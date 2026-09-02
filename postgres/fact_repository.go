@@ -197,7 +197,7 @@ func (repository FactRepository) SearchFacts(ctx context.Context, query bluememo
 		}
 		if hasVectorSearch {
 			searchSQL = hybridFactSearchSQL
-			arguments = append(arguments, vectorLiteral(query.Embedding))
+			arguments = append(arguments, vectorLiteral(query.Embedding), query.EmbeddingModel)
 		}
 	}
 	rows, errorValue := repository.database.QueryContext(ctx, searchSQL, arguments...)
@@ -210,10 +210,11 @@ func (repository FactRepository) SearchFacts(ctx context.Context, query bluememo
 
 const hybridFactSearchSQL = `
 WITH readable AS (
-  SELECT f.fact_id, f.content, f.valid_from FROM memory_fact f WHERE` + readableFactFilter + `
+  SELECT f.fact_id, f.content, f.valid_from, f.embedding_model FROM memory_fact f WHERE` + readableFactFilter + `
 ), vector_hits AS (
   SELECT r.fact_id, row_number() OVER (ORDER BY e.embedding <=> $8::vector) AS vector_rank
   FROM readable r JOIN memory_fact_embedding e ON e.fact_id = r.fact_id
+  WHERE r.embedding_model = $9
   ORDER BY e.embedding <=> $8::vector
   LIMIT $7
 ), lexical_hits AS (
@@ -242,6 +243,50 @@ WITH readable AS (
 SELECT` + factColumns + `, 0, l.lexical_rank
 FROM memory_fact f
 JOIN lexical_hits l ON l.fact_id = f.fact_id`
+
+func (repository FactRepository) ListLiveFactsNotEmbeddedWith(ctx context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]bluememo.Fact, error) {
+	rows, errorValue := repository.database.QueryContext(ctx, `
+SELECT`+factColumns+`
+FROM memory_fact f
+WHERE f.embedding_model <> $1
+  AND f.superseded_by IS NULL
+  AND f.forgotten_at IS NULL
+  AND (f.valid_until IS NULL OR f.valid_until > $2)
+ORDER BY f.created_at
+LIMIT $3`, embeddingModel, referenceTime.UTC(), candidateLimit(limit))
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	return scanFacts(rows)
+}
+
+func (repository FactRepository) ReplaceFactEmbedding(ctx context.Context, factID string, embeddingModel string, embedding []float32) error {
+	hasVectorSearch, errorValue := repository.HasVectorSearch(ctx)
+	if errorValue != nil {
+		return errorValue
+	}
+	transaction, errorValue := repository.database.BeginTx(ctx, nil)
+	if errorValue != nil {
+		return errorValue
+	}
+	defer transaction.Rollback()
+	result, errorValue := transaction.ExecContext(ctx, `UPDATE memory_fact SET embedding_model = $2 WHERE fact_id = $1`, factID, embeddingModel)
+	if errorValue != nil {
+		return errorValue
+	}
+	if updatedRows, _ := result.RowsAffected(); updatedRows == 0 {
+		return errors.New("memory fact " + factID + " does not exist")
+	}
+	if hasVectorSearch {
+		if _, errorValue := transaction.ExecContext(ctx, `
+INSERT INTO memory_fact_embedding (fact_id, embedding) VALUES ($1, $2::vector)
+ON CONFLICT (fact_id) DO UPDATE SET embedding = EXCLUDED.embedding`, factID, vectorLiteral(embedding)); errorValue != nil {
+			return errorValue
+		}
+	}
+	return transaction.Commit()
+}
 
 func (repository FactRepository) ListFactsByID(ctx context.Context, reader bluememo.Reader, factIDs []string, referenceTime time.Time) ([]bluememo.Fact, error) {
 	if len(factIDs) == 0 {

@@ -27,7 +27,7 @@ Everything goes through `Ingester`. It embeds the episode, offers the reader's n
 
 ## Reading
 
-`Store.Recall` returns a person's **profile** (two short lists a background job condenses from their facts) and a hybrid search of the prompt: pgvector cosine and `pg_trgm` word similarity fused by reciprocal rank, episodes decaying with age, reinforcement breaking ties. Where the `vector` extension is absent the migration still applies and search answers lexically; the result says which mode answered.
+`Store.Recall` returns a person's **profile** (two short lists a background job condenses from their facts) and a hybrid search of the prompt: pgvector cosine and `pg_trgm` word similarity fused by reciprocal rank, episodes decaying with age, reinforcement breaking ties. Where the `vector` extension is absent the migration still applies and search answers lexically; the result says which mode answered. Vectors from two embedding models do not compare, so the vector side of a search only ranks facts embedded by the store's own model; a `reembed` job (`Store.EnqueueReembed`, `ReembedJobHandler`) moves every live fact onto that model, and until it has run those facts answer lexically.
 
 ## Using it
 

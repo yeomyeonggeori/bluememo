@@ -11,6 +11,7 @@ type FactSearchQuery struct {
 	Reader         Reader
 	Text           string
 	Embedding      []float32
+	EmbeddingModel string
 	CandidateLimit int
 	ReferenceTime  time.Time
 }
@@ -28,6 +29,8 @@ type FactRepository interface {
 	ListFactsByID(ctx context.Context, reader Reader, factIDs []string, referenceTime time.Time) ([]Fact, error)
 	ListReadableFacts(ctx context.Context, reader Reader, limit int, referenceTime time.Time) ([]Fact, error)
 	ListLiveFactsAboutPerson(ctx context.Context, personID string, referenceTime time.Time) ([]Fact, error)
+	ListLiveFactsNotEmbeddedWith(ctx context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]Fact, error)
+	ReplaceFactEmbedding(ctx context.Context, factID string, embeddingModel string, embedding []float32) error
 	MarkFactsRecalled(ctx context.Context, factIDs []string, recalledAt time.Time) error
 	ForgetFacts(ctx context.Context, reader Reader, factIDs []string, reason string, forgottenAt time.Time) ([]string, error)
 }

@@ -289,3 +289,49 @@ func unitEmbedding(axis int) []float32 {
 	embedding[axis] = 1
 	return embedding
 }
+
+func TestReembedMovesFactsToTheStoreModel(t *testing.T) {
+	fixture := openFixture(t)
+	if !fixture.hasVector {
+		t.Skip("the database has no vector extension")
+	}
+	episode := fixture.episode("alice")
+	fact := fixture.privateFact(episode.EpisodeID, "alice", "the standup moved to 10am")
+	fact.EmbeddingModel = "old-model"
+	fixture.save(t, episode, bluememo.FactWrite{Fact: fact, Embedding: unitEmbedding(0)})
+	reader := bluememo.NewReader("alice", nil, nil, 1, nil)
+	query := bluememo.FactSearchQuery{Reader: reader, Text: "zzzz", Embedding: unitEmbedding(0), EmbeddingModel: "new-model", ReferenceTime: fixture.now}
+	hits, errorValue := fixture.facts.SearchFacts(context.Background(), query)
+	if errorValue != nil || len(hits) != 0 {
+		t.Fatalf("expected a fact embedded by another model to stay out of vector hits, got %d (%v)", len(hits), errorValue)
+	}
+	store := bluememo.Store{Facts: fixture.facts, Jobs: fixture.jobs, Embedder: fixedEmbedder{embedding: unitEmbedding(1)}, EmbeddingModel: "new-model", Now: func() time.Time { return fixture.now }}
+	job, _, errorValue := store.EnqueueReembed(context.Background())
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if errorValue := (bluememo.ReembedJobHandler{Store: store}).Handle(context.Background(), job); errorValue != nil {
+		t.Fatalf("expected the reembed to run: %v", errorValue)
+	}
+	query.Embedding = unitEmbedding(1)
+	hits, errorValue = fixture.facts.SearchFacts(context.Background(), query)
+	if errorValue != nil || len(hits) != 1 || hits[0].VectorRank != 1 || hits[0].Fact.EmbeddingModel != "new-model" {
+		t.Fatalf("expected the fact to rank by vector under the store model, got %+v (%v)", hits, errorValue)
+	}
+}
+
+type fixedEmbedder struct {
+	embedding []float32
+}
+
+func (embedder fixedEmbedder) EmbedQuery(context.Context, string) ([]float32, error) {
+	return embedder.embedding, nil
+}
+
+func (embedder fixedEmbedder) EmbedDocuments(_ context.Context, texts []string) ([][]float32, error) {
+	embeddings := make([][]float32, 0, len(texts))
+	for range texts {
+		embeddings = append(embeddings, embedder.embedding)
+	}
+	return embeddings, nil
+}

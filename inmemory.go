@@ -105,7 +105,7 @@ func (repository *InMemoryRepository) SearchFacts(_ context.Context, query FactS
 		ranked[fact.FactID] = &RankedFact{Fact: fact, LexicalRank: index + 1}
 	}
 	if len(query.Embedding) > 0 {
-		for index, fact := range repository.vectorOrderLocked(readable, query.Embedding, limit) {
+		for index, fact := range repository.vectorOrderLocked(readable, query.Embedding, query.EmbeddingModel, limit) {
 			if hit, isRanked := ranked[fact.FactID]; isRanked {
 				hit.VectorRank = index + 1
 				continue
@@ -156,7 +156,7 @@ func lexicalOrder(facts []Fact, text string, limit int) []Fact {
 	return ordered
 }
 
-func (repository *InMemoryRepository) vectorOrderLocked(facts []Fact, queryEmbedding []float32, limit int) []Fact {
+func (repository *InMemoryRepository) vectorOrderLocked(facts []Fact, queryEmbedding []float32, embeddingModel string, limit int) []Fact {
 	type scored struct {
 		fact       Fact
 		similarity float64
@@ -164,7 +164,7 @@ func (repository *InMemoryRepository) vectorOrderLocked(facts []Fact, queryEmbed
 	scoredFacts := []scored{}
 	for _, fact := range facts {
 		embedding, hasEmbedding := repository.embeddings[fact.FactID]
-		if !hasEmbedding {
+		if !hasEmbedding || fact.EmbeddingModel != embeddingModel {
 			continue
 		}
 		scoredFacts = append(scoredFacts, scored{fact: fact, similarity: cosineSimilarity(queryEmbedding, embedding)})
@@ -247,6 +247,35 @@ func (repository *InMemoryRepository) ListLiveFactsAboutPerson(_ context.Context
 	}
 	sort.SliceStable(facts, func(left int, right int) bool { return facts[left].ValidFrom.After(facts[right].ValidFrom) })
 	return facts, nil
+}
+
+func (repository *InMemoryRepository) ListLiveFactsNotEmbeddedWith(_ context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]Fact, error) {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	facts := []Fact{}
+	for _, factID := range repository.order {
+		fact := repository.facts[factID]
+		if fact.EmbeddingModel != embeddingModel && fact.IsLive(referenceTime) {
+			facts = append(facts, fact)
+		}
+		if limit > 0 && len(facts) >= limit {
+			break
+		}
+	}
+	return facts, nil
+}
+
+func (repository *InMemoryRepository) ReplaceFactEmbedding(_ context.Context, factID string, embeddingModel string, embedding []float32) error {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	fact, isKnown := repository.facts[factID]
+	if !isKnown {
+		return errors.New("memory fact " + factID + " does not exist")
+	}
+	fact.EmbeddingModel = embeddingModel
+	repository.facts[factID] = fact
+	repository.embeddings[factID] = append([]float32{}, embedding...)
+	return nil
 }
 
 func (repository *InMemoryRepository) MarkFactsRecalled(_ context.Context, factIDs []string, recalledAt time.Time) error {

@@ -67,7 +67,7 @@ func (store Store) Search(ctx context.Context, reader Reader, text string, limit
 		return SearchResult{}, errors.New("memory search text is required")
 	}
 	referenceTime := store.now()
-	query := FactSearchQuery{Reader: reader, Text: trimmedText, CandidateLimit: store.candidateLimit(), ReferenceTime: referenceTime}
+	query := FactSearchQuery{Reader: reader, Text: trimmedText, EmbeddingModel: store.EmbeddingModel, CandidateLimit: store.candidateLimit(), ReferenceTime: referenceTime}
 	mode, degradedReason := store.resolveSearchMode(ctx, &query)
 	hits, errorValue := store.Facts.SearchFacts(ctx, query)
 	if errorValue != nil {
@@ -177,6 +177,16 @@ func (store Store) EnqueueExtraction(ctx context.Context, subjectID string) (Job
 		return Job{}, false, errors.New("memory job repository is not configured")
 	}
 	return store.Jobs.EnqueueJob(ctx, JobKindExtract, subjectID, store.now())
+}
+
+func (store Store) EnqueueReembed(ctx context.Context) (Job, bool, error) {
+	if store.Jobs == nil {
+		return Job{}, false, errors.New("memory job repository is not configured")
+	}
+	if strings.TrimSpace(store.EmbeddingModel) == "" {
+		return Job{}, false, errors.New("memory embedding model is not configured")
+	}
+	return store.Jobs.EnqueueJob(ctx, JobKindReembed, store.EmbeddingModel, store.now())
 }
 
 func (store Store) EnqueueProfileRebuild(ctx context.Context, personID string) {
