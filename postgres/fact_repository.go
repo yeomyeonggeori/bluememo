@@ -22,7 +22,7 @@ func NewFactRepository(database *sql.DB) FactRepository {
 }
 
 const factColumns = `
-  f.fact_id, f.episode_id, f.scope_type, f.owner_person_id, f.subject_person_id, f.kind, f.content,
+  f.fact_id, f.episode_id, f.owner_person_id, f.subject_person_id, f.kind, f.content,
   f.embedding_model, f.security_level_rank, COALESCE(array_to_json(f.required_classes)::text, '[]'),
   f.valid_from, f.valid_until, COALESCE(f.superseded_by, ''), f.reinforcement_count,
   f.last_recalled_at, f.forgotten_at, COALESCE(f.forget_reason, ''), f.created_at,
@@ -30,13 +30,13 @@ const factColumns = `
 
 const readableFactFilter = `
   (
-    (f.scope_type = 'private' AND f.owner_person_id = $1)
-    OR (f.scope_type = 'circle' AND EXISTS (
-      SELECT 1 FROM memory_fact_circle rc WHERE rc.fact_id = f.fact_id AND rc.circle_id = ANY($2::text[])))
-    OR f.scope_type = 'workspace'
+    f.owner_person_id = $1
+    OR (
+      EXISTS (SELECT 1 FROM memory_fact_circle rc WHERE rc.fact_id = f.fact_id AND rc.circle_id = ANY($2::text[]))
+      AND f.security_level_rank <= $3
+      AND f.required_classes <@ $4::text[]
+    )
   )
-  AND f.security_level_rank <= $3
-  AND f.required_classes <@ $4::text[]
   AND f.superseded_by IS NULL
   AND f.forgotten_at IS NULL
   AND (f.valid_until IS NULL OR f.valid_until > $5)`
@@ -131,10 +131,10 @@ func applyFactWrite(ctx context.Context, transaction *sql.Tx, factWrite bluememo
 func insertFact(ctx context.Context, transaction *sql.Tx, fact bluememo.Fact) error {
 	_, errorValue := transaction.ExecContext(ctx, `
 INSERT INTO memory_fact (
-  fact_id, episode_id, scope_type, owner_person_id, subject_person_id, kind, content, embedding_model,
+  fact_id, episode_id, owner_person_id, subject_person_id, kind, content, embedding_model,
   security_level_rank, required_classes, valid_from, valid_until, reinforcement_count
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::text[], $11, $12, GREATEST($13, 1))`,
-		fact.FactID, fact.EpisodeID, fact.ScopeType, fact.OwnerPersonID, fact.SubjectPersonID, fact.Kind,
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text[], $10, $11, GREATEST($12, 1))`,
+		fact.FactID, fact.EpisodeID, fact.OwnerPersonID, fact.SubjectPersonID, fact.Kind,
 		strings.TrimSpace(fact.Content), fact.EmbeddingModel, fact.SecurityLevelRank, nonNilStrings(fact.RequiredClasses),
 		fact.ValidFrom.UTC(), nullableTime(fact.ValidUntil), fact.ReinforcementCount,
 	)
@@ -377,7 +377,7 @@ func scanFact(rows *sql.Rows, trailingTargets ...any) (bluememo.Fact, error) {
 	var requiredClassesDocument, circleIDsDocument string
 	var validUntil, lastRecalledAt, forgottenAt sql.NullTime
 	targets := []any{
-		&fact.FactID, &fact.EpisodeID, &fact.ScopeType, &fact.OwnerPersonID, &fact.SubjectPersonID, &fact.Kind, &fact.Content,
+		&fact.FactID, &fact.EpisodeID, &fact.OwnerPersonID, &fact.SubjectPersonID, &fact.Kind, &fact.Content,
 		&fact.EmbeddingModel, &fact.SecurityLevelRank, &requiredClassesDocument,
 		&fact.ValidFrom, &validUntil, &fact.SupersededBy, &fact.ReinforcementCount,
 		&lastRecalledAt, &forgottenAt, &fact.ForgetReason, &fact.CreatedAt, &circleIDsDocument,

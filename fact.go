@@ -10,12 +10,6 @@ import (
 )
 
 const (
-	ScopeTypePrivate   = "private"
-	ScopeTypeCircle    = "circle"
-	ScopeTypeWorkspace = "workspace"
-)
-
-const (
 	FactKindIdentity   = "identity"
 	FactKindPreference = "preference"
 	FactKindFact       = "fact"
@@ -32,8 +26,6 @@ const (
 const FactContentCharacterLimit = 240
 
 const EmbeddingDimensionCount = 1024
-
-var ScopeTypes = []string{ScopeTypePrivate, ScopeTypeCircle, ScopeTypeWorkspace}
 
 var FactKinds = []string{FactKindIdentity, FactKindPreference, FactKindFact, FactKindEpisode, FactKindTemporary}
 
@@ -53,8 +45,7 @@ type Episode struct {
 type Fact struct {
 	FactID             string    `json:"factID"`
 	EpisodeID          string    `json:"episodeID"`
-	ScopeType          string    `json:"scopeType"`
-	OwnerPersonID      string    `json:"ownerPersonID,omitempty"`
+	OwnerPersonID      string    `json:"ownerPersonID"`
 	CircleIDs          []string  `json:"circleIDs,omitempty"`
 	SubjectPersonID    string    `json:"subjectPersonID,omitempty"`
 	Kind               string    `json:"kind"`
@@ -97,6 +88,10 @@ type SecurityLabel struct {
 	RequiredClasses   []string
 }
 
+func (fact Fact) IsShared() bool {
+	return len(fact.CircleIDs) > 0
+}
+
 func (fact Fact) IsLive(referenceTime time.Time) bool {
 	if fact.SupersededBy != "" || !fact.ForgottenAt.IsZero() {
 		return false
@@ -133,8 +128,11 @@ func ValidateFact(fact Fact) error {
 	if strings.TrimSpace(fact.EpisodeID) == "" {
 		return errors.New("fact episode id is required")
 	}
-	if errorValue := validateFactScope(fact); errorValue != nil {
-		return errorValue
+	if strings.TrimSpace(fact.OwnerPersonID) == "" {
+		return errors.New("a fact requires an owner")
+	}
+	if len(fact.CircleIDs) != len(NormalizeCircleIDs(fact.CircleIDs)) {
+		return errors.New("fact circles must be lowercase, trimmed, and unique")
 	}
 	if !containsString(FactKinds, fact.Kind) {
 		return fmt.Errorf("fact kind %q is not one of %s", fact.Kind, strings.Join(FactKinds, ", "))
@@ -150,32 +148,6 @@ func ValidateFact(fact Fact) error {
 	}
 	if fact.Kind != FactKindTemporary && !fact.ValidUntil.IsZero() {
 		return fmt.Errorf("a %s fact carries no valid_until", fact.Kind)
-	}
-	return nil
-}
-
-func validateFactScope(fact Fact) error {
-	switch fact.ScopeType {
-	case ScopeTypePrivate:
-		if strings.TrimSpace(fact.OwnerPersonID) == "" {
-			return errors.New("a private fact requires an owner")
-		}
-		if len(fact.CircleIDs) > 0 {
-			return errors.New("a private fact carries no circles")
-		}
-	case ScopeTypeCircle:
-		if len(NormalizeCircleIDs(fact.CircleIDs)) == 0 {
-			return errors.New("a circle fact requires at least one circle")
-		}
-		if fact.OwnerPersonID != "" {
-			return errors.New("a circle fact carries no owner")
-		}
-	case ScopeTypeWorkspace:
-		if fact.OwnerPersonID != "" || len(fact.CircleIDs) > 0 {
-			return errors.New("a workspace fact carries no owner and no circles")
-		}
-	default:
-		return fmt.Errorf("fact scope type %q is not one of %s", fact.ScopeType, strings.Join(ScopeTypes, ", "))
 	}
 	return nil
 }

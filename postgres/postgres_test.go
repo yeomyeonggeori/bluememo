@@ -61,15 +61,15 @@ func (fixture fixture) episode(requesterPersonID string) bluememo.Episode {
 }
 
 func (fixture fixture) privateFact(episodeID string, ownerPersonID string, content string) bluememo.Fact {
-	return bluememo.Fact{FactID: bluememo.NewIdentifier(), EpisodeID: episodeID, ScopeType: bluememo.ScopeTypePrivate, OwnerPersonID: ownerPersonID, SubjectPersonID: ownerPersonID, Kind: bluememo.FactKindFact, Content: content, ValidFrom: fixture.now.Add(-time.Hour)}
+	return bluememo.Fact{FactID: bluememo.NewIdentifier(), EpisodeID: episodeID, OwnerPersonID: ownerPersonID, SubjectPersonID: ownerPersonID, Kind: bluememo.FactKindFact, Content: content, ValidFrom: fixture.now.Add(-time.Hour)}
 }
 
 func (fixture fixture) circleFact(episodeID string, content string, circleIDs ...string) bluememo.Fact {
-	return bluememo.Fact{FactID: bluememo.NewIdentifier(), EpisodeID: episodeID, ScopeType: bluememo.ScopeTypeCircle, CircleIDs: circleIDs, Kind: bluememo.FactKindFact, Content: content, ValidFrom: fixture.now.Add(-time.Hour)}
+	return bluememo.Fact{FactID: bluememo.NewIdentifier(), EpisodeID: episodeID, OwnerPersonID: "carol", CircleIDs: bluememo.NormalizeCircleIDs(circleIDs), Kind: bluememo.FactKindFact, Content: content, ValidFrom: fixture.now.Add(-time.Hour)}
 }
 
 func (fixture fixture) workspaceFact(episodeID string, content string) bluememo.Fact {
-	return bluememo.Fact{FactID: bluememo.NewIdentifier(), EpisodeID: episodeID, ScopeType: bluememo.ScopeTypeWorkspace, Kind: bluememo.FactKindFact, Content: content, ValidFrom: fixture.now.Add(-time.Hour)}
+	return fixture.circleFact(episodeID, content, "member")
 }
 
 func (fixture fixture) save(t *testing.T, episode bluememo.Episode, writes ...bluememo.FactWrite) {
@@ -107,7 +107,7 @@ func TestReaderFilterGatesScopeContainmentRankAndClasses(t *testing.T) {
 	classed.RequiredClasses = []string{"legal"}
 	fixture.save(t, episode, bluememo.FactWrite{Fact: own}, bluememo.FactWrite{Fact: other}, bluememo.FactWrite{Fact: platform}, bluememo.FactWrite{Fact: shared}, bluememo.FactWrite{Fact: sales}, bluememo.FactWrite{Fact: open}, bluememo.FactWrite{Fact: secret}, bluememo.FactWrite{Fact: classed})
 
-	reader := bluememo.NewReader("alice", []string{"engineering"}, map[string][]string{"engineering": {"platform", "data"}}, 1, nil)
+	reader := bluememo.NewReader("alice", []string{"member", "engineering"}, map[string][]string{"engineering": {"platform", "data"}}, 1, nil)
 	hits := fixture.search(t, reader, "Q3 프로젝트")
 	for _, visible := range []bluememo.Fact{own, platform, shared, open} {
 		if _, isVisible := hits[visible.Content]; !isVisible {
@@ -259,8 +259,8 @@ func TestIngestThroughPostgresEndsAsRowsAndRecall(t *testing.T) {
 	store := bluememo.Store{Facts: fixture.facts, Profiles: fixture.profiles, Jobs: fixture.jobs, Embedder: &bluememotest.HashEmbedder{}, EmbeddingModel: "test-embed", Now: func() time.Time { return fixture.now }}
 	ingester := bluememo.Ingester{Store: store, Model: scripted, Now: func() time.Time { return fixture.now }}
 	scripted.Queue(bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, Scope: bluememo.ScopeTypeCircle, CircleIDs: []string{"platform"}, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
-		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Scope: bluememo.ScopeTypePrivate, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, CircleIDs: []string{"platform"}, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
 	))
 	result, errorValue := ingester.Ingest(ctx, bluememo.IngestRequest{
 		Episode:       bluememo.Episode{EpisodeID: "episode-1", SourceKind: bluememo.EpisodeSourceKindTaskRun, SourceID: "run-1", RequesterPersonID: "alice", Content: "나 플랫폼 팀으로 옮겼어. 요약은 불릿으로.", OccurredAt: fixture.now},

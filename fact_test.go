@@ -10,7 +10,6 @@ func validFact() Fact {
 	return Fact{
 		FactID:        "fact-1",
 		EpisodeID:     "episode-1",
-		ScopeType:     ScopeTypePrivate,
 		OwnerPersonID: "person-1",
 		Kind:          FactKindFact,
 		Content:       "이샘플 owns the Q3 review",
@@ -18,20 +17,15 @@ func validFact() Fact {
 	}
 }
 
-func circleFact(circleIDs ...string) Fact {
+func sharedFact(circleIDs ...string) Fact {
 	fact := validFact()
-	fact.ScopeType, fact.OwnerPersonID, fact.CircleIDs = ScopeTypeCircle, "", circleIDs
+	fact.OwnerPersonID = "person-9"
+	fact.CircleIDs = circleIDs
 	return fact
 }
 
-func workspaceFact() Fact {
-	fact := validFact()
-	fact.ScopeType, fact.OwnerPersonID = ScopeTypeWorkspace, ""
-	return fact
-}
-
-func TestValidateFactAcceptsEveryScopeShape(t *testing.T) {
-	for name, fact := range map[string]Fact{"private": validFact(), "circle": circleFact("platform", "data"), "workspace": workspaceFact()} {
+func TestValidateFactAcceptsOwnedAndSharedFacts(t *testing.T) {
+	for name, fact := range map[string]Fact{"owner only": validFact(), "shared": sharedFact("data", "platform")} {
 		if errorValue := ValidateFact(fact); errorValue != nil {
 			t.Fatalf("expected the %s fact to validate, got %v", name, errorValue)
 		}
@@ -41,12 +35,8 @@ func TestValidateFactAcceptsEveryScopeShape(t *testing.T) {
 func TestValidateFactRejectsEachBrokenField(t *testing.T) {
 	cases := map[string]func(*Fact){
 		"missing id":                  func(fact *Fact) { fact.FactID = " " },
-		"unknown scope":               func(fact *Fact) { fact.ScopeType = "conversation" },
-		"private without owner":       func(fact *Fact) { fact.OwnerPersonID = "" },
-		"private with circles":        func(fact *Fact) { fact.CircleIDs = []string{"platform"} },
-		"circle without circles":      func(fact *Fact) { *fact = circleFact(" ") },
-		"circle with owner":           func(fact *Fact) { *fact = circleFact("platform"); fact.OwnerPersonID = "person-1" },
-		"workspace with circles":      func(fact *Fact) { *fact = workspaceFact(); fact.CircleIDs = []string{"platform"} },
+		"missing owner":               func(fact *Fact) { fact.OwnerPersonID = " " },
+		"unnormalized circles":        func(fact *Fact) { fact.CircleIDs = []string{"Platform", "platform"} },
 		"unknown kind":                func(fact *Fact) { fact.Kind = "rumour" },
 		"empty content":               func(fact *Fact) { fact.Content = "  " },
 		"oversized content":           func(fact *Fact) { fact.Content = strings.Repeat("가", FactContentCharacterLimit+1) },
@@ -111,24 +101,26 @@ func TestReaderCanReadAppliesScopeContainmentRankAndClasses(t *testing.T) {
 	ownPrivate := validFact()
 	otherPrivate := validFact()
 	otherPrivate.OwnerPersonID = "person-2"
-	tooSecret := workspaceFact()
+	ownSecret := validFact()
+	ownSecret.SecurityLevelRank = 9
+	tooSecret := sharedFact("engineering")
 	tooSecret.SecurityLevelRank = 2
-	wrongClass := workspaceFact()
+	wrongClass := sharedFact("engineering")
 	wrongClass.RequiredClasses = []string{"legal"}
-	rightClass := workspaceFact()
+	rightClass := sharedFact("engineering")
 	rightClass.RequiredClasses = []string{"finance"}
 	for name, expectation := range map[string]struct {
 		fact    Fact
 		canRead bool
 	}{
-		"own private":            {ownPrivate, true},
-		"other private":          {otherPrivate, false},
-		"member circle":          {circleFact("engineering"), true},
-		"contained circle":       {circleFact("platform"), true},
-		"one of several circles": {circleFact("sales", "platform"), true},
-		"stranger circle":        {circleFact("sales"), false},
-		"containing circle":      {circleFact("company"), false},
-		"workspace":              {workspaceFact(), true},
+		"own, no circles":        {ownPrivate, true},
+		"own, above own rank":    {ownSecret, true},
+		"someone else's":         {otherPrivate, false},
+		"member circle":          {sharedFact("engineering"), true},
+		"contained circle":       {sharedFact("platform"), true},
+		"one of several circles": {sharedFact("platform", "sales"), true},
+		"stranger circle":        {sharedFact("sales"), false},
+		"containing circle":      {sharedFact("company"), false},
 		"above clearance":        {tooSecret, false},
 		"missing class":          {wrongClass, false},
 		"granted class":          {rightClass, true},

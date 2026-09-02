@@ -12,15 +12,14 @@
 
 An **episode** is something that happened: a finished task, or a sentence a person asked the agent to keep. A **fact** is one atomic sentence a language model extracts from an episode, with a kind (`identity`, `preference`, `fact`, `episode`, `temporary`), a scope, and the security label of the conversation it came from. Facts are never deleted. A newer fact supersedes an older one, a repeated fact reinforces one, a person forgets one with a reason, and a temporary fact expires.
 
-A fact lives in exactly one scope:
+Every fact has an owner, the person whose task or request produced it, and zero or more circles it is shared with:
 
-| scope | who reads it |
+| circles | who reads it |
 |---|---|
-| `private` | its owner |
-| `circle` | members of any circle it names, and members of any circle that contains one of them |
-| `workspace` | everyone whose security rank and classes pass the label |
+| none | its owner, and nobody else |
+| one or more | its owner, plus members of any named circle whose security rank and classes pass the label |
 
-Circles nest. A circle that is a member of another circle is readable from that other circle, transitively, so a fact shared with `platform` is readable by everyone in `engineering` when `engineering` contains `platform`. The host supplies the containment map; bluememo computes the readable set once per reader and applies it as one SQL predicate. Writing to a circle needs direct membership.
+There is no company-wide scope: sharing with everyone is sharing with the circle everyone is in. Circles nest. A circle that is a member of another circle is readable from that other circle, transitively, so a fact shared with `platform` is readable by everyone in `engineering` when `engineering` contains `platform`. The host supplies the containment map; bluememo computes the readable set once per reader and applies it as one SQL predicate. Writing to a circle needs direct membership.
 
 ## Writing
 

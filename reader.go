@@ -41,7 +41,10 @@ func ReadableCircles(memberCircleIDs []string, containedCircles map[string][]str
 }
 
 func (reader Reader) CanRead(fact Fact) bool {
-	if !reader.isInScope(fact) {
+	if reader.PersonID != "" && fact.OwnerPersonID == reader.PersonID {
+		return true
+	}
+	if !reader.isInSharedCircle(fact) {
 		return false
 	}
 	if fact.SecurityLevelRank > reader.SecurityLevelRank {
@@ -59,19 +62,11 @@ func (reader Reader) CanWriteCircle(circleID string) bool {
 	return containsString(reader.MemberCircleIDs, strings.ToLower(strings.TrimSpace(circleID)))
 }
 
-func (reader Reader) isInScope(fact Fact) bool {
-	switch fact.ScopeType {
-	case ScopeTypePrivate:
-		return reader.PersonID != "" && fact.OwnerPersonID == reader.PersonID
-	case ScopeTypeCircle:
-		for _, circleID := range fact.CircleIDs {
-			if containsString(reader.ReadableCircleIDs, circleID) {
-				return true
-			}
+func (reader Reader) isInSharedCircle(fact Fact) bool {
+	for _, circleID := range fact.CircleIDs {
+		if containsString(reader.ReadableCircleIDs, circleID) {
+			return true
 		}
-		return false
-	case ScopeTypeWorkspace:
-		return true
 	}
 	return false
 }

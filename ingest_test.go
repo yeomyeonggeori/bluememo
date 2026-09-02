@@ -49,7 +49,7 @@ func (fixture ingestFixture) request(content string) bluememo.IngestRequest {
 			Content:           content,
 			OccurredAt:        ingestNow,
 		},
-		Reader:        bluememo.NewReader("person-alice", []string{"engineering", "platform"}, map[string][]string{"engineering": {"platform", "data"}}, 1, nil),
+		Reader:        bluememo.NewReader("person-alice", []string{"member", "engineering", "platform"}, map[string][]string{"engineering": {"platform", "data"}}, 1, nil),
 		RequesterName: "이샘플",
 		Label:         bluememo.SecurityLabel{SecurityLevelRank: 1, RequiredClasses: []string{}},
 	}
@@ -72,63 +72,57 @@ func (fixture ingestFixture) ingest(t *testing.T, content string, response map[s
 func TestIngestRecordsNewFactsWithScopeLabelAndSubject(t *testing.T) {
 	fixture := newIngestFixture()
 	result := fixture.ingest(t, "이샘플 moved to the platform team and prefers bullet summaries", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, Scope: bluememo.ScopeTypeWorkspace, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
-		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, CircleIDs: []string{"member"}, SubjectPersonHint: "이샘플", Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationNew},
 	), nil)
 	if len(result.Facts) != 2 || len(result.SupersededFactIDs) != 0 {
 		t.Fatalf("expected two new facts, got %+v", result)
 	}
-	workspaceFact, privateFact := result.Facts[0], result.Facts[1]
-	if workspaceFact.ScopeType != bluememo.ScopeTypeWorkspace || workspaceFact.SubjectPersonID != "person-alice" || workspaceFact.SecurityLevelRank != 1 {
-		t.Fatalf("expected a labelled workspace fact about the requester, got %+v", workspaceFact)
+	sharedFact, ownFact := result.Facts[0], result.Facts[1]
+	if strings.Join(sharedFact.CircleIDs, ",") != "member" || sharedFact.OwnerPersonID != "person-alice" || sharedFact.SubjectPersonID != "person-alice" || sharedFact.SecurityLevelRank != 1 {
+		t.Fatalf("expected a labelled fact shared with member and owned by the requester, got %+v", sharedFact)
 	}
-	if privateFact.ScopeType != bluememo.ScopeTypePrivate || privateFact.OwnerPersonID != "person-alice" || privateFact.SubjectPersonID != "person-alice" || privateFact.SecurityLevelRank != 0 {
-		t.Fatalf("expected an unlabelled private fact owned by the requester, got %+v", privateFact)
+	if ownFact.IsShared() || ownFact.OwnerPersonID != "person-alice" || ownFact.SubjectPersonID != "person-alice" || ownFact.SecurityLevelRank != 0 {
+		t.Fatalf("expected an unlabelled fact for the requester alone, got %+v", ownFact)
 	}
-	if stored, isFound := fixture.repository.FindFact(privateFact.FactID); !isFound || stored.EmbeddingModel != "test-embed" || stored.EpisodeID != result.EpisodeID {
+	if stored, isFound := fixture.repository.FindFact(ownFact.FactID); !isFound || stored.EmbeddingModel != "test-embed" || stored.EpisodeID != result.EpisodeID {
 		t.Fatalf("expected the fact stored with its embedding model and episode, got %+v", stored)
 	}
 	if _, isCreated, _ := fixture.repository.EnqueueJob(context.Background(), bluememo.JobKindProfile, "person-alice", ingestNow); isCreated {
 		t.Fatal("expected a profile rebuild to be pending for the subject")
 	}
 	subject := fixture.model.LastSubject()
-	if !strings.Contains(subject, "Requester's circles: engineering, platform") || !strings.Contains(subject, "Existing facts closest to the source:\n(none)") {
+	if !strings.Contains(subject, "Requester's circles: engineering, member, platform") || !strings.Contains(subject, "Existing facts closest to the source:\n(none)") {
 		t.Fatalf("expected the requester's circles and an empty candidate list, got %s", subject)
 	}
 }
 
-func TestIngestCircleFactsKeepOnlyCirclesTheRequesterIsIn(t *testing.T) {
+func TestIngestSharesOnlyWithCirclesTheRequesterIsIn(t *testing.T) {
 	fixture := newIngestFixture()
 	shared := fixture.ingest(t, "the platform and data circles meet on Mondays", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "the platform and data circles meet on Mondays", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypeCircle, CircleIDs: []string{"Platform", "data", "sales"}, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "the platform and data circles meet on Mondays", Kind: bluememo.FactKindFact, CircleIDs: []string{"Platform", "data", "sales"}, Relation: bluememo.FactRelationNew},
 	), nil)
-	if strings.Join(shared.Facts[0].CircleIDs, ",") != "platform" || shared.Facts[0].ScopeType != bluememo.ScopeTypeCircle {
-		t.Fatalf("expected only the circles the requester is a member of, got %+v", shared.Facts[0])
-	}
-	defaulted := fixture.ingest(t, "said in the engineering channel", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "engineering deploys on Thursdays", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypeCircle, Relation: bluememo.FactRelationNew},
-	), func(request *bluememo.IngestRequest) { request.ActiveCircleID = "engineering" })
-	if strings.Join(defaulted.Facts[0].CircleIDs, ",") != "engineering" {
-		t.Fatalf("expected the active circle when none is named, got %+v", defaulted.Facts[0])
+	if strings.Join(shared.Facts[0].CircleIDs, ",") != "platform" || shared.Facts[0].SecurityLevelRank != 1 {
+		t.Fatalf("expected only the circles the requester is a member of, with the label kept, got %+v", shared.Facts[0])
 	}
 	narrowed := fixture.ingest(t, "said in a direct message", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "sales closes the quarter on Friday", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypeCircle, CircleIDs: []string{"sales"}, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "sales closes the quarter on Friday", Kind: bluememo.FactKindFact, CircleIDs: []string{"sales"}, Relation: bluememo.FactRelationNew},
 	), nil)
-	if narrowed.Facts[0].ScopeType != bluememo.ScopeTypePrivate || narrowed.Facts[0].OwnerPersonID != "person-alice" || len(narrowed.Facts[0].CircleIDs) != 0 {
-		t.Fatalf("expected a fact for a foreign circle to narrow to private, got %+v", narrowed.Facts[0])
+	if narrowed.Facts[0].IsShared() || narrowed.Facts[0].OwnerPersonID != "person-alice" || narrowed.Facts[0].SecurityLevelRank != 0 {
+		t.Fatalf("expected a fact for a foreign circle to fall back to the requester alone, got %+v", narrowed.Facts[0])
 	}
 }
 
 func TestIngestSupersedesAndReinforcesOnlyCandidates(t *testing.T) {
 	fixture := newIngestFixture()
 	first := fixture.ingest(t, "이샘플 works at Google as an engineer and likes terse notes", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 works at Google as an engineer", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
-		bluememotest.IngestFact{Content: "이샘플 likes terse notes", Kind: bluememo.FactKindPreference, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 works at Google as an engineer", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 likes terse notes", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationNew},
 	), nil)
 	jobFact, preferenceFact := first.Facts[0], first.Facts[1]
 	second := fixture.ingest(t, "이샘플 works at Stripe now as a product manager and still likes terse notes", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 works at Stripe as a product manager", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationSupersedes, RelatedFactID: jobFact.FactID},
-		bluememotest.IngestFact{Content: "이샘플 likes terse notes", Kind: bluememo.FactKindPreference, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationReinforces, RelatedFactID: preferenceFact.FactID},
+		bluememotest.IngestFact{Content: "이샘플 works at Stripe as a product manager", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationSupersedes, RelatedFactID: jobFact.FactID},
+		bluememotest.IngestFact{Content: "이샘플 likes terse notes", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationReinforces, RelatedFactID: preferenceFact.FactID},
 	), nil)
 	if len(second.Facts) != 1 || len(second.SupersededFactIDs) != 1 || second.SupersededFactIDs[0] != jobFact.FactID || len(second.ReinforcedFactIDs) != 1 {
 		t.Fatalf("expected one supersede and one reinforcement, got %+v", second)
@@ -142,7 +136,7 @@ func TestIngestSupersedesAndReinforcesOnlyCandidates(t *testing.T) {
 	if reinforced, _ := fixture.repository.FindFact(preferenceFact.FactID); reinforced.ReinforcementCount != 2 {
 		t.Fatalf("expected the preference reinforced to 2, got %d", reinforced.ReinforcementCount)
 	}
-	fixture.model.Queue(bluememotest.IngestResponse(bluememotest.IngestFact{Content: "이샘플 works at Acme", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationSupersedes, RelatedFactID: "never-offered"}))
+	fixture.model.Queue(bluememotest.IngestResponse(bluememotest.IngestFact{Content: "이샘플 works at Acme", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationSupersedes, RelatedFactID: "never-offered"}))
 	_, errorValue := fixture.ingester.Ingest(context.Background(), fixture.request("이샘플 works at Acme now"))
 	var terminal bluememo.TerminalJobError
 	if !errors.As(errorValue, &terminal) || len(fixture.repository.AllFacts()) != 3 {
@@ -152,14 +146,14 @@ func TestIngestSupersedesAndReinforcesOnlyCandidates(t *testing.T) {
 
 func TestIngestTemporaryFactsCarryTheirExpiry(t *testing.T) {
 	fixture := newIngestFixture()
-	result := fixture.ingest(t, "이샘플 is out of office until 2026-09-05", bluememotest.IngestResponse(bluememotest.IngestFact{Content: "이샘플 is out of office until 2026-09-05", Kind: bluememo.FactKindTemporary, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew, ValidUntil: "2026-09-05"}), nil)
+	result := fixture.ingest(t, "이샘플 is out of office until 2026-09-05", bluememotest.IngestResponse(bluememotest.IngestFact{Content: "이샘플 is out of office until 2026-09-05", Kind: bluememo.FactKindTemporary, Relation: bluememo.FactRelationNew, ValidUntil: "2026-09-05"}), nil)
 	if result.Facts[0].ValidUntil != time.Date(2026, 9, 6, 0, 0, 0, 0, time.UTC) {
 		t.Fatalf("expected validUntil at the end of the day, got %s", result.Facts[0].ValidUntil)
 	}
 	for name, fact := range map[string]bluememotest.IngestFact{
-		"temporary without expiry": {Content: "이샘플 is away", Kind: bluememo.FactKindTemporary, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
-		"expiry in the past":       {Content: "이샘플 was away", Kind: bluememo.FactKindTemporary, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew, ValidUntil: "2026-08-01"},
-		"durable fact with expiry": {Content: "이샘플 leads the team", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew, ValidUntil: "2026-09-05"},
+		"temporary without expiry": {Content: "이샘플 is away", Kind: bluememo.FactKindTemporary, Relation: bluememo.FactRelationNew},
+		"expiry in the past":       {Content: "이샘플 was away", Kind: bluememo.FactKindTemporary, Relation: bluememo.FactRelationNew, ValidUntil: "2026-08-01"},
+		"durable fact with expiry": {Content: "이샘플 leads the team", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationNew, ValidUntil: "2026-09-05"},
 	} {
 		fixture.model.Queue(bluememotest.IngestResponse(fact))
 		_, errorValue := fixture.ingester.Ingest(context.Background(), fixture.request("이샘플 availability "+name))
@@ -194,8 +188,8 @@ func TestProfileBuilderCondensesFactsAndSkipsTheModelWhenEmpty(t *testing.T) {
 		t.Fatalf("expected an empty profile without a model call, got %+v (%v)", empty, errorValue)
 	}
 	fixture.ingest(t, "이샘플 works in the platform team and prefers bullet summaries", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
-		bluememotest.IngestFact{Content: "이샘플 is migrating admind config this week", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 works in the platform team", Kind: bluememo.FactKindIdentity, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 is migrating admind config this week", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationNew},
 	), nil)
 	fixture.model.Queue(bluememotest.ProfileResponse([]string{"이샘플 is on the platform team"}, []string{"이샘플 is migrating admind config", "", "  "}))
 	profile, errorValue := builder.Rebuild(context.Background(), "person-alice")
@@ -210,8 +204,8 @@ func TestProfileBuilderCondensesFactsAndSkipsTheModelWhenEmpty(t *testing.T) {
 func TestStoreSearchRecallAndBudget(t *testing.T) {
 	fixture := newIngestFixture()
 	fixture.ingest(t, "이샘플 prefers bullet summaries and owns the Q3 review", bluememotest.IngestResponse(
-		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Scope: bluememo.ScopeTypePrivate, Relation: bluememo.FactRelationNew},
-		bluememotest.IngestFact{Content: "이샘플 owns the Q3 review", Kind: bluememo.FactKindFact, Scope: bluememo.ScopeTypeCircle, CircleIDs: []string{"platform"}, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationNew},
+		bluememotest.IngestFact{Content: "이샘플 owns the Q3 review", Kind: bluememo.FactKindFact, CircleIDs: []string{"platform"}, Relation: bluememo.FactRelationNew},
 	), nil)
 	if errorValue := fixture.repository.SaveProfile(context.Background(), bluememo.Profile{PersonID: "person-alice", IdentityLines: []string{"이샘플 wants bullets"}, CurrentLines: []string{strings.Repeat("가", 300)}}); errorValue != nil {
 		t.Fatal(errorValue)
@@ -221,6 +215,12 @@ func TestStoreSearchRecallAndBudget(t *testing.T) {
 	result, errorValue := store.Search(context.Background(), engineeringReader, "Q3 review", 5)
 	if errorValue != nil || result.Mode != bluememo.SearchModeHybrid || len(result.Facts) != 1 || result.Facts[0].Fact.Content != "이샘플 owns the Q3 review" {
 		t.Fatalf("expected a member of the containing circle to find the platform fact, got %+v (%v)", result, errorValue)
+	}
+	hidden, _ := store.Search(context.Background(), engineeringReader, "bullet summaries", 5)
+	for _, scoredFact := range hidden.Facts {
+		if !scoredFact.Fact.IsShared() {
+			t.Fatalf("expected a fact with no circles to stay with its owner, got %+v", scoredFact.Fact)
+		}
 	}
 	recall, errorValue := store.Recall(context.Background(), bluememo.RecallRequest{Reader: fixture.request("").Reader, PersonID: "person-alice", Query: "bullet summaries", ProfileBudget: 100})
 	if errorValue != nil || len(recall.Profile.IdentityLines) != 1 || len(recall.Profile.CurrentLines) != 0 || len(recall.Facts) == 0 {

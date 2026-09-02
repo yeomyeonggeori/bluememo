@@ -31,11 +31,10 @@ const IngestSchemaDocument = `{
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["content", "kind", "scope", "circleIDs", "subjectPersonHint", "relation", "relatedFactID", "validUntil"],
+        "required": ["content", "kind", "circleIDs", "subjectPersonHint", "relation", "relatedFactID", "validUntil"],
         "properties": {
           "content": {"type": "string", "maxLength": 240},
           "kind": {"type": "string", "enum": ["identity", "preference", "fact", "episode", "temporary"]},
-          "scope": {"type": "string", "enum": ["private", "circle", "workspace"]},
           "circleIDs": {"type": "array", "items": {"type": "string"}},
           "subjectPersonHint": {"type": "string"},
           "relation": {"type": "string", "enum": ["new", "supersedes", "reinforces"]},
@@ -58,10 +57,9 @@ kind:
 - "episode": something that happened, with its date if the source gives one.
 - "temporary": a state with an end date; put that date in validUntil as YYYY-MM-DD. Every other kind leaves validUntil as "".
 
-scope:
-- "private": about the requester, for the requester alone. circleIDs is [].
-- "circle": shared with one or more of the circles listed under the requester's circles; put their exact IDs in circleIDs. Use the active circle when the source does not say otherwise. Never name a circle that is not listed.
-- "workspace": true for everyone in the company. circleIDs is [].
+circleIDs decides who may read the fact besides the requester, who always may:
+- [] keeps it to the requester alone: their own preferences, their own situation, anything said in private.
+- One or more of the circles listed under the requester's circles shares it with those circles' members. Use the active circle when the source was said there and does not say otherwise; use "member" for something true for everyone in the company. Never name a circle that is not listed.
 
 relation, judged against the existing facts you were given:
 - "supersedes" with relatedFactID when the new content replaces an existing fact that is no longer true.
@@ -109,7 +107,6 @@ type ingestOutput struct {
 type ingestOutputFact struct {
 	Content           string   `json:"content"`
 	Kind              string   `json:"kind"`
-	Scope             string   `json:"scope"`
 	CircleIDs         []string `json:"circleIDs"`
 	SubjectPersonHint string   `json:"subjectPersonHint"`
 	Relation          string   `json:"relation"`
@@ -217,10 +214,10 @@ func IngestSubject(request IngestRequest, candidates []Fact, now time.Time) stri
 }
 
 func candidateScope(fact Fact) string {
-	if fact.ScopeType == ScopeTypeCircle {
-		return "circle[" + strings.Join(fact.CircleIDs, ",") + "]"
+	if fact.IsShared() {
+		return "circles[" + strings.Join(fact.CircleIDs, ",") + "]"
 	}
-	return fact.ScopeType
+	return "owner"
 }
 
 func joinOrNone(values []string) string {
@@ -291,7 +288,8 @@ func (ingester Ingester) newFact(request IngestRequest, outputFact ingestOutputF
 	fact := Fact{
 		FactID:            NewIdentifier(),
 		EpisodeID:         request.Episode.EpisodeID,
-		ScopeType:         outputFact.Scope,
+		OwnerPersonID:     request.Episode.RequesterPersonID,
+		CircleIDs:         writableCircles(request, outputFact.CircleIDs),
 		Kind:              outputFact.Kind,
 		Content:           strings.Join(strings.Fields(outputFact.Content), " "),
 		EmbeddingModel:    ingester.Store.EmbeddingModel,
@@ -300,14 +298,7 @@ func (ingester Ingester) newFact(request IngestRequest, outputFact ingestOutputF
 		ValidFrom:         request.Episode.OccurredAt.UTC(),
 		SubjectPersonID:   ingester.resolveSubject(request, outputFact.SubjectPersonHint),
 	}
-	if fact.ScopeType == ScopeTypeCircle {
-		fact.CircleIDs = writableCircles(request, outputFact.CircleIDs)
-		if len(fact.CircleIDs) == 0 {
-			fact.ScopeType = ScopeTypePrivate
-		}
-	}
-	if fact.ScopeType == ScopeTypePrivate {
-		fact.OwnerPersonID = request.Episode.RequesterPersonID
+	if !fact.IsShared() {
 		fact.CircleIDs = nil
 		fact.SecurityLevelRank = 0
 		fact.RequiredClasses = []string{}
@@ -332,9 +323,6 @@ func (ingester Ingester) newFact(request IngestRequest, outputFact ingestOutputF
 
 func writableCircles(request IngestRequest, requestedCircleIDs []string) []string {
 	requested := NormalizeCircleIDs(requestedCircleIDs)
-	if len(requested) == 0 {
-		requested = NormalizeCircleIDs([]string{request.ActiveCircleID})
-	}
 	writable := make([]string, 0, len(requested))
 	for _, circleID := range requested {
 		if request.Reader.CanWriteCircle(circleID) {

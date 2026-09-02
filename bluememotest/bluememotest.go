@@ -121,7 +121,6 @@ func (scripted *ScriptedModel) LastSubject() string {
 type IngestFact struct {
 	Content           string   `json:"content"`
 	Kind              string   `json:"kind"`
-	Scope             string   `json:"scope"`
 	CircleIDs         []string `json:"circleIDs"`
 	SubjectPersonHint string   `json:"subjectPersonHint"`
 	Relation          string   `json:"relation"`
