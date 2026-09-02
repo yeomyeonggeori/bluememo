@@ -48,13 +48,19 @@ const IngestSchemaDocument = `{
 
 const IngestInstruction = `You maintain an assistant's long-term memory about the people it works with. You read one source (a finished task's transcript, or one sentence a person asked the assistant to remember) together with the memory facts that already exist and are closest to it, and you decide what the memory should hold afterwards.
 
-Each fact is one atomic sentence about one subject, written in the language the source uses, naming the person rather than saying "the user". Keep only what will still matter after this task: who someone is, what they prefer, what is true about their work, what happened that is worth recalling, and time-bound states with an end date. Do not turn the task request itself, tool output, or small talk into facts.
+Each fact is one atomic sentence about one subject, written in the language the source uses, naming the person rather than saying "the user".
+
+Memory is for what the assistant will need in a different conversation, weeks from now, when this transcript is gone. The conversation history and the task ledger already keep what was said and what was done; do not copy them into memory. Most sources yield nothing, and an empty list is the normal answer. Keep a fact only when it passes all three tests:
+- It is about a person, their preferences, their work, or their situation, not about this task's mechanics.
+- It would change how the assistant acts the next time, without anyone repeating it.
+- It is stated by the source, not inferred from it.
+Never record the request itself, what the assistant did, tool output, file names, one-off instructions, or small talk. Prefer one fact that says a durable thing over several that narrate an event.
 
 kind:
 - "identity": stable facts about who a person is (name to use, role, team).
 - "preference": how a person wants things done.
 - "fact": something true until it changes.
-- "episode": something that happened, with its date if the source gives one.
+- "episode": something that happened and will matter later (a decision, an incident, a commitment), with its date if the source gives one. What the assistant did in this task is never an episode.
 - "temporary": a state with an end date; put that date in validUntil as YYYY-MM-DD. Every other kind leaves validUntil as "".
 
 circleIDs decides who may read the fact besides the requester, who always may:
