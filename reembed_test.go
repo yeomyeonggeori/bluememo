@@ -2,12 +2,33 @@ package bluememo_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/yeomyeonggeori/bluememo"
 	"github.com/yeomyeonggeori/bluememo/bluememotest"
 )
+
+func TestReembedRejectsAnObsoleteModelBeforeChangingFacts(t *testing.T) {
+	repository := bluememo.NewInMemoryRepository()
+	now := time.Now().UTC()
+	episode := bluememo.Episode{EpisodeID: "original-episode", SourceKind: bluememo.EpisodeSourceKindExplicit, SourceID: "original-source", RequesterPersonID: "reader", Content: "source", OccurredAt: now}
+	fact := bluememo.Fact{FactID: "original-fact", EpisodeID: episode.EpisodeID, OwnerPersonID: "reader", Kind: bluememo.FactKindFact, Content: "a source fact", EmbeddingModel: "original-model", ValidFrom: now}
+	if errorValue := repository.SaveEpisode(context.Background(), bluememo.EpisodeWrite{Episode: episode, Facts: []bluememo.FactWrite{{Fact: fact}}}); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	store := bluememo.Store{Facts: repository, Embedder: &bluememotest.HashEmbedder{}, EmbeddingModel: "current-model"}
+	errorValue := (bluememo.ReembedJobHandler{Store: store}).Handle(context.Background(), bluememo.Job{Kind: bluememo.JobKindReembed, SubjectID: "old-model"})
+	var terminal bluememo.TerminalJobError
+	if !errors.As(errorValue, &terminal) {
+		t.Fatalf("an obsolete model must fail before embedding, got %v", errorValue)
+	}
+	stored, _ := repository.FindFact(fact.FactID)
+	if stored.EmbeddingModel != "original-model" {
+		t.Fatalf("obsolete job changed the fact's embedding model: %+v", stored)
+	}
+}
 
 func TestSearchOnlyRanksVectorsFromTheStoreModelAndReembedMovesTheRest(t *testing.T) {
 	now := time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)

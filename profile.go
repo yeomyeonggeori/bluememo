@@ -43,7 +43,7 @@ type profileOutput struct {
 	CurrentLines  []string `json:"currentLines"`
 }
 
-func (builder ProfileBuilder) Rebuild(ctx context.Context, personID string) (Profile, error) {
+func (builder ProfileBuilder) Rebuild(ctx context.Context, reader Reader) (Profile, error) {
 	if builder.Store.Facts == nil || builder.Store.Profiles == nil {
 		return Profile{}, errors.New("memory profile builder has no repositories")
 	}
@@ -51,11 +51,13 @@ func (builder ProfileBuilder) Rebuild(ctx context.Context, personID string) (Pro
 		return Profile{}, errors.New("memory profile builder has no language model")
 	}
 	now := builder.now()
-	facts, errorValue := builder.Store.Facts.ListLiveFactsAboutPerson(ctx, personID, now)
+	personID := reader.PersonID
+	facts, errorValue := builder.Store.Facts.ListLiveFactsAboutPerson(ctx, reader, personID, now)
 	if errorValue != nil {
 		return Profile{}, errorValue
 	}
 	profile := Profile{PersonID: personID, IdentityLines: []string{}, CurrentLines: []string{}, BuiltFromFactCount: len(facts), BuiltAt: now}
+	profile.SourceFactIDs = profileFactIDs(facts)
 	if len(facts) > 0 {
 		output, errorValue := builder.askModel(ctx, facts, now)
 		if errorValue != nil {
@@ -143,10 +145,21 @@ func (builder ProfileBuilder) now() time.Time {
 }
 
 type ProfileJobHandler struct {
-	Builder ProfileBuilder
+	Builder       ProfileBuilder
+	ResolveReader func(context.Context, string) (Reader, bool, error)
 }
 
 func (handler ProfileJobHandler) Handle(ctx context.Context, job Job) error {
-	_, errorValue := handler.Builder.Rebuild(ctx, job.SubjectID)
+	if handler.ResolveReader == nil {
+		return errors.New("memory profile reader resolver is not configured")
+	}
+	reader, isFound, errorValue := handler.ResolveReader(ctx, job.SubjectID)
+	if errorValue != nil || !isFound {
+		return errorValue
+	}
+	if reader.PersonID != job.SubjectID {
+		return errors.New("memory profile reader does not match the job subject")
+	}
+	_, errorValue = handler.Builder.Rebuild(ctx, reader)
 	return errorValue
 }

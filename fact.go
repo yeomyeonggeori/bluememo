@@ -71,11 +71,43 @@ type FactWrite struct {
 }
 
 type EpisodeWrite struct {
-	Episode Episode
-	Facts   []FactWrite
+	Episode        Episode
+	Facts          []FactWrite
+	CandidateCount int
+}
+
+type EpisodeReceipt struct {
+	EpisodeID         string   `json:"episodeID"`
+	FactIDs           []string `json:"factIDs"`
+	SupersededFactIDs []string `json:"supersededFactIDs"`
+	ReinforcedFactIDs []string `json:"reinforcedFactIDs"`
+	CandidateCount    int      `json:"candidateCount"`
+}
+
+func ReceiptForWrite(write EpisodeWrite) EpisodeReceipt {
+	receipt := EpisodeReceipt{EpisodeID: write.Episode.EpisodeID, CandidateCount: write.CandidateCount, FactIDs: []string{}, SupersededFactIDs: []string{}, ReinforcedFactIDs: []string{}}
+	for _, factWrite := range write.Facts {
+		if factWrite.ReinforcesFactID != "" {
+			receipt.ReinforcedFactIDs = append(receipt.ReinforcedFactIDs, factWrite.ReinforcesFactID)
+			continue
+		}
+		receipt.FactIDs = append(receipt.FactIDs, factWrite.Fact.FactID)
+		if factWrite.SupersedesFactID != "" {
+			receipt.SupersededFactIDs = append(receipt.SupersededFactIDs, factWrite.SupersedesFactID)
+		}
+	}
+	return receipt
+}
+
+func ValidateEpisodeReplay(stored Episode, requested Episode) error {
+	if stored.RequesterPersonID != requested.RequesterPersonID || stored.Content != requested.Content || stored.ConversationID != requested.ConversationID {
+		return errors.New("memory episode source is already recorded with a different requester or payload")
+	}
+	return nil
 }
 
 type Profile struct {
+	SourceFactIDs      []string  `json:"sourceFactIDs"`
 	PersonID           string    `json:"personID"`
 	IdentityLines      []string  `json:"identityLines"`
 	CurrentLines       []string  `json:"currentLines"`

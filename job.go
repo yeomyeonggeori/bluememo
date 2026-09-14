@@ -28,6 +28,8 @@ type Job struct {
 	JobID       string    `json:"jobID"`
 	Kind        string    `json:"kind"`
 	SubjectID   string    `json:"subjectID"`
+	ClaimToken  string    `json:"claimToken,omitempty"`
+	Generation  int64     `json:"generation"`
 	Attempts    int       `json:"attempts"`
 	RunAfter    time.Time `json:"runAfter"`
 	LockedUntil time.Time `json:"lockedUntil,omitzero"`
@@ -121,21 +123,27 @@ func (worker JobWorker) RunOnce(ctx context.Context) (int, error) {
 func (worker JobWorker) runJob(ctx context.Context, job Job) {
 	handlerError := worker.Handlers[job.Kind](ctx, job)
 	if handlerError == nil {
-		worker.settle(job, worker.Jobs.FinishJob(ctx, job.JobID, worker.now()), "finished")
+		isSettled, errorValue := worker.Jobs.FinishJob(ctx, job, worker.now())
+		worker.settle(job, isSettled, errorValue, "finished")
 		return
 	}
 	var terminalError TerminalJobError
 	if errors.As(handlerError, &terminalError) || job.Attempts >= worker.maxAttempts() {
 		worker.logger().Error("memory.job.abandoned", "jobID", job.JobID, "kind", job.Kind, "subjectID", job.SubjectID, "attempts", job.Attempts, "error", handlerError.Error())
-		worker.settle(job, worker.Jobs.AbandonJob(ctx, job.JobID, handlerError.Error(), worker.now()), "abandoned")
+		isSettled, errorValue := worker.Jobs.AbandonJob(ctx, job, handlerError.Error(), worker.now())
+		worker.settle(job, isSettled, errorValue, "abandoned")
 		return
 	}
 	runAfter := worker.now().Add(JobRetryDelay(job.Attempts))
 	worker.logger().Warn("memory.job.retry_scheduled", "jobID", job.JobID, "kind", job.Kind, "subjectID", job.SubjectID, "attempts", job.Attempts, "runAfter", runAfter, "error", handlerError.Error())
-	worker.settle(job, worker.Jobs.RetryJob(ctx, job.JobID, handlerError.Error(), runAfter), "retry")
+	isSettled, errorValue := worker.Jobs.RetryJob(ctx, job, handlerError.Error(), runAfter)
+	worker.settle(job, isSettled, errorValue, "retry")
 }
 
-func (worker JobWorker) settle(job Job, errorValue error, outcome string) {
+func (worker JobWorker) settle(job Job, isSettled bool, errorValue error, outcome string) {
+	if !isSettled && errorValue == nil {
+		return
+	}
 	if errorValue == nil {
 		return
 	}

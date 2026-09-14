@@ -25,10 +25,11 @@ type RankedFact struct {
 type FactRepository interface {
 	HasVectorSearch(ctx context.Context) (bool, error)
 	SaveEpisode(ctx context.Context, write EpisodeWrite) error
+	FindEpisodeReceipt(ctx context.Context, episode Episode) (EpisodeReceipt, bool, error)
 	SearchFacts(ctx context.Context, query FactSearchQuery) ([]RankedFact, error)
 	ListFactsByID(ctx context.Context, reader Reader, factIDs []string, referenceTime time.Time) ([]Fact, error)
 	ListReadableFacts(ctx context.Context, reader Reader, limit int, referenceTime time.Time) ([]Fact, error)
-	ListLiveFactsAboutPerson(ctx context.Context, personID string, referenceTime time.Time) ([]Fact, error)
+	ListLiveFactsAboutPerson(ctx context.Context, reader Reader, personID string, referenceTime time.Time) ([]Fact, error)
 	ListLiveFactsNotEmbeddedWith(ctx context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]Fact, error)
 	ReplaceFactEmbedding(ctx context.Context, factID string, embeddingModel string, embedding []float32) error
 	MarkFactsRecalled(ctx context.Context, factIDs []string, recalledAt time.Time) error
@@ -43,9 +44,9 @@ type ProfileRepository interface {
 type JobRepository interface {
 	EnqueueJob(ctx context.Context, kind string, subjectID string, runAfter time.Time) (Job, bool, error)
 	ClaimDueJobs(ctx context.Context, kinds []string, referenceTime time.Time, leaseDuration time.Duration, limit int) ([]Job, error)
-	FinishJob(ctx context.Context, jobID string, finishedAt time.Time) error
-	RetryJob(ctx context.Context, jobID string, lastError string, runAfter time.Time) error
-	AbandonJob(ctx context.Context, jobID string, lastError string, finishedAt time.Time) error
+	FinishJob(ctx context.Context, job Job, finishedAt time.Time) (bool, error)
+	RetryJob(ctx context.Context, job Job, lastError string, runAfter time.Time) (bool, error)
+	AbandonJob(ctx context.Context, job Job, lastError string, finishedAt time.Time) (bool, error)
 }
 
 type Embedder interface {

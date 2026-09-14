@@ -19,6 +19,9 @@ func (handler ReembedJobHandler) Handle(ctx context.Context, job Job) error {
 	if embeddingModel == "" {
 		return TerminalJobError{Cause: errors.New("reembed job names no embedding model")}
 	}
+	if embeddingModel != handler.Store.EmbeddingModel {
+		return TerminalJobError{Cause: errors.New("reembed job model does not match the configured embedder model")}
+	}
 	if handler.Store.Embedder == nil || handler.Store.Facts == nil {
 		return TerminalJobError{Cause: errors.New("memory embedder or fact repository is not configured")}
 	}
