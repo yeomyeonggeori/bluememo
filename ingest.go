@@ -166,6 +166,7 @@ func (ingester Ingester) candidates(ctx context.Context, request IngestRequest, 
 		Reader:         request.Reader,
 		Text:           request.Episode.Content,
 		Embedding:      embedding,
+		EmbeddingModel: ingester.Store.EmbeddingModel,
 		CandidateLimit: ingester.candidateLimit(),
 		ReferenceTime:  now,
 	})
