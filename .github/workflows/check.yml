@@ -16,9 +16,12 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres: ["postgres:16", "pgvector/pgvector:pg16"]
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: ${{ matrix.postgres }}
         env:
           POSTGRES_USER: bluememo
           POSTGRES_PASSWORD: bluememo

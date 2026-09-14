@@ -130,6 +130,12 @@ func (ingester Ingester) Ingest(ctx context.Context, request IngestRequest) (Ing
 	if errorValue := ValidateEpisode(request.Episode); errorValue != nil {
 		return IngestResult{}, TerminalJobError{Cause: errorValue}
 	}
+	if request.Reader.PersonID != request.Episode.RequesterPersonID {
+		return IngestResult{}, errors.New("memory episode requester does not match the authenticated reader")
+	}
+	if result, isFound, errorValue := ingester.replay(ctx, request); errorValue != nil || isFound {
+		return result, errorValue
+	}
 	now := ingester.now()
 	candidates, errorValue := ingester.candidates(ctx, request, now)
 	if errorValue != nil {
@@ -146,12 +152,24 @@ func (ingester Ingester) Ingest(ctx context.Context, request IngestRequest) (Ing
 	if errorValue := ingester.embedNewFacts(ctx, writes); errorValue != nil {
 		return IngestResult{}, errorValue
 	}
-	if errorValue := ingester.Store.Facts.SaveEpisode(ctx, EpisodeWrite{Episode: request.Episode, Facts: writes}); errorValue != nil {
+	if errorValue := ingester.Store.Facts.SaveEpisode(ctx, EpisodeWrite{Episode: request.Episode, Facts: writes, CandidateCount: len(candidates)}); errorValue != nil {
 		return IngestResult{}, errorValue
 	}
-	result := summarizeIngest(request.Episode.EpisodeID, writes, len(candidates))
-	ingester.enqueueProfileRebuilds(ctx, writes, candidates)
-	return result, nil
+	result, isFound, errorValue := ingester.replay(ctx, request)
+	if errorValue == nil && !isFound {
+		return IngestResult{}, errors.New("memory episode write completed without a receipt")
+	}
+	return result, errorValue
+}
+
+func (ingester Ingester) replay(ctx context.Context, request IngestRequest) (IngestResult, bool, error) {
+	receipt, isFound, errorValue := ingester.Store.Facts.FindEpisodeReceipt(ctx, request.Episode)
+	if errorValue != nil || !isFound {
+		return IngestResult{}, isFound, errorValue
+	}
+	facts, errorValue := ingester.Store.Facts.ListFactsByID(ctx, request.Reader, receipt.FactIDs, ingester.now())
+	result := IngestResult{EpisodeID: receipt.EpisodeID, Facts: facts, SupersededFactIDs: receipt.SupersededFactIDs, ReinforcedFactIDs: receipt.ReinforcedFactIDs, CandidateCount: receipt.CandidateCount}
+	return result, true, errorValue
 }
 
 func (ingester Ingester) candidates(ctx context.Context, request IngestRequest, now time.Time) ([]Fact, error) {
@@ -406,38 +424,6 @@ func (ingester Ingester) embedNewFacts(ctx context.Context, writes []FactWrite) 
 		writes[index].Embedding = embeddings[position]
 	}
 	return nil
-}
-
-func summarizeIngest(episodeID string, writes []FactWrite, candidateCount int) IngestResult {
-	result := IngestResult{EpisodeID: episodeID, Facts: []Fact{}, SupersededFactIDs: []string{}, ReinforcedFactIDs: []string{}, CandidateCount: candidateCount}
-	for _, write := range writes {
-		if write.ReinforcesFactID != "" {
-			result.ReinforcedFactIDs = append(result.ReinforcedFactIDs, write.ReinforcesFactID)
-			continue
-		}
-		result.Facts = append(result.Facts, write.Fact)
-		if write.SupersedesFactID != "" {
-			result.SupersededFactIDs = append(result.SupersededFactIDs, write.SupersedesFactID)
-		}
-	}
-	return result
-}
-
-func (ingester Ingester) enqueueProfileRebuilds(ctx context.Context, writes []FactWrite, candidates []Fact) {
-	candidateByID := map[string]Fact{}
-	for _, candidate := range candidates {
-		candidateByID[candidate.FactID] = candidate
-	}
-	touched := map[string]bool{}
-	for _, write := range writes {
-		touched[write.Fact.SubjectPersonID] = true
-		if related, isCandidate := candidateByID[firstNonEmptyTrimmed(write.SupersedesFactID, write.ReinforcesFactID)]; isCandidate {
-			touched[related.SubjectPersonID] = true
-		}
-	}
-	for personID := range touched {
-		ingester.Store.EnqueueProfileRebuild(ctx, personID)
-	}
 }
 
 func (ingester Ingester) candidateLimit() int {

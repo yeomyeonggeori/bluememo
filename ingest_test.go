@@ -184,7 +184,7 @@ func TestIngestFailuresAreRetryableWhenTheModelOrEmbedderIsDown(t *testing.T) {
 func TestProfileBuilderCondensesFactsAndSkipsTheModelWhenEmpty(t *testing.T) {
 	fixture := newIngestFixture()
 	builder := bluememo.ProfileBuilder{Store: fixture.ingester.Store, Model: fixture.model, Now: func() time.Time { return ingestNow }}
-	if empty, errorValue := builder.Rebuild(context.Background(), "person-nobody"); errorValue != nil || len(empty.IdentityLines) != 0 || fixture.model.RequestCount() != 0 {
+	if empty, errorValue := builder.Rebuild(context.Background(), bluememo.NewReader("person-nobody", nil, nil, 0, nil)); errorValue != nil || len(empty.IdentityLines) != 0 || fixture.model.RequestCount() != 0 {
 		t.Fatalf("expected an empty profile without a model call, got %+v (%v)", empty, errorValue)
 	}
 	fixture.ingest(t, "이샘플 works in the platform team and prefers bullet summaries", bluememotest.IngestResponse(
@@ -192,7 +192,7 @@ func TestProfileBuilderCondensesFactsAndSkipsTheModelWhenEmpty(t *testing.T) {
 		bluememotest.IngestFact{Content: "이샘플 is migrating admind config this week", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationNew},
 	), nil)
 	fixture.model.Queue(bluememotest.ProfileResponse([]string{"이샘플 is on the platform team"}, []string{"이샘플 is migrating admind config", "", "  "}))
-	profile, errorValue := builder.Rebuild(context.Background(), "person-alice")
+	profile, errorValue := builder.Rebuild(context.Background(), fixture.request("").Reader)
 	if errorValue != nil || len(profile.IdentityLines) != 1 || len(profile.CurrentLines) != 1 || profile.BuiltFromFactCount != 2 {
 		t.Fatalf("expected a condensed profile, got %+v (%v)", profile, errorValue)
 	}
@@ -207,7 +207,8 @@ func TestStoreSearchRecallAndBudget(t *testing.T) {
 		bluememotest.IngestFact{Content: "이샘플 prefers bullet summaries", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationNew},
 		bluememotest.IngestFact{Content: "이샘플 owns the Q3 review", Kind: bluememo.FactKindFact, CircleIDs: []string{"platform"}, Relation: bluememo.FactRelationNew},
 	), nil)
-	if errorValue := fixture.repository.SaveProfile(context.Background(), bluememo.Profile{PersonID: "person-alice", IdentityLines: []string{"이샘플 wants bullets"}, CurrentLines: []string{strings.Repeat("가", 300)}}); errorValue != nil {
+	facts := fixture.repository.AllFacts()
+	if errorValue := fixture.repository.SaveProfile(context.Background(), bluememo.Profile{PersonID: "person-alice", IdentityLines: []string{"이샘플 wants bullets"}, CurrentLines: []string{strings.Repeat("가", 300)}, SourceFactIDs: []string{facts[0].FactID}, BuiltFromFactCount: 1}); errorValue != nil {
 		t.Fatal(errorValue)
 	}
 	store := fixture.ingester.Store
@@ -222,7 +223,7 @@ func TestStoreSearchRecallAndBudget(t *testing.T) {
 			t.Fatalf("expected a fact with no circles to stay with its owner, got %+v", scoredFact.Fact)
 		}
 	}
-	recall, errorValue := store.Recall(context.Background(), bluememo.RecallRequest{Reader: fixture.request("").Reader, PersonID: "person-alice", Query: "bullet summaries", ProfileBudget: 100})
+	recall, errorValue := store.Recall(context.Background(), bluememo.RecallRequest{Reader: fixture.request("").Reader, Query: "bullet summaries", ProfileBudget: 100})
 	if errorValue != nil || len(recall.Profile.IdentityLines) != 1 || len(recall.Profile.CurrentLines) != 0 || len(recall.Facts) == 0 {
 		t.Fatalf("expected the profile trimmed to budget and a recalled fact, got %+v (%v)", recall, errorValue)
 	}

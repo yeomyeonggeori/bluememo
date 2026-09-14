@@ -14,6 +14,7 @@ import (
 type InMemoryRepository struct {
 	mutex      sync.Mutex
 	episodes   map[string]Episode
+	receipts   map[string]EpisodeReceipt
 	facts      map[string]Fact
 	embeddings map[string][]float32
 	profiles   map[string]Profile
@@ -24,6 +25,7 @@ type InMemoryRepository struct {
 func NewInMemoryRepository() *InMemoryRepository {
 	return &InMemoryRepository{
 		episodes:   map[string]Episode{},
+		receipts:   map[string]EpisodeReceipt{},
 		facts:      map[string]Fact{},
 		embeddings: map[string][]float32{},
 		profiles:   map[string]Profile{},
@@ -43,7 +45,7 @@ func (repository *InMemoryRepository) SaveEpisode(_ context.Context, write Episo
 	}
 	for _, episode := range repository.episodes {
 		if episode.SourceKind == write.Episode.SourceKind && episode.SourceID == write.Episode.SourceID {
-			return fmt.Errorf("episode for %s %s already exists", episode.SourceKind, episode.SourceID)
+			return ValidateEpisodeReplay(episode, write.Episode)
 		}
 	}
 	for _, factWrite := range write.Facts {
@@ -61,7 +63,15 @@ func (repository *InMemoryRepository) SaveEpisode(_ context.Context, write Episo
 		}
 	}
 	repository.episodes[write.Episode.EpisodeID] = write.Episode
+	repository.receipts[write.Episode.EpisodeID] = ReceiptForWrite(write)
 	for _, factWrite := range write.Facts {
+		subjects := map[string]bool{factWrite.Fact.SubjectPersonID: true}
+		for _, relatedFactID := range []string{factWrite.ReinforcesFactID, factWrite.SupersedesFactID} {
+			subjects[repository.facts[relatedFactID].SubjectPersonID] = true
+		}
+		for personID := range subjects {
+			repository.enqueueProfileLocked(personID, write.Episode.OccurredAt)
+		}
 		if factWrite.ReinforcesFactID != "" {
 			reinforced := repository.facts[factWrite.ReinforcesFactID]
 			reinforced.ReinforcementCount++
@@ -85,6 +95,20 @@ func (repository *InMemoryRepository) SaveEpisode(_ context.Context, write Episo
 		}
 	}
 	return nil
+}
+
+func (repository *InMemoryRepository) FindEpisodeReceipt(_ context.Context, requested Episode) (EpisodeReceipt, bool, error) {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	for _, episode := range repository.episodes {
+		if episode.SourceKind == requested.SourceKind && episode.SourceID == requested.SourceID {
+			if errorValue := ValidateEpisodeReplay(episode, requested); errorValue != nil {
+				return EpisodeReceipt{}, false, errorValue
+			}
+			return repository.receipts[episode.EpisodeID], true, nil
+		}
+	}
+	return EpisodeReceipt{}, false, nil
 }
 
 func (repository *InMemoryRepository) isLiveLocked(factID string) bool {
@@ -235,13 +259,13 @@ func (repository *InMemoryRepository) ListReadableFacts(_ context.Context, reade
 	return facts, nil
 }
 
-func (repository *InMemoryRepository) ListLiveFactsAboutPerson(_ context.Context, personID string, referenceTime time.Time) ([]Fact, error) {
+func (repository *InMemoryRepository) ListLiveFactsAboutPerson(_ context.Context, reader Reader, personID string, referenceTime time.Time) ([]Fact, error) {
 	repository.mutex.Lock()
 	defer repository.mutex.Unlock()
 	facts := []Fact{}
 	for _, factID := range repository.order {
 		fact := repository.facts[factID]
-		if fact.SubjectPersonID == personID && fact.IsLive(referenceTime) {
+		if fact.SubjectPersonID == personID && fact.IsLive(referenceTime) && reader.CanRead(fact) {
 			facts = append(facts, fact)
 		}
 	}
@@ -302,6 +326,7 @@ func (repository *InMemoryRepository) ForgetFacts(_ context.Context, reader Read
 		fact.ForgetReason = reason
 		repository.facts[fact.FactID] = fact
 		forgotten = append(forgotten, fact.FactID)
+		repository.enqueueProfileLocked(fact.SubjectPersonID, forgottenAt)
 	}
 	return forgotten, nil
 }
@@ -343,12 +368,27 @@ func (repository *InMemoryRepository) SaveProfile(_ context.Context, profile Pro
 func (repository *InMemoryRepository) EnqueueJob(_ context.Context, kind string, subjectID string, runAfter time.Time) (Job, bool, error) {
 	repository.mutex.Lock()
 	defer repository.mutex.Unlock()
+	return repository.enqueueJobLocked(kind, subjectID, runAfter)
+}
+
+func (repository *InMemoryRepository) enqueueProfileLocked(personID string, runAfter time.Time) {
+	if personID != "" {
+		repository.enqueueJobLocked(JobKindProfile, personID, runAfter)
+	}
+}
+
+func (repository *InMemoryRepository) enqueueJobLocked(kind string, subjectID string, runAfter time.Time) (Job, bool, error) {
 	for _, job := range repository.jobs {
 		if job.Kind == kind && job.SubjectID == subjectID && job.FinishedAt.IsZero() {
+			job.Generation++
+			if runAfter.Before(job.RunAfter) {
+				job.RunAfter = runAfter
+			}
+			repository.jobs[job.JobID] = job
 			return job, false, nil
 		}
 	}
-	job := Job{JobID: NewIdentifier(), Kind: kind, SubjectID: subjectID, RunAfter: runAfter, CreatedAt: runAfter}
+	job := Job{JobID: NewIdentifier(), Kind: kind, SubjectID: subjectID, RunAfter: runAfter, CreatedAt: runAfter, Generation: 1}
 	repository.jobs[job.JobID] = job
 	return job, true, nil
 }
@@ -370,6 +410,7 @@ func (repository *InMemoryRepository) ClaimDueJobs(_ context.Context, kinds []st
 			break
 		}
 		job.Attempts++
+		job.ClaimToken = NewIdentifier()
 		job.LockedUntil = referenceTime.Add(leaseDuration)
 		repository.jobs[job.JobID] = job
 		claimed = append(claimed, job)
@@ -377,16 +418,16 @@ func (repository *InMemoryRepository) ClaimDueJobs(_ context.Context, kinds []st
 	return claimed, nil
 }
 
-func (repository *InMemoryRepository) FinishJob(_ context.Context, jobID string, finishedAt time.Time) error {
-	return repository.updateJob(jobID, func(job *Job) { job.FinishedAt = finishedAt; job.LockedUntil = time.Time{}; job.LastError = "" })
+func (repository *InMemoryRepository) FinishJob(_ context.Context, claim Job, finishedAt time.Time) (bool, error) {
+	return repository.updateJob(claim, func(job *Job) { job.FinishedAt = finishedAt; job.LastError = "" })
 }
 
-func (repository *InMemoryRepository) RetryJob(_ context.Context, jobID string, lastError string, runAfter time.Time) error {
-	return repository.updateJob(jobID, func(job *Job) { job.RunAfter = runAfter; job.LockedUntil = time.Time{}; job.LastError = lastError })
+func (repository *InMemoryRepository) RetryJob(_ context.Context, claim Job, lastError string, runAfter time.Time) (bool, error) {
+	return repository.updateJob(claim, func(job *Job) { job.RunAfter = runAfter; job.LastError = lastError })
 }
 
-func (repository *InMemoryRepository) AbandonJob(_ context.Context, jobID string, lastError string, finishedAt time.Time) error {
-	return repository.updateJob(jobID, func(job *Job) { job.FinishedAt = finishedAt; job.LockedUntil = time.Time{}; job.LastError = lastError })
+func (repository *InMemoryRepository) AbandonJob(_ context.Context, claim Job, lastError string, finishedAt time.Time) (bool, error) {
+	return repository.updateJob(claim, func(job *Job) { job.FinishedAt = finishedAt; job.LastError = lastError })
 }
 
 func (repository *InMemoryRepository) FindJob(jobID string) (Job, bool) {
@@ -396,14 +437,22 @@ func (repository *InMemoryRepository) FindJob(jobID string) (Job, bool) {
 	return job, isFound
 }
 
-func (repository *InMemoryRepository) updateJob(jobID string, mutate func(*Job)) error {
+func (repository *InMemoryRepository) updateJob(claim Job, mutate func(*Job)) (bool, error) {
 	repository.mutex.Lock()
 	defer repository.mutex.Unlock()
-	job, isFound := repository.jobs[jobID]
-	if !isFound {
-		return fmt.Errorf("memory job %s not found", jobID)
+	job, isFound := repository.jobs[claim.JobID]
+	if !isFound || !job.FinishedAt.IsZero() || claim.ClaimToken == "" || job.ClaimToken != claim.ClaimToken {
+		return false, nil
 	}
-	mutate(&job)
-	repository.jobs[jobID] = job
-	return nil
+	hasCurrentGeneration := job.Generation == claim.Generation
+	if hasCurrentGeneration {
+		mutate(&job)
+	} else {
+		job.Attempts = 0
+		job.LastError = ""
+	}
+	job.LockedUntil = time.Time{}
+	job.ClaimToken = ""
+	repository.jobs[job.JobID] = job
+	return hasCurrentGeneration, nil
 }

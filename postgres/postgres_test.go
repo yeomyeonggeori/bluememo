@@ -231,14 +231,14 @@ func TestJobsDeduplicateClaimLeaseRetryAndFinish(t *testing.T) {
 	if again, _ := fixture.jobs.ClaimDueJobs(ctx, []string{bluememo.JobKindExtract}, fixture.now.Add(time.Second), time.Minute, 10); len(again) != 0 {
 		t.Fatalf("expected the leased job to stay claimed, got %+v", again)
 	}
-	if errorValue := fixture.jobs.RetryJob(ctx, first.JobID, "model unavailable", fixture.now.Add(time.Minute)); errorValue != nil {
+	if isSettled, errorValue := fixture.jobs.RetryJob(ctx, claimed[0], "model unavailable", fixture.now.Add(time.Minute)); errorValue != nil || !isSettled {
 		t.Fatal(errorValue)
 	}
 	retried, errorValue := fixture.jobs.ClaimDueJobs(ctx, []string{bluememo.JobKindExtract}, fixture.now.Add(2*time.Minute), time.Minute, 10)
 	if errorValue != nil || len(retried) != 1 || retried[0].Attempts != 2 || retried[0].LastError != "model unavailable" {
 		t.Fatalf("expected the retried job claimed with attempts=2, got %+v (%v)", retried, errorValue)
 	}
-	if errorValue := fixture.jobs.FinishJob(ctx, first.JobID, fixture.now.Add(3*time.Minute)); errorValue != nil {
+	if isSettled, errorValue := fixture.jobs.FinishJob(ctx, retried[0], fixture.now.Add(3*time.Minute)); errorValue != nil || !isSettled {
 		t.Fatal(errorValue)
 	}
 	if _, created, _ := fixture.jobs.EnqueueJob(ctx, bluememo.JobKindExtract, "run-1", fixture.now); !created {
@@ -273,14 +273,20 @@ func TestIngestThroughPostgresEndsAsRowsAndRecall(t *testing.T) {
 	}
 	scripted.Queue(bluememotest.ProfileResponse([]string{"이샘플 is on the platform team and wants bullets"}, []string{}))
 	worker := bluememo.JobWorker{Jobs: fixture.jobs, Now: func() time.Time { return fixture.now }, Handlers: map[string]bluememo.JobHandler{
-		bluememo.JobKindProfile: bluememo.ProfileJobHandler{Builder: bluememo.ProfileBuilder{Store: store, Model: scripted, Now: func() time.Time { return fixture.now }}}.Handle,
+		bluememo.JobKindProfile: bluememo.ProfileJobHandler{Builder: bluememo.ProfileBuilder{Store: store, Model: scripted, Now: func() time.Time { return fixture.now }}, ResolveReader: func(_ context.Context, personID string) (bluememo.Reader, bool, error) {
+			return bluememo.NewReader(personID, []string{"platform"}, nil, 1, nil), true, nil
+		}}.Handle,
 	}}
 	if runCount, errorValue := worker.RunOnce(ctx); errorValue != nil || runCount != 1 {
 		t.Fatalf("expected the profile job to run once, got %d (%v)", runCount, errorValue)
 	}
-	recall, errorValue := store.Recall(ctx, bluememo.RecallRequest{Reader: bluememo.NewReader("bob", []string{"engineering"}, map[string][]string{"engineering": {"platform"}}, 1, nil), PersonID: "alice", Query: "platform team"})
-	if errorValue != nil || len(recall.Profile.IdentityLines) != 1 || len(recall.Facts) != 1 || recall.Facts[0].Fact.Content != "이샘플 works in the platform team" {
-		t.Fatalf("expected the profile and the circle fact through containment, got %+v (%v)", recall, errorValue)
+	recall, errorValue := store.Recall(ctx, bluememo.RecallRequest{Reader: bluememo.NewReader("bob", []string{"engineering"}, map[string][]string{"engineering": {"platform"}}, 1, nil), Query: "platform team"})
+	if errorValue != nil || len(recall.Profile.IdentityLines) != 0 || len(recall.Facts) != 1 || recall.Facts[0].Fact.Content != "이샘플 works in the platform team" {
+		t.Fatalf("expected only the circle fact through containment, with no other person's profile, got %+v (%v)", recall, errorValue)
+	}
+	ownerRecall, errorValue := store.Recall(ctx, bluememo.RecallRequest{Reader: bluememo.NewReader("alice", []string{"platform"}, nil, 1, nil)})
+	if errorValue != nil || len(ownerRecall.Profile.IdentityLines) != 1 {
+		t.Fatalf("expected the owner's validated profile, got %+v (%v)", ownerRecall, errorValue)
 	}
 }
 

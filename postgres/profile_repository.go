@@ -18,12 +18,12 @@ func NewProfileRepository(database *sql.DB) ProfileRepository {
 
 func (repository ProfileRepository) FindProfile(ctx context.Context, personID string) (bluememo.Profile, bool, error) {
 	var profile bluememo.Profile
-	var identityLinesDocument, currentLinesDocument string
+	var identityLinesDocument, currentLinesDocument, sourceFactIDsDocument string
 	errorValue := repository.database.QueryRowContext(ctx, `
 SELECT person_id, COALESCE(array_to_json(identity_lines)::text, '[]'), COALESCE(array_to_json(current_lines)::text, '[]'),
-       built_from_fact_count, built_at
+       built_from_fact_count, built_at, COALESCE(array_to_json(source_fact_ids)::text, '[]')
 FROM memory_profile WHERE person_id = $1`, personID).Scan(
-		&profile.PersonID, &identityLinesDocument, &currentLinesDocument, &profile.BuiltFromFactCount, &profile.BuiltAt,
+		&profile.PersonID, &identityLinesDocument, &currentLinesDocument, &profile.BuiltFromFactCount, &profile.BuiltAt, &sourceFactIDsDocument,
 	)
 	if errors.Is(errorValue, sql.ErrNoRows) {
 		return bluememo.Profile{}, false, nil
@@ -33,20 +33,22 @@ FROM memory_profile WHERE person_id = $1`, personID).Scan(
 	}
 	profile.IdentityLines = stringSliceFromDocument(identityLinesDocument)
 	profile.CurrentLines = stringSliceFromDocument(currentLinesDocument)
+	profile.SourceFactIDs = stringSliceFromDocument(sourceFactIDsDocument)
 	profile.BuiltAt = profile.BuiltAt.UTC()
 	return profile, true, nil
 }
 
 func (repository ProfileRepository) SaveProfile(ctx context.Context, profile bluememo.Profile) error {
 	_, errorValue := repository.database.ExecContext(ctx, `
-INSERT INTO memory_profile (person_id, identity_lines, current_lines, built_from_fact_count, built_at)
-VALUES ($1, $2::text[], $3::text[], $4, $5)
+INSERT INTO memory_profile (person_id, identity_lines, current_lines, built_from_fact_count, built_at, source_fact_ids)
+VALUES ($1, $2::text[], $3::text[], $4, $5, $6::text[])
 ON CONFLICT (person_id) DO UPDATE SET
   identity_lines = EXCLUDED.identity_lines,
   current_lines = EXCLUDED.current_lines,
   built_from_fact_count = EXCLUDED.built_from_fact_count,
+  source_fact_ids = EXCLUDED.source_fact_ids,
   built_at = EXCLUDED.built_at`,
-		profile.PersonID, nonNilStrings(profile.IdentityLines), nonNilStrings(profile.CurrentLines), profile.BuiltFromFactCount, profile.BuiltAt.UTC(),
+		profile.PersonID, nonNilStrings(profile.IdentityLines), nonNilStrings(profile.CurrentLines), profile.BuiltFromFactCount, profile.BuiltAt.UTC(), nonNilStrings(profile.SourceFactIDs),
 	)
 	return errorValue
 }

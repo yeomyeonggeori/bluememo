@@ -6,7 +6,7 @@
 [![Go](https://img.shields.io/badge/go-1.26-00ADD8?logo=go&logoColor=white)](go.mod)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-> **Status: pre-alpha.** The exported API, the schema and the prompts change without notice. Pin a commit.
+> **Status: pre-alpha.** The exported API, the schema and the prompts change without notice.
 
 ## The model
 
@@ -45,11 +45,21 @@ store := bluememo.Store{
 ingester := bluememo.Ingester{Store: store, Model: yourStructuredModel}
 reader := bluememo.NewReader(personID, memberCircleIDs, containedCircles, rank, classes)
 
-recall, _ := store.Recall(ctx, bluememo.RecallRequest{Reader: reader, PersonID: personID, Query: prompt})
+recall, _ := store.Recall(ctx, bluememo.RecallRequest{Reader: reader, Query: prompt})
 result, _ := ingester.Ingest(ctx, bluememo.IngestRequest{Episode: episode, Reader: reader, Label: label})
 ```
 
+Run the reader-scoped in-memory example with `go run ./examples/recall`. It seeds synthetic facts in `InMemoryRepository` and needs no database or model. Production ingestion uses `Ingester` with a host-provided model and embedder.
+
 `JobWorker` drains `memory_job` (extraction, profile rebuilds) with `FOR UPDATE SKIP LOCKED` claims, leases and backoff; `InMemoryRepository` and `bluememotest` carry the same contract for tests.
+
+The host authenticates every `Reader` and resolves its current circle membership and clearance. Repository methods are privileged storage operations; expose the `Store` methods to authenticated callers. Recall always targets the reader's own profile. `ProfileJobHandler.ResolveReader` must resolve that person's current access from the host directory each time a job runs.
+
+Profiles record the IDs of their source facts. Before returning a profile, the store compares those IDs with the reader's currently readable live facts. A change in membership, clearance, fact validity or content invalidates the cached result and queues a rebuild. Existing profiles without source IDs stay stored and are withheld until rebuilt.
+
+An episode's `(source_kind, source_id)` is its idempotency key. Replaying the same requester and payload returns the committed receipt without repeating extraction or reinforcement. A different requester, conversation or content under the same key fails. Receipts contain IDs; replay reads fact content through current permissions and validity checks. Receipts reconstructed for pre-upgrade episodes cannot recover historical reinforcement IDs or candidate counts that were never recorded.
+
+Fact changes and profile-job enqueueing commit together. Each job claim carries a token and generation: a worker whose lease was reclaimed cannot settle another worker's claim, and work enqueued during execution stays pending. `ApplyMigrations` serializes callers and commits pending migrations with their ledger entries in one transaction. Back up the database before upgrading; failed migrations leave their schema changes unapplied.
 
 ## Layout
 
@@ -61,3 +71,5 @@ result, _ := ingester.Ingest(ctx, bluememo.IngestRequest{Episode: episode, Reade
 | `bluememotest/` | a deterministic embedder and a scripted model |
 
 Tests that need Postgres read `BLUEMEMO_TEST_POSTGRES_URL` and skip without it.
+
+The current embedding contract is fixed at 1,024 dimensions, with one database per tenant. This is pre-alpha software; pin a release, since breaking API changes are allowed between pre-release versions. Schema upgrades use additive migrations, and `ApplyMigrations` does not perform an automatic downgrade. Forgetting a fact hides it from recall while retaining its row and audit metadata; backups and any eventual erasure policy remain the host's responsibility.

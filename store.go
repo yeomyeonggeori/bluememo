@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 )
@@ -40,7 +41,6 @@ type SearchResult struct {
 
 type RecallRequest struct {
 	Reader         Reader
-	PersonID       string
 	Query          string
 	Limit          int
 	ProfileBudget  int
@@ -115,15 +115,11 @@ func (store Store) markRecalled(ctx context.Context, scoredFacts []ScoredFact, r
 
 func (store Store) Recall(ctx context.Context, request RecallRequest) (Recall, error) {
 	recall := Recall{Mode: SearchModeLexical}
-	if store.Profiles != nil && strings.TrimSpace(request.PersonID) != "" {
-		profile, isFound, errorValue := store.Profiles.FindProfile(ctx, request.PersonID)
-		if errorValue != nil {
-			return Recall{}, errorValue
-		}
-		if isFound {
-			recall.Profile = profile
-		}
+	profile, errorValue := store.readProfile(ctx, request.Reader)
+	if errorValue != nil {
+		return Recall{}, errorValue
 	}
+	recall.Profile = profile
 	if strings.TrimSpace(request.Query) != "" {
 		searchResult, errorValue := store.Search(ctx, request.Reader, request.Query, request.Limit)
 		if errorValue != nil {
@@ -141,21 +137,55 @@ func (store Store) ListReadable(ctx context.Context, reader Reader, limit int) (
 		return Profile{}, nil, errors.New("memory fact repository is not configured")
 	}
 	now := store.now()
-	profile := Profile{PersonID: reader.PersonID, IdentityLines: []string{}, CurrentLines: []string{}}
-	if store.Profiles != nil && strings.TrimSpace(reader.PersonID) != "" {
-		storedProfile, isFound, errorValue := store.Profiles.FindProfile(ctx, reader.PersonID)
-		if errorValue != nil {
-			return Profile{}, nil, errorValue
-		}
-		if isFound {
-			profile = storedProfile
-		}
+	profile, errorValue := store.readProfile(ctx, reader)
+	if errorValue != nil {
+		return Profile{}, nil, errorValue
 	}
 	facts, errorValue := store.Facts.ListReadableFacts(ctx, reader, limit, now)
 	if errorValue != nil {
 		return Profile{}, nil, errorValue
 	}
 	return profile, facts, nil
+}
+
+func (store Store) readProfile(ctx context.Context, reader Reader) (Profile, error) {
+	empty := Profile{PersonID: reader.PersonID, IdentityLines: []string{}, CurrentLines: []string{}}
+	if store.Profiles == nil || reader.PersonID == "" {
+		return empty, nil
+	}
+	profile, isFound, errorValue := store.Profiles.FindProfile(ctx, reader.PersonID)
+	if errorValue != nil {
+		return empty, errorValue
+	}
+	if store.Facts == nil {
+		return empty, errors.New("memory fact repository is not configured")
+	}
+	facts, errorValue := store.Facts.ListLiveFactsAboutPerson(ctx, reader, reader.PersonID, store.now())
+	if errorValue != nil {
+		return empty, errorValue
+	}
+	if isFound && profileMatchesFacts(profile, facts) {
+		return profile, nil
+	}
+	return empty, store.EnqueueProfileRebuild(ctx, reader.PersonID)
+}
+
+func profileMatchesFacts(profile Profile, facts []Fact) bool {
+	if len(profile.SourceFactIDs) == 0 && len(profile.IdentityLines)+len(profile.CurrentLines) > 0 {
+		return false
+	}
+	sourceFactIDs := slices.Clone(profile.SourceFactIDs)
+	slices.Sort(sourceFactIDs)
+	return profile.BuiltFromFactCount == len(facts) && slices.Equal(sourceFactIDs, profileFactIDs(facts))
+}
+
+func profileFactIDs(facts []Fact) []string {
+	identifiers := make([]string, 0, len(facts))
+	for _, fact := range facts {
+		identifiers = append(identifiers, fact.FactID)
+	}
+	slices.Sort(identifiers)
+	return identifiers
 }
 
 func (store Store) Forget(ctx context.Context, reader Reader, factIDs []string, reason string) ([]string, error) {
@@ -165,9 +195,6 @@ func (store Store) Forget(ctx context.Context, reader Reader, factIDs []string, 
 	forgottenFactIDs, errorValue := store.Facts.ForgetFacts(ctx, reader, factIDs, reason, store.now())
 	if errorValue != nil {
 		return nil, errorValue
-	}
-	if len(forgottenFactIDs) > 0 {
-		store.EnqueueProfileRebuild(ctx, reader.PersonID)
 	}
 	return forgottenFactIDs, nil
 }
@@ -189,13 +216,12 @@ func (store Store) EnqueueReembed(ctx context.Context) (Job, bool, error) {
 	return store.Jobs.EnqueueJob(ctx, JobKindReembed, store.EmbeddingModel, store.now())
 }
 
-func (store Store) EnqueueProfileRebuild(ctx context.Context, personID string) {
+func (store Store) EnqueueProfileRebuild(ctx context.Context, personID string) error {
 	if store.Jobs == nil || strings.TrimSpace(personID) == "" {
-		return
+		return nil
 	}
-	if _, _, errorValue := store.Jobs.EnqueueJob(ctx, JobKindProfile, personID, store.now()); errorValue != nil {
-		store.logger().Warn("memory.profile.enqueue_failed", "personID", personID, "error", errorValue.Error())
-	}
+	_, _, errorValue := store.Jobs.EnqueueJob(ctx, JobKindProfile, personID, store.now())
+	return errorValue
 }
 
 func BudgetRecall(recall Recall, profileBudget int, recalledBudget int) Recall {

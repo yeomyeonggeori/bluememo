@@ -61,13 +61,17 @@ func (repository FactRepository) SaveEpisode(ctx context.Context, write bluememo
 	if errorValue != nil {
 		return errorValue
 	}
-	if errorValue := insertEpisode(ctx, transaction, write.Episode); errorValue != nil {
-		_ = transaction.Rollback()
+	defer transaction.Rollback()
+	isInserted, errorValue := insertEpisode(ctx, transaction, write)
+	if errorValue != nil || !isInserted {
 		return errorValue
 	}
 	for _, factWrite := range write.Facts {
 		if errorValue := applyFactWrite(ctx, transaction, factWrite, hasVectorSearch); errorValue != nil {
 			_ = transaction.Rollback()
+			return errorValue
+		}
+		if errorValue := enqueueFactProfiles(ctx, transaction, factWrite, write.Episode.OccurredAt); errorValue != nil {
 			return errorValue
 		}
 	}
@@ -100,14 +104,81 @@ func validateEpisodeWrite(write bluememo.EpisodeWrite) error {
 	return nil
 }
 
-func insertEpisode(ctx context.Context, transaction *sql.Tx, episode bluememo.Episode) error {
-	_, errorValue := transaction.ExecContext(ctx, `
-INSERT INTO memory_episode (episode_id, source_kind, source_id, requester_person_id, conversation_id, content, occurred_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+func insertEpisode(ctx context.Context, transaction *sql.Tx, write bluememo.EpisodeWrite) (bool, error) {
+	episode := write.Episode
+	receipt, errorValue := json.Marshal(bluememo.ReceiptForWrite(write))
+	if errorValue != nil {
+		return false, errorValue
+	}
+	result, errorValue := transaction.ExecContext(ctx, `
+INSERT INTO memory_episode (episode_id, source_kind, source_id, requester_person_id, conversation_id, content, occurred_at, receipt)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+ON CONFLICT (source_kind, source_id) DO NOTHING`,
 		episode.EpisodeID, episode.SourceKind, episode.SourceID, episode.RequesterPersonID,
-		episode.ConversationID, episode.Content, episode.OccurredAt.UTC(),
+		episode.ConversationID, episode.Content, episode.OccurredAt.UTC(), string(receipt),
 	)
-	return errorValue
+	if errorValue != nil {
+		return false, errorValue
+	}
+	insertedCount, errorValue := result.RowsAffected()
+	if errorValue != nil || insertedCount > 0 {
+		return insertedCount > 0, errorValue
+	}
+	_, _, errorValue = findEpisodeReceipt(ctx, transaction, episode)
+	return false, errorValue
+}
+
+type episodeQueryer interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func (repository FactRepository) FindEpisodeReceipt(ctx context.Context, episode bluememo.Episode) (bluememo.EpisodeReceipt, bool, error) {
+	return findEpisodeReceipt(ctx, repository.database, episode)
+}
+
+func findEpisodeReceipt(ctx context.Context, queryer episodeQueryer, requested bluememo.Episode) (bluememo.EpisodeReceipt, bool, error) {
+	var stored bluememo.Episode
+	var document []byte
+	errorValue := queryer.QueryRowContext(ctx, `SELECT requester_person_id, conversation_id, content, receipt FROM memory_episode WHERE source_kind = $1 AND source_id = $2`, requested.SourceKind, requested.SourceID).Scan(&stored.RequesterPersonID, &stored.ConversationID, &stored.Content, &document)
+	if errors.Is(errorValue, sql.ErrNoRows) {
+		return bluememo.EpisodeReceipt{}, false, nil
+	}
+	if errorValue != nil {
+		return bluememo.EpisodeReceipt{}, false, errorValue
+	}
+	if errorValue := bluememo.ValidateEpisodeReplay(stored, requested); errorValue != nil {
+		return bluememo.EpisodeReceipt{}, false, errorValue
+	}
+	var receipt bluememo.EpisodeReceipt
+	errorValue = json.Unmarshal(document, &receipt)
+	return receipt, true, errorValue
+}
+
+func enqueueFactProfiles(ctx context.Context, transaction *sql.Tx, write bluememo.FactWrite, now time.Time) error {
+	subjects := map[string]bool{write.Fact.SubjectPersonID: true}
+	for _, factID := range []string{write.SupersedesFactID, write.ReinforcesFactID} {
+		if factID == "" {
+			continue
+		}
+		var personID string
+		if errorValue := transaction.QueryRowContext(ctx, `SELECT subject_person_id FROM memory_fact WHERE fact_id = $1`, factID).Scan(&personID); errorValue != nil {
+			return errorValue
+		}
+		subjects[personID] = true
+	}
+	return enqueueProfiles(ctx, transaction, subjects, now)
+}
+
+func enqueueProfiles(ctx context.Context, transaction *sql.Tx, subjects map[string]bool, now time.Time) error {
+	for personID := range subjects {
+		if personID == "" {
+			continue
+		}
+		if _, _, errorValue := enqueueJob(ctx, transaction, bluememo.JobKindProfile, personID, now); errorValue != nil {
+			return errorValue
+		}
+	}
+	return nil
 }
 
 func applyFactWrite(ctx context.Context, transaction *sql.Tx, factWrite bluememo.FactWrite, hasVectorSearch bool) error {
@@ -324,15 +395,14 @@ LIMIT $6`, arguments...)
 	return scanFacts(rows)
 }
 
-func (repository FactRepository) ListLiveFactsAboutPerson(ctx context.Context, personID string, referenceTime time.Time) ([]bluememo.Fact, error) {
+func (repository FactRepository) ListLiveFactsAboutPerson(ctx context.Context, reader bluememo.Reader, personID string, referenceTime time.Time) ([]bluememo.Fact, error) {
+	arguments := append(readerArguments(reader, referenceTime), personID)
 	rows, errorValue := repository.database.QueryContext(ctx, `
 SELECT`+factColumns+`
 FROM memory_fact f
-WHERE f.subject_person_id = $1
-  AND f.superseded_by IS NULL
-  AND f.forgotten_at IS NULL
-  AND (f.valid_until IS NULL OR f.valid_until > $2)
-ORDER BY f.valid_from DESC`, personID, referenceTime.UTC())
+WHERE`+readableFactFilter+`
+  AND f.subject_person_id = $6
+ORDER BY f.valid_from DESC`, arguments...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -354,24 +424,40 @@ func (repository FactRepository) ForgetFacts(ctx context.Context, reader bluemem
 		return []string{}, nil
 	}
 	arguments := append(readerArguments(reader, forgottenAt), nonNilStrings(factIDs), strings.TrimSpace(reason), forgottenAt.UTC())
-	rows, errorValue := repository.database.QueryContext(ctx, `
+	transaction, errorValue := repository.database.BeginTx(ctx, nil)
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer transaction.Rollback()
+	rows, errorValue := transaction.QueryContext(ctx, `
 UPDATE memory_fact f SET forgotten_at = $8, forget_reason = NULLIF($7, '')
 WHERE`+readableFactFilter+`
   AND f.fact_id = ANY($6::text[])
-RETURNING f.fact_id`, arguments...)
+RETURNING f.fact_id, f.subject_person_id`, arguments...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
 	defer rows.Close()
 	forgottenFactIDs := []string{}
+	subjects := map[string]bool{}
 	for rows.Next() {
-		var factID string
-		if errorValue := rows.Scan(&factID); errorValue != nil {
+		var factID, personID string
+		if errorValue := rows.Scan(&factID, &personID); errorValue != nil {
 			return nil, errorValue
 		}
 		forgottenFactIDs = append(forgottenFactIDs, factID)
+		subjects[personID] = true
 	}
-	return forgottenFactIDs, rows.Err()
+	if errorValue := rows.Err(); errorValue != nil {
+		return nil, errorValue
+	}
+	if errorValue := rows.Close(); errorValue != nil {
+		return nil, errorValue
+	}
+	if errorValue := enqueueProfiles(ctx, transaction, subjects, forgottenAt); errorValue != nil {
+		return nil, errorValue
+	}
+	return forgottenFactIDs, transaction.Commit()
 }
 
 func readerArguments(reader bluememo.Reader, referenceTime time.Time) []any {
