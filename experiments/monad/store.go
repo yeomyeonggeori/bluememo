@@ -38,7 +38,7 @@ func openStore(path string, decomposer Decomposer, embedder Embedder, resolver E
 	if errorValue != nil {
 		return nil, errorValue
 	}
-	if _, errorValue = database.Exec(schemaStatements); errorValue != nil {
+	if _, errorValue = database.Exec(schemaStatements + settlingSchema); errorValue != nil {
 		return nil, errorValue
 	}
 	return &Store{database: database, decomposer: decomposer, embedder: embedder, resolver: resolver, now: now}, nil

@@ -57,7 +57,13 @@ validUntil: 그 명제가 특정 날짜 이후 더는 참이 아니면 ISO 날�
 예시 입력: 어제 최견본이랑 회의했어. 나는 회의록을 항상 마크다운으로 받고 싶어.
 예시 출력의 명제 둘:
   episode: "이동하는 2026-09-20에 최견본과 회의했다."
-  preference: "이동하는 회의록을 항상 마크다운으로 받고 싶어 한다."`
+  preference: "이동하는 회의록을 항상 마크다운으로 받고 싶어 한다."
+
+잘못된 출력의 예 (절대 이렇게 하지 마라):
+  입력: "내 이름은 이동하고, 여명거리 CTO야."
+  틀린 명제: "이동하는 이름은 이동한다."   ← "이동하고"를 "이동"+"하고"로 잘못 나눴다
+  옳은 명제: "이동하는 여명거리의 CTO이다."
+화자의 이름은 맥락에 주어진 문자열 그대로다. 그 문자열을 더 짧게 자르지 마라.`
 
 var decompositionSchema = map[string]any{
 	"type": "object",
@@ -155,4 +161,75 @@ func (client *ollamaClient) postJSON(ctx context.Context, path string, body any,
 		return fmt.Errorf("ollama %s returned %d", path, response.StatusCode)
 	}
 	return json.NewDecoder(response.Body).Decode(target)
+}
+
+const judgeInstruction = `너는 기억 저장소의 통합 판정자다. 새 명제 하나와, 저장소가 이미 갖고 있는 후보 명제 목록을 받는다.
+새 명제가 후보들 중 하나에 대해 어떤 관계인지 딱 하나만 고른다.
+
+same      후보와 같은 사실을 말한다. 표현만 다르고 새로 알게 된 것이 없다.
+updates   후보가 말하던 것이 더는 참이 아니게 만든다. 같은 대상의 값이 바뀌었다.
+extends   후보를 무효화하지 않으면서 세부를 더한다. 둘 다 참으로 남는다.
+unrelated 후보들과 관계가 없다.
+noise     기억할 가치가 없는 잡담이거나 내용이 없다.
+
+targetIndex 는 관계를 맺는 후보의 번호다. unrelated 와 noise 는 -1 을 쓴다.
+
+same 은 같은 대상에 대한 같은 종류의 말이라는 뜻이 아니다. 같은 것을 서술해야 same 이다.
+확신이 없으면 unrelated 를 골라라. 잘못 묶으면 사실이 영영 사라지고, 잘못 나누면 중복이 남을 뿐이다.
+
+잘못된 판정의 예 (절대 이렇게 하지 마라):
+  새 명제: "이동하는 여명거리의 CTO이다."
+  후보 0: "이동하의 이름은 이동하이다."
+  틀린 판정: same   ← 둘 다 이동하에 대한 신원 서술이지만 서술하는 것이 다르다
+  옳은 판정: unrelated
+
+  새 명제: "이동하는 사과보다 배를 더 좋아한다."
+  후보 0: "이동하는 사과를 좋아한다."
+  틀린 판정: updates   ← 후보가 거짓이 되지 않았다
+  옳은 판정: extends`
+
+var judgeSchema = map[string]any{
+	"type": "object",
+	"properties": map[string]any{
+		"relation":    map[string]any{"type": "string", "enum": []string{"same", "updates", "extends", "unrelated", "noise"}},
+		"targetIndex": map[string]any{"type": "integer"},
+	},
+	"required":             []string{"relation", "targetIndex"},
+	"additionalProperties": false,
+}
+
+func (client *ollamaClient) Judge(ctx context.Context, proposition string, candidates []string) (Relation, int, error) {
+	listing := ""
+	for index, candidate := range candidates {
+		listing += fmt.Sprintf("%d. %s\n", index, candidate)
+	}
+	userMessage := fmt.Sprintf("새 명제:\n%s\n\n이미 갖고 있는 후보:\n%s", proposition, listing)
+
+	requestBody := map[string]any{
+		"model":   client.generationModel,
+		"stream":  false,
+		"think":   false,
+		"options": map[string]any{"temperature": 0},
+		"messages": []map[string]string{
+			{"role": "system", "content": judgeInstruction},
+			{"role": "user", "content": userMessage},
+		},
+		"format": judgeSchema,
+	}
+	var response struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	}
+	if errorValue := client.postJSON(ctx, "/api/chat", requestBody, &response); errorValue != nil {
+		return "", -1, errorValue
+	}
+	var decoded struct {
+		Relation    Relation `json:"relation"`
+		TargetIndex int      `json:"targetIndex"`
+	}
+	if errorValue := json.Unmarshal([]byte(response.Message.Content), &decoded); errorValue != nil {
+		return "", -1, fmt.Errorf("judge returned unparseable structured output: %w", errorValue)
+	}
+	return decoded.Relation, decoded.TargetIndex, nil
 }
