@@ -75,7 +75,7 @@ func (store *Store) Memorize(ctx context.Context, text string) ([]Memory, error)
 	for index, monad := range monads {
 		resolved, unresolved := store.resolver.Resolve(monad.Content)
 		memory := Memory{
-			Monad:             Monad{Content: monad.Content, Kind: monad.settledKind(), ValidUntil: monad.ValidUntil},
+			Monad:             Monad{Content: monad.Content, IsStatic: monad.IsStatic, ValidUntil: monad.ValidUntil},
 			MemoryID:          newIdentifier(),
 			ResolvedEntityIDs: resolved,
 			UnresolvedNames:   unresolved,
@@ -97,7 +97,7 @@ func (store *Store) Recall(ctx context.Context, text string, limit int) ([]Ranke
 		return nil, errorValue
 	}
 	if len(monads) == 0 {
-		monads = []Monad{{Content: text, Kind: KindUnknown}}
+		monads = []Monad{{Content: text}}
 	}
 	ranked, errorValue := store.search(ctx, monads, limit)
 	if errorValue != nil {
@@ -256,7 +256,7 @@ func lexicalTerms(query string) []string {
 
 func (store *Store) loadLive(ctx context.Context) (map[string]liveMemory, error) {
 	rows, errorValue := store.database.QueryContext(ctx, `
-		select m.memory_id, m.content, m.kind, coalesce(m.valid_until,''),
+		select m.memory_id, m.content, m.is_static, coalesce(m.valid_until,''),
 		       m.resolved_entity_ids, m.unresolved_names,
 		       m.storage_strength, m.retrieval_strength, m.created_at, v.vector
 		from memory m join memory_vector v using (memory_id)
@@ -271,7 +271,7 @@ func (store *Store) loadLive(ctx context.Context) (map[string]liveMemory, error)
 		var memory Memory
 		var resolvedJSON, unresolvedJSON, createdAt string
 		var vectorBlob []byte
-		if errorValue = rows.Scan(&memory.MemoryID, &memory.Content, &memory.Kind, &memory.ValidUntil,
+		if errorValue = rows.Scan(&memory.MemoryID, &memory.Content, &memory.IsStatic, &memory.ValidUntil,
 			&resolvedJSON, &unresolvedJSON, &memory.StorageStrength, &memory.RetrievalStrength,
 			&createdAt, &vectorBlob); errorValue != nil {
 			return nil, errorValue
@@ -310,8 +310,8 @@ func (store *Store) bury(ctx context.Context, memory Memory, reason string) erro
 	}
 	defer transaction.Rollback()
 	if _, errorValue = transaction.ExecContext(ctx,
-		`insert or replace into tombstone (memory_id, content, kind, reason, died_at) values (?,?,?,?,?)`,
-		memory.MemoryID, memory.Content, memory.Kind, reason, store.now().Format(time.RFC3339)); errorValue != nil {
+		`insert or replace into tombstone (memory_id, content, is_static, reason, died_at) values (?,?,?,?,?)`,
+		memory.MemoryID, memory.Content, memory.IsStatic, reason, store.now().Format(time.RFC3339)); errorValue != nil {
 		return errorValue
 	}
 	if _, errorValue = transaction.ExecContext(ctx,
@@ -330,10 +330,10 @@ func insertMemory(ctx context.Context, transaction *sql.Tx, memory Memory, vecto
 		validUntil = memory.ValidUntil
 	}
 	if _, errorValue := transaction.ExecContext(ctx, `
-		insert into memory (memory_id, content, kind, valid_until, resolved_entity_ids,
+		insert into memory (memory_id, content, is_static, valid_until, resolved_entity_ids,
 		                    unresolved_names, storage_strength, retrieval_strength, created_at)
 		values (?,?,?,?,?,?,?,?,?)`,
-		memory.MemoryID, memory.Content, memory.Kind, validUntil, string(resolvedJSON),
+		memory.MemoryID, memory.Content, memory.IsStatic, validUntil, string(resolvedJSON),
 		string(unresolvedJSON), memory.StorageStrength, memory.RetrievalStrength,
 		memory.CreatedAt.Format(time.RFC3339)); errorValue != nil {
 		return errorValue

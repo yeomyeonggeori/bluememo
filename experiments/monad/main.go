@@ -77,7 +77,7 @@ func show(memories []Memory, errorValue error) {
 		if len(memory.UnresolvedNames) > 0 {
 			annotation += "  ?" + strings.Join(memory.UnresolvedNames, ",")
 		}
-		fmt.Printf("  [%-10s] %s%s\n", memory.Kind, memory.Content, annotation)
+		fmt.Printf("  [%-6s] %s%s\n", staticMark(memory.IsStatic), memory.Content, annotation)
 	}
 }
 
@@ -86,7 +86,7 @@ func recall(ctx context.Context, store *Store, query string) {
 	exitOn(errorValue)
 	fmt.Printf("  ? %s\n", query)
 	for _, candidate := range ranked {
-		fmt.Printf("      %.4f  [%-10s] %s\n", candidate.Score, candidate.Memory.Kind, candidate.Memory.Content)
+		fmt.Printf("      %.4f  [%-6s] %s\n", candidate.Score, staticMark(candidate.Memory.IsStatic), candidate.Memory.Content)
 	}
 }
 
@@ -131,4 +131,11 @@ func exitOn(errorValue error) {
 		fmt.Fprintln(os.Stderr, "실패:", errorValue)
 		os.Exit(1)
 	}
+}
+
+func staticMark(isStatic bool) string {
+	if isStatic {
+		return "static"
+	}
+	return ""
 }

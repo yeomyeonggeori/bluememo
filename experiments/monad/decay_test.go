@@ -10,9 +10,22 @@ import (
 	"time"
 )
 
+// rejectedKind is the five-value enum this test measured and found wanting.
+// It lives here and nowhere else: the shipped Monad carries a single boolean,
+// and a reader who found this type in the domain would take it for current.
+type rejectedKind string
+
+const (
+	KindIdentity   rejectedKind = "identity"
+	KindPreference rejectedKind = "preference"
+	KindFact       rejectedKind = "fact"
+	KindEpisode    rejectedKind = "episode"
+	KindProcedure  rejectedKind = "procedure"
+)
+
 type sample struct {
 	content    string
-	kind       Kind
+	kind       rejectedKind
 	occurredAt time.Time
 	isStatic   bool
 	originID   string // 같은 memorize() 호출에서 나온 형제

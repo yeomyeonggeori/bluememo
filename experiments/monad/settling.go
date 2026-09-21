@@ -286,9 +286,9 @@ func (store *Store) insertMonadWithImportance(ctx context.Context, monad Monad, 
 	defer transaction.Rollback()
 	validUntil := sql.NullString{String: monad.ValidUntil, Valid: strings.TrimSpace(monad.ValidUntil) != ""}
 	if _, errorValue := transaction.ExecContext(ctx,
-		`insert into memory(memory_id,content,kind,valid_until,resolved_entity_ids,unresolved_names,created_at,origin_id,importance)
+		`insert into memory(memory_id,content,is_static,valid_until,resolved_entity_ids,unresolved_names,created_at,origin_id,importance)
 		 values(?,?,?,?,?,?,?,?,?)`,
-		memoryID, monad.Content, string(monad.settledKind()), validUntil,
+		memoryID, monad.Content, monad.IsStatic, validUntil,
 		string(resolvedJSON), string(unresolvedJSON),
 		time.Now().UTC().Format(time.RFC3339Nano), originID, importance); errorValue != nil {
 		return "", errorValue

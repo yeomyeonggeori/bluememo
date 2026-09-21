@@ -38,26 +38,21 @@ const decomposerInstruction = `너는 기억 저장소의 분해기다. 사용�
 - 전해 들은 말은 출처를 명제 안에 포함한다. 출처를 별도 명제로 분리하지 않는다.
 - 명제는 평서형 종결로 쓴다. "좋아해" 대신 "좋아한다".
 
-kind:
-- identity: 누가 누구인가. 이름, 역할, 소속.
-- preference: 원하는 것, 선호하는 방식, 요청받은 응대 방식.
-- fact: 참으로 유지되는 단언.
-- episode: 언제 무슨 일이 있었나.
-- procedure: 어떤 일을 하는 방법이나 절차, 단계.
-- unknown: 위 어디에도 명확히 속하지 않을 때.
+isStatic: 그 사람에 대해 바뀌지 않는 특성이면 true. 이름, 직업, 소속, 오래 가는 선호가 그렇다.
+사건, 한 번의 요청, 상황 설명은 false.
 
 validUntil: 그 명제가 특정 날짜 이후 더는 참이 아니면 ISO 날짜(YYYY-MM-DD). 아니면 빈 문자열.
 
 금지:
 - 원문에 없는 사실을 추가하지 마라.
-- 원문이 말하지 않은 것을 추론해 채우지 마라. 애매하면 unknown을 골라라.
+- 원문이 말하지 않은 것을 추론해 채우지 마라. 애매하면 isStatic은 false 다.
 - 아래 맥락 자체를 명제로 만들지 마라. 맥락은 대명사를 푸는 데만 쓴다.
 - 이름의 철자를 바꾸거나 줄이지 마라. 조사를 이름에 붙이지 마라.
 
 예시 입력: 어제 최견본이랑 회의했어. 나는 회의록을 항상 마크다운으로 받고 싶어.
 예시 출력의 명제 둘:
-  episode: "이동하는 2026-09-20에 최견본과 회의했다."
-  preference: "이동하는 회의록을 항상 마크다운으로 받고 싶어 한다."
+  isStatic false: "이동하는 2026-09-20에 최견본과 회의했다."
+  isStatic true:  "이동하는 회의록을 항상 마크다운으로 받고 싶어 한다."
 
 잘못된 출력의 예 (절대 이렇게 하지 마라):
   입력: "내 이름은 이동하고, 여명거리 CTO야."
@@ -74,10 +69,10 @@ var decompositionSchema = map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"content":    map[string]any{"type": "string"},
-					"kind":       map[string]any{"type": "string", "enum": []string{"identity", "preference", "fact", "episode", "procedure", "unknown"}},
+					"isStatic":   map[string]any{"type": "boolean"},
 					"validUntil": map[string]any{"type": "string"},
 				},
-				"required":             []string{"content", "kind", "validUntil"},
+				"required":             []string{"content", "isStatic", "validUntil"},
 				"additionalProperties": false,
 			},
 		},

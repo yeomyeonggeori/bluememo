@@ -53,7 +53,7 @@ func TestTriggersReachWhatSurfaceCannot(t *testing.T) {
 		}
 
 		for _, proposition := range propositions {
-			monad := Monad{Content: proposition, Kind: KindFact}
+			monad := Monad{Content: proposition}
 			if _, errorValue := store.insertMonadWithImportance(ctx, monad, newIdentifier(), 4); errorValue != nil {
 				t.Fatal(errorValue)
 			}
