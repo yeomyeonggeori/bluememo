@@ -147,3 +147,16 @@ func (rehearser Rehearser) askModel(ctx context.Context, fact Fact) ([]string, e
 	}
 	return NormalizeTriggerPhrases(output.Phrases), nil
 }
+
+type RehearseJobHandler struct {
+	Rehearser Rehearser
+}
+
+func (handler RehearseJobHandler) Handle(ctx context.Context, job Job) error {
+	episodeID := strings.TrimSpace(job.SubjectID)
+	if episodeID == "" {
+		return TerminalJobError{Cause: errors.New("rehearse job names no episode")}
+	}
+	_, errorValue := handler.Rehearser.Rehearse(ctx, episodeID)
+	return errorValue
+}
