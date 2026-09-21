@@ -24,6 +24,7 @@ const (
 
 type Store struct {
 	Facts          FactRepository
+	Triggers       TriggerRepository
 	Profiles       ProfileRepository
 	Jobs           JobRepository
 	Embedder       Embedder
@@ -73,7 +74,7 @@ func (store Store) Search(ctx context.Context, reader Reader, text string, limit
 	if errorValue != nil {
 		return SearchResult{}, errorValue
 	}
-	scoredFacts := limitScoredFacts(RankFacts(hits, referenceTime), limit)
+	scoredFacts := store.expandWithSiblings(ctx, reader, RankFacts(store.withTriggerHits(ctx, query, hits), referenceTime), limit, referenceTime)
 	store.markRecalled(ctx, scoredFacts, referenceTime)
 	return SearchResult{Facts: scoredFacts, Mode: mode, DegradedReason: degradedReason}, nil
 }
@@ -98,6 +99,30 @@ func (store Store) resolveSearchMode(ctx context.Context, query *FactSearchQuery
 	}
 	query.Embedding = embedding
 	return SearchModeHybrid, ""
+}
+
+func (store Store) withTriggerHits(ctx context.Context, query FactSearchQuery, hits []RankedFact) []RankedFact {
+	if store.Triggers == nil || len(query.Embedding) == 0 {
+		return hits
+	}
+	triggerHits, errorValue := store.Triggers.SearchTriggers(ctx, query)
+	if errorValue != nil {
+		store.logger().WarnContext(ctx, "memory.search.triggers_unavailable", "error", errorValue)
+		return hits
+	}
+	return MergeRankedFacts(hits, triggerHits)
+}
+
+func (store Store) expandWithSiblings(ctx context.Context, reader Reader, scoredFacts []ScoredFact, limit int, referenceTime time.Time) []ScoredFact {
+	if len(scoredFacts) == 0 || scoredFacts[0].Fact.EpisodeID == "" {
+		return limitScoredFacts(scoredFacts, limit)
+	}
+	siblings, errorValue := store.Facts.ListLiveFactsFromEpisode(ctx, reader, scoredFacts[0].Fact.EpisodeID, referenceTime)
+	if errorValue != nil {
+		store.logger().WarnContext(ctx, "memory.search.siblings_unavailable", "episodeID", scoredFacts[0].Fact.EpisodeID, "error", errorValue)
+		return limitScoredFacts(scoredFacts, limit)
+	}
+	return ExpandWithSiblings(scoredFacts, siblings, limit)
 }
 
 func (store Store) markRecalled(ctx context.Context, scoredFacts []ScoredFact, recalledAt time.Time) {
@@ -221,6 +246,14 @@ func (store Store) EnqueueProfileRebuild(ctx context.Context, personID string) e
 		return nil
 	}
 	_, _, errorValue := store.Jobs.EnqueueJob(ctx, JobKindProfile, personID, store.now())
+	return errorValue
+}
+
+func (store Store) EnqueueRehearsal(ctx context.Context, episodeID string) error {
+	if store.Jobs == nil || store.Triggers == nil || strings.TrimSpace(episodeID) == "" {
+		return nil
+	}
+	_, _, errorValue := store.Jobs.EnqueueJob(ctx, JobKindRehearse, episodeID, store.now())
 	return errorValue
 }
 

@@ -9,10 +9,11 @@ import (
 )
 
 const (
-	JobKindExtract = "extract"
-	JobKindProfile = "profile"
-	JobKindReembed = "reembed"
-	JobKindImport  = "import"
+	JobKindExtract  = "extract"
+	JobKindProfile  = "profile"
+	JobKindReembed  = "reembed"
+	JobKindImport   = "import"
+	JobKindRehearse = "rehearse"
 )
 
 const (

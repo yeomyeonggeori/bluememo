@@ -273,6 +273,34 @@ func (repository *InMemoryRepository) ListLiveFactsAboutPerson(_ context.Context
 	return facts, nil
 }
 
+func (repository *InMemoryRepository) ListLiveFactsFromEpisode(_ context.Context, reader Reader, episodeID string, referenceTime time.Time) ([]Fact, error) {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	facts := []Fact{}
+	for _, factID := range repository.order {
+		fact := repository.facts[factID]
+		if fact.EpisodeID == episodeID && fact.IsLive(referenceTime) && reader.CanRead(fact) {
+			facts = append(facts, fact)
+		}
+	}
+	sort.SliceStable(facts, func(left int, right int) bool { return facts[left].ValidFrom.After(facts[right].ValidFrom) })
+	return facts, nil
+}
+
+func (repository *InMemoryRepository) ListLiveFactsToRehearse(_ context.Context, episodeID string, referenceTime time.Time) ([]Fact, error) {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	facts := []Fact{}
+	for _, factID := range repository.order {
+		fact := repository.facts[factID]
+		if fact.EpisodeID == episodeID && fact.IsLive(referenceTime) {
+			facts = append(facts, fact)
+		}
+	}
+	sort.SliceStable(facts, func(left int, right int) bool { return facts[left].ValidFrom.After(facts[right].ValidFrom) })
+	return facts, nil
+}
+
 func (repository *InMemoryRepository) ListLiveFactsNotEmbeddedWith(_ context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]Fact, error) {
 	repository.mutex.Lock()
 	defer repository.mutex.Unlock()

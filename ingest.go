@@ -61,7 +61,9 @@ kind:
 - "preference": how a person wants things done.
 - "fact": something true until it changes.
 - "episode": something that happened and will matter later (a decision, an incident, a commitment), with its date if the source gives one. What the assistant did in this task is never an episode.
-- "temporary": a state with an end date; put that date in validUntil as YYYY-MM-DD. Every other kind leaves validUntil as "".
+- "temporary": a state that exists only until an end date, and is nothing once it passes.
+
+Any kind may carry an end date. When the source bounds a fact in time — this quarter, until the launch, for the rest of the year — put that date in validUntil as YYYY-MM-DD, whatever the kind. Leave validUntil as "" when the source sets no end.
 
 circleIDs decides who may read the fact besides the requester, who always may:
 - [] keeps it to the requester alone: their own preferences, their own situation, anything said in private.
@@ -75,7 +77,11 @@ relatedFactID must be one of the IDs listed under existing facts; never invent o
 
 subjectPersonHint is the exact name of the person the fact is about as it appears in the source or the context, or "" when it is about nobody in particular.
 
-Return an empty facts list when the source holds nothing worth remembering. Do not add requirements the source does not state, do not infer what it does not say, and do not repeat an existing fact as "new".`
+Return an empty facts list when the source holds nothing worth remembering. Do not add requirements the source does not state, do not infer what it does not say, and do not repeat an existing fact as "new".
+
+A source saying 내 이름은 이동하고, 여명거리 CTO야 yields 이동하는 여명거리의 CTO이다. These are wrong and show the two ways a name gets lost:
+- 이동하고는 … or 이동은 … — the name is 이동하, and a grammatical particle that follows it is not part of it. Never respell a name to make a sentence read smoothly.
+- 이동하의 이름은 이동하이다. — a sentence whose only content is the name it already contains says nothing.`
 
 type PersonResolver interface {
 	ResolvePersonIDByDisplayName(displayName string) (string, bool)
@@ -158,6 +164,11 @@ func (ingester Ingester) Ingest(ctx context.Context, request IngestRequest) (Ing
 	result, isFound, errorValue := ingester.replay(ctx, request)
 	if errorValue == nil && !isFound {
 		return IngestResult{}, errors.New("memory episode write completed without a receipt")
+	}
+	if errorValue == nil {
+		if rehearsalError := ingester.Store.EnqueueRehearsal(ctx, result.EpisodeID); rehearsalError != nil {
+			ingester.Store.logger().WarnContext(ctx, "memory.ingest.rehearsal_not_enqueued", "episodeID", result.EpisodeID, "error", rehearsalError.Error())
+		}
 	}
 	return result, errorValue
 }
@@ -331,14 +342,12 @@ func (ingester Ingester) newFact(request IngestRequest, outputFact ingestOutputF
 			fact.SubjectPersonID = request.Episode.RequesterPersonID
 		}
 	}
-	if fact.Kind == FactKindTemporary {
+	if fact.Kind == FactKindTemporary || strings.TrimSpace(outputFact.ValidUntil) != "" {
 		validUntil, errorValue := parseValidUntil(outputFact.ValidUntil, now)
 		if errorValue != nil {
 			return Fact{}, errorValue
 		}
 		fact.ValidUntil = validUntil
-	} else if strings.TrimSpace(outputFact.ValidUntil) != "" {
-		return Fact{}, fmt.Errorf("a %s fact carries validUntil %q", fact.Kind, outputFact.ValidUntil)
 	}
 	if errorValue := ValidateFact(fact); errorValue != nil {
 		return Fact{}, errorValue

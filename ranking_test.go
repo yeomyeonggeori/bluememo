@@ -16,14 +16,13 @@ func TestRankFactsFusesBothRankLists(t *testing.T) {
 	}
 }
 
-func TestRankFactsDecaysOldEpisodesAndKeepsBetterMatchesAheadOfReinforcedOnes(t *testing.T) {
+func TestRankFactsLetsAnOldEpisodeAnswerAQuestionAboutThePast(t *testing.T) {
 	referenceTime := time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC)
-	betterMatch := RankedFact{Fact: Fact{FactID: "fact", Kind: FactKindFact, ValidFrom: referenceTime}, VectorRank: 1, LexicalRank: 1}
-	reinforced := RankedFact{Fact: Fact{FactID: "preference", Kind: FactKindPreference, ReinforcementCount: 9, ValidFrom: referenceTime}, VectorRank: 2, LexicalRank: 2}
-	oldEpisode := RankedFact{Fact: Fact{FactID: "episode", Kind: FactKindEpisode, ValidFrom: referenceTime.Add(-180 * 24 * time.Hour)}, VectorRank: 1, LexicalRank: 1}
-	ranked := RankFacts([]RankedFact{reinforced, oldEpisode, betterMatch}, referenceTime)
-	if ranked[0].Fact.FactID != "fact" || ranked[1].Fact.FactID != "preference" || ranked[2].Fact.FactID != "episode" {
-		t.Fatalf("expected fact, preference, episode, got %s, %s, %s", ranked[0].Fact.FactID, ranked[1].Fact.FactID, ranked[2].Fact.FactID)
+	oldEpisode := RankedFact{Fact: Fact{FactID: "episode", Kind: FactKindEpisode, ValidFrom: referenceTime.Add(-400 * 24 * time.Hour)}, VectorRank: 1, LexicalRank: 1}
+	weakerRecentFact := RankedFact{Fact: Fact{FactID: "fact", Kind: FactKindFact, ValidFrom: referenceTime}, VectorRank: 2, LexicalRank: 2}
+	ranked := RankFacts([]RankedFact{weakerRecentFact, oldEpisode}, referenceTime)
+	if ranked[0].Fact.FactID != "episode" {
+		t.Fatalf("expected the better match to rank first regardless of age, got %s", ranked[0].Fact.FactID)
 	}
 }
 
@@ -79,5 +78,32 @@ func TestJobWorkerClaimsOnlyHandledKindsRetriesWithBackoffAndAbandons(t *testing
 	}
 	if pending, _ := repository.ClaimDueJobs(context.Background(), []string{JobKindProfile}, now.Add(time.Hour), time.Minute, 10); len(pending) != 0 {
 		t.Fatalf("expected a terminal error to abandon at once, got %+v", pending)
+	}
+}
+
+func TestExpandWithSiblingsCompletesTheLeadingEpisode(t *testing.T) {
+	referenceTime := time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC)
+	leading := ScoredFact{Fact: Fact{FactID: "a1", EpisodeID: "e1", ValidFrom: referenceTime}, Score: 0.03}
+	unrelated := ScoredFact{Fact: Fact{FactID: "b1", EpisodeID: "e2", ValidFrom: referenceTime}, Score: 0.01}
+	siblings := []Fact{
+		{FactID: "a1", EpisodeID: "e1", ValidFrom: referenceTime},
+		{FactID: "a2", EpisodeID: "e1", ValidFrom: referenceTime},
+		{FactID: "a3", EpisodeID: "e1", ValidFrom: referenceTime},
+	}
+	expanded := ExpandWithSiblings([]ScoredFact{leading, unrelated}, siblings, 4)
+	if len(expanded) != 4 {
+		t.Fatalf("expected the leading episode to be completed, got %d facts", len(expanded))
+	}
+	if expanded[0].Fact.FactID != "a1" || expanded[1].Fact.FactID != "a2" || expanded[2].Fact.FactID != "a3" || expanded[3].Fact.FactID != "b1" {
+		t.Fatalf("expected a1, a2, a3, b1, got %s, %s, %s, %s", expanded[0].Fact.FactID, expanded[1].Fact.FactID, expanded[2].Fact.FactID, expanded[3].Fact.FactID)
+	}
+}
+
+func TestExpandWithSiblingsNeverDropsTheRankedHead(t *testing.T) {
+	referenceTime := time.Date(2026, 9, 2, 0, 0, 0, 0, time.UTC)
+	leading := ScoredFact{Fact: Fact{FactID: "a1", EpisodeID: "e1", ValidFrom: referenceTime}, Score: 0.03}
+	siblings := []Fact{{FactID: "a2", EpisodeID: "e1", ValidFrom: referenceTime}, {FactID: "a3", EpisodeID: "e1", ValidFrom: referenceTime}}
+	if expanded := ExpandWithSiblings([]ScoredFact{leading}, siblings, 1); len(expanded) != 1 || expanded[0].Fact.FactID != "a1" {
+		t.Fatalf("expected the ranked head to survive a tight limit, got %+v", expanded)
 	}
 }

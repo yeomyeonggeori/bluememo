@@ -315,6 +315,22 @@ SELECT` + factColumns + `, 0, l.lexical_rank
 FROM memory_fact f
 JOIN lexical_hits l ON l.fact_id = f.fact_id`
 
+func (repository FactRepository) ListLiveFactsToRehearse(ctx context.Context, episodeID string, referenceTime time.Time) ([]bluememo.Fact, error) {
+	rows, errorValue := repository.database.QueryContext(ctx, `
+SELECT`+factColumns+`
+FROM memory_fact f
+WHERE f.episode_id = $1
+  AND f.superseded_by IS NULL
+  AND f.forgotten_at IS NULL
+  AND (f.valid_until IS NULL OR f.valid_until > $2)
+ORDER BY f.valid_from DESC`, episodeID, referenceTime.UTC())
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	return scanFacts(rows)
+}
+
 func (repository FactRepository) ListLiveFactsNotEmbeddedWith(ctx context.Context, embeddingModel string, limit int, referenceTime time.Time) ([]bluememo.Fact, error) {
 	rows, errorValue := repository.database.QueryContext(ctx, `
 SELECT`+factColumns+`
@@ -402,6 +418,21 @@ SELECT`+factColumns+`
 FROM memory_fact f
 WHERE`+readableFactFilter+`
   AND f.subject_person_id = $6
+ORDER BY f.valid_from DESC`, arguments...)
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	return scanFacts(rows)
+}
+
+func (repository FactRepository) ListLiveFactsFromEpisode(ctx context.Context, reader bluememo.Reader, episodeID string, referenceTime time.Time) ([]bluememo.Fact, error) {
+	arguments := append(readerArguments(reader, referenceTime), episodeID)
+	rows, errorValue := repository.database.QueryContext(ctx, `
+SELECT`+factColumns+`
+FROM memory_fact f
+WHERE`+readableFactFilter+`
+  AND f.episode_id = $6
 ORDER BY f.valid_from DESC`, arguments...)
 	if errorValue != nil {
 		return nil, errorValue

@@ -124,6 +124,10 @@ func (fact Fact) IsShared() bool {
 	return len(fact.CircleIDs) > 0
 }
 
+func (fact Fact) IsStatic() bool {
+	return fact.Kind == FactKindIdentity || fact.Kind == FactKindPreference
+}
+
 func (fact Fact) IsLive(referenceTime time.Time) bool {
 	if fact.SupersededBy != "" || !fact.ForgottenAt.IsZero() {
 		return false
@@ -178,8 +182,8 @@ func ValidateFact(fact Fact) error {
 	if fact.Kind == FactKindTemporary && fact.ValidUntil.IsZero() {
 		return errors.New("a temporary fact requires valid_until")
 	}
-	if fact.Kind != FactKindTemporary && !fact.ValidUntil.IsZero() {
-		return fmt.Errorf("a %s fact carries no valid_until", fact.Kind)
+	if !fact.ValidUntil.IsZero() && !fact.ValidUntil.After(fact.ValidFrom) {
+		return errors.New("fact valid_until must come after valid_from")
 	}
 	return nil
 }

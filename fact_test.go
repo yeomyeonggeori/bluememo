@@ -34,21 +34,43 @@ func TestValidateFactAcceptsOwnedAndSharedFacts(t *testing.T) {
 
 func TestValidateFactRejectsEachBrokenField(t *testing.T) {
 	cases := map[string]func(*Fact){
-		"missing id":                  func(fact *Fact) { fact.FactID = " " },
-		"missing owner":               func(fact *Fact) { fact.OwnerPersonID = " " },
-		"unnormalized circles":        func(fact *Fact) { fact.CircleIDs = []string{"Platform", "platform"} },
-		"unknown kind":                func(fact *Fact) { fact.Kind = "rumour" },
-		"empty content":               func(fact *Fact) { fact.Content = "  " },
-		"oversized content":           func(fact *Fact) { fact.Content = strings.Repeat("가", FactContentCharacterLimit+1) },
-		"missing valid_from":          func(fact *Fact) { fact.ValidFrom = time.Time{} },
-		"temporary without expiry":    func(fact *Fact) { fact.Kind = FactKindTemporary },
-		"durable fact with an expiry": func(fact *Fact) { fact.ValidUntil = fact.ValidFrom.Add(time.Hour) },
+		"missing id":               func(fact *Fact) { fact.FactID = " " },
+		"missing owner":            func(fact *Fact) { fact.OwnerPersonID = " " },
+		"unnormalized circles":     func(fact *Fact) { fact.CircleIDs = []string{"Platform", "platform"} },
+		"unknown kind":             func(fact *Fact) { fact.Kind = "rumour" },
+		"empty content":            func(fact *Fact) { fact.Content = "  " },
+		"oversized content":        func(fact *Fact) { fact.Content = strings.Repeat("가", FactContentCharacterLimit+1) },
+		"missing valid_from":       func(fact *Fact) { fact.ValidFrom = time.Time{} },
+		"temporary without expiry": func(fact *Fact) { fact.Kind = FactKindTemporary },
+		"expiry before valid_from": func(fact *Fact) { fact.ValidUntil = fact.ValidFrom.Add(-time.Hour) },
 	}
 	for name, mutate := range cases {
 		fact := validFact()
 		mutate(&fact)
 		if errorValue := ValidateFact(fact); errorValue == nil {
 			t.Fatalf("expected %s to be rejected", name)
+		}
+	}
+}
+
+func TestExpiryIsOrthogonalToKind(t *testing.T) {
+	for _, kind := range FactKinds {
+		fact := validFact()
+		fact.Kind = kind
+		fact.ValidUntil = fact.ValidFrom.Add(90 * 24 * time.Hour)
+		if errorValue := ValidateFact(fact); errorValue != nil {
+			t.Errorf("a %s fact should be allowed to expire so that a preference can hold for one quarter only: %v", kind, errorValue)
+		}
+	}
+}
+
+func TestIsStaticMarksTheKindsThatDoNotAgeOut(t *testing.T) {
+	staticKinds := map[string]bool{FactKindIdentity: true, FactKindPreference: true}
+	for _, kind := range FactKinds {
+		fact := validFact()
+		fact.Kind = kind
+		if fact.IsStatic() != staticKinds[kind] {
+			t.Errorf("kind %q reported IsStatic=%v", kind, fact.IsStatic())
 		}
 	}
 }
