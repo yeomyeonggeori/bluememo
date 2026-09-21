@@ -82,3 +82,27 @@ SELECT` + factColumns + `, trigger_hits.vector_rank, 0
 FROM memory_fact f
 JOIN trigger_hits ON trigger_hits.fact_id = f.fact_id
 ORDER BY trigger_hits.vector_rank`
+
+func (repository TriggerRepository) ListTriggerPhrases(ctx context.Context, factIDs []string) (map[string][]string, error) {
+	phrases := map[string][]string{}
+	if len(factIDs) == 0 {
+		return phrases, nil
+	}
+	rows, errorValue := repository.database.QueryContext(ctx, `
+SELECT fact_id, phrase
+FROM memory_fact_trigger
+WHERE fact_id = ANY($1::text[])
+ORDER BY fact_id, phrase`, nonNilStrings(factIDs))
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var factID, phrase string
+		if errorValue := rows.Scan(&factID, &phrase); errorValue != nil {
+			return nil, errorValue
+		}
+		phrases[factID] = append(phrases[factID], phrase)
+	}
+	return phrases, rows.Err()
+}

@@ -107,3 +107,23 @@ func (repository *InMemoryTriggerRepository) TriggersForFact(factID string) []Fa
 	}
 	return triggers
 }
+
+func (repository *InMemoryTriggerRepository) ListTriggerPhrases(ctx context.Context, factIDs []string) (map[string][]string, error) {
+	repository.mutex.Lock()
+	defer repository.mutex.Unlock()
+	wanted := map[string]bool{}
+	for _, factID := range factIDs {
+		wanted[factID] = true
+	}
+	phrases := map[string][]string{}
+	for _, trigger := range repository.triggers {
+		if !wanted[trigger.FactID] {
+			continue
+		}
+		phrases[trigger.FactID] = append(phrases[trigger.FactID], trigger.Phrase)
+	}
+	for factID := range phrases {
+		sort.Strings(phrases[factID])
+	}
+	return phrases, nil
+}

@@ -48,6 +48,7 @@ type TriggerRepository interface {
 	SaveFactTriggers(ctx context.Context, triggers []FactTrigger, embeddings [][]float32) error
 	SearchTriggers(ctx context.Context, query FactSearchQuery) ([]RankedFact, error)
 	DeleteFactTriggers(ctx context.Context, factIDs []string) error
+	ListTriggerPhrases(ctx context.Context, factIDs []string) (map[string][]string, error)
 }
 
 func NormalizeTriggerPhrases(phrases []string) []string {
