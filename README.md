@@ -27,7 +27,9 @@ Everything goes through `Ingester`. It embeds the episode, offers the reader's n
 
 ## Reading
 
-`Store.Recall` returns a person's **profile** (two short lists a background job condenses from their facts) and a hybrid search of the prompt: pgvector cosine and `pg_trgm` word similarity fused by reciprocal rank, episodes decaying with age, reinforcement breaking ties. Where the `vector` extension is absent the migration still applies and search answers lexically; the result says which mode answered. Vectors from two embedding models do not compare, so the vector side of a search only ranks facts embedded by the store's own model; a `reembed` job (`Store.EnqueueReembed`, `ReembedJobHandler`) moves every live fact onto that model, and until it has run those facts answer lexically.
+`Store.Recall` returns a person's **profile** (two short lists a background job condenses from their facts) and a hybrid search of the prompt: pgvector cosine and `pg_trgm` word similarity fused by reciprocal rank, reinforcement breaking ties. Age does not lower a fact's rank. A measurement of the alternative put age-weighted ranking below plain similarity, because a question about the past is exactly where an old fact is wanted; age decides which facts an eviction sweep takes, not which ones a search returns. Two things widen what a search can reach. A hit pulls in the other facts extracted from the same episode, so a question answered by one sentence returns the sentences that came with it. And each fact carries **trigger phrases**: short situations a model writes at rehearsal time, embedded and searched beside the facts themselves, returning the fact rather than the phrase. A phrase survives only when it sits measurably closer to its own fact than to that fact's neighbours, so one that fits anything is dropped instead of drawing every query toward one memory. `Store.EnqueueRehearse` and `RehearseJobHandler` run this after ingest; facts written before it exist have no phrases and answer as they always did.
+
+Where the `vector` extension is absent the migration still applies and search answers lexically; the result says which mode answered. Vectors from two embedding models do not compare, so the vector side of a search only ranks facts embedded by the store's own model; a `reembed` job (`Store.EnqueueReembed`, `ReembedJobHandler`) moves every live fact onto that model, and until it has run those facts answer lexically.
 
 ## Using it
 
@@ -51,7 +53,7 @@ result, _ := ingester.Ingest(ctx, bluememo.IngestRequest{Episode: episode, Reade
 
 Run the reader-scoped in-memory example with `go run ./examples/recall`. It seeds synthetic facts in `InMemoryRepository` and needs no database or model. Production ingestion uses `Ingester` with a host-provided model and embedder.
 
-`JobWorker` drains `memory_job` (extraction, profile rebuilds) with `FOR UPDATE SKIP LOCKED` claims, leases and backoff; `InMemoryRepository` and `bluememotest` carry the same contract for tests.
+`JobWorker` drains `memory_job` (extraction, profile rebuilds, trigger rehearsal) with `FOR UPDATE SKIP LOCKED` claims, leases and backoff; `InMemoryRepository` and `bluememotest` carry the same contract for tests.
 
 The host authenticates every `Reader` and resolves its current circle membership and clearance. Repository methods are privileged storage operations; expose the `Store` methods to authenticated callers. Recall always targets the reader's own profile. `ProfileJobHandler.ResolveReader` must resolve that person's current access from the host directory each time a job runs.
 
