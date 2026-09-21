@@ -14,7 +14,8 @@ create table if not exists memory (
   last_recalled_at    text,
   superseded_by       text references memory(memory_id),
   forgotten_at        text,
-  origin_id           text
+  origin_id           text,
+  importance          integer not null default 3
 );
 
 create index if not exists memory_live on memory(kind)

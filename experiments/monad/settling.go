@@ -36,9 +36,18 @@ const (
 	RelationNoise     Relation = "noise"
 )
 
+// Judgement is one typed decision about a fresh proposition.
+type Judgement struct {
+	Relation    Relation
+	TargetIndex int
+	// Importance rates the proposition itself, so that when two say the same
+	// thing the better rendering is the one retrieval keeps.
+	Importance int
+}
+
 // Judge decides how a fresh proposition stands to the memories already held.
 type Judge interface {
-	Judge(ctx context.Context, proposition string, candidates []string) (Relation, int, error)
+	Judge(ctx context.Context, proposition string, candidates []string) (Judgement, error)
 }
 
 // Enqueue accepts input without deciding anything about it. Search reaches it
@@ -125,37 +134,29 @@ func (store *Store) settleProposition(ctx context.Context, judge Judge, monad Mo
 	if errorValue != nil {
 		return "", errorValue
 	}
-	relation := RelationUnrelated
-	targetIndex := -1
+	judgement := Judgement{Relation: RelationUnrelated, TargetIndex: -1, Importance: 3}
 	if len(candidates) > 0 {
 		texts := make([]string, len(candidates))
 		for index, candidate := range candidates {
 			texts[index] = candidate.content
 		}
-		relation, targetIndex, errorValue = judge.Judge(ctx, monad.Content, texts)
+		judgement, errorValue = judge.Judge(ctx, monad.Content, texts)
 		if errorValue != nil {
 			return "", errorValue
 		}
 	}
+	relation, targetIndex := judgement.Relation, judgement.TargetIndex
 	if targetIndex < 0 || targetIndex >= len(candidates) {
 		if relation != RelationNoise {
 			relation = RelationUnrelated
 		}
 	}
 
-	if relation == RelationSame && candidates[targetIndex].similarity < sameSimilarityFloor {
-		relation = RelationUnrelated
-	}
-
 	switch relation {
 	case RelationNoise:
 		return RelationNoise, nil
 	case RelationSame:
-		_, errorValue := store.database.ExecContext(ctx,
-			`update memory set storage_strength = storage_strength + 0.25,
-			 retrieval_strength = retrieval_strength + 0.5 where memory_id = ?`,
-			candidates[targetIndex].memoryID)
-		return RelationSame, errorValue
+		return store.keepTheBetterOne(ctx, monad, originID, candidates[targetIndex], judgement.Importance)
 	}
 
 	memoryID, errorValue := store.insertMonad(ctx, monad, originID)
@@ -182,14 +183,10 @@ func (store *Store) settleProposition(ctx context.Context, judge Judge, monad Mo
 	return RelationUnrelated, nil
 }
 
-// sameSimilarityFloor gates the one judgement that destroys information.
-// Collapsing two memories is not reversible; keeping a duplicate is.
-const sameSimilarityFloor = 0.82
-
 type candidate struct {
 	memoryID   string
 	content    string
-	similarity float64
+	importance int
 }
 
 func (store *Store) nearest(ctx context.Context, text string, limit int) ([]candidate, error) {
@@ -198,7 +195,7 @@ func (store *Store) nearest(ctx context.Context, text string, limit int) ([]cand
 		return nil, errorValue
 	}
 	rows, errorValue := store.database.QueryContext(ctx,
-		`select m.memory_id, m.content, v.vector from memory m join memory_vector v using(memory_id)
+		`select m.memory_id, m.content, coalesce(m.importance,3), v.vector from memory m join memory_vector v using(memory_id)
 		 where m.superseded_by is null and m.forgotten_at is null`)
 	if errorValue != nil {
 		return nil, errorValue
@@ -212,11 +209,10 @@ func (store *Store) nearest(ctx context.Context, text string, limit int) ([]cand
 	for rows.Next() {
 		one := scored{}
 		blob := []byte{}
-		if errorValue := rows.Scan(&one.memoryID, &one.content, &blob); errorValue != nil {
+		if errorValue := rows.Scan(&one.memoryID, &one.content, &one.importance, &blob); errorValue != nil {
 			return nil, errorValue
 		}
 		one.score = cosineSimilarity(vectors[0], decodeVector(blob))
-		one.similarity = one.score
 		all = append(all, one)
 	}
 	for outer := 0; outer < len(all); outer++ {
@@ -236,7 +232,36 @@ func (store *Store) nearest(ctx context.Context, text string, limit int) ([]cand
 	return result, nil
 }
 
+// keepTheBetterOne resolves a same judgement by importance. The loser is
+// superseded rather than deleted, so the wording that lost stays recoverable
+// and only the better rendering reaches retrieval.
+func (store *Store) keepTheBetterOne(ctx context.Context, monad Monad, originID string, held candidate, freshImportance int) (Relation, error) {
+	if freshImportance <= held.importance {
+		_, errorValue := store.database.ExecContext(ctx,
+			`update memory set storage_strength = storage_strength + 0.25,
+			 retrieval_strength = retrieval_strength + 0.5 where memory_id = ?`,
+			held.memoryID)
+		return RelationSame, errorValue
+	}
+	memoryID, errorValue := store.insertMonadWithImportance(ctx, monad, originID, freshImportance)
+	if errorValue != nil {
+		return "", errorValue
+	}
+	if _, errorValue := store.database.ExecContext(ctx,
+		`update memory set superseded_by = ? where memory_id = ?`, memoryID, held.memoryID); errorValue != nil {
+		return "", errorValue
+	}
+	_, errorValue = store.database.ExecContext(ctx,
+		`update memory set storage_strength = storage_strength + 0.25,
+		 retrieval_strength = retrieval_strength + 0.5 where memory_id = ?`, memoryID)
+	return RelationSame, errorValue
+}
+
 func (store *Store) insertMonad(ctx context.Context, monad Monad, originID string) (string, error) {
+	return store.insertMonadWithImportance(ctx, monad, originID, 3)
+}
+
+func (store *Store) insertMonadWithImportance(ctx context.Context, monad Monad, originID string, importance int) (string, error) {
 	memoryID := newIdentifier()
 	resolved, unresolved := store.resolver.Resolve(monad.Content)
 	resolvedJSON, _ := json.Marshal(resolved)
@@ -252,11 +277,11 @@ func (store *Store) insertMonad(ctx context.Context, monad Monad, originID strin
 	defer transaction.Rollback()
 	validUntil := sql.NullString{String: monad.ValidUntil, Valid: strings.TrimSpace(monad.ValidUntil) != ""}
 	if _, errorValue := transaction.ExecContext(ctx,
-		`insert into memory(memory_id,content,kind,valid_until,resolved_entity_ids,unresolved_names,created_at,origin_id)
-		 values(?,?,?,?,?,?,?,?)`,
+		`insert into memory(memory_id,content,kind,valid_until,resolved_entity_ids,unresolved_names,created_at,origin_id,importance)
+		 values(?,?,?,?,?,?,?,?,?)`,
 		memoryID, monad.Content, string(monad.settledKind()), validUntil,
 		string(resolvedJSON), string(unresolvedJSON),
-		time.Now().UTC().Format(time.RFC3339Nano), originID); errorValue != nil {
+		time.Now().UTC().Format(time.RFC3339Nano), originID, importance); errorValue != nil {
 		return "", errorValue
 	}
 	if _, errorValue := transaction.ExecContext(ctx,

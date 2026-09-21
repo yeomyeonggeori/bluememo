@@ -13,8 +13,8 @@ import (
 // becomes a row, nothing is compared against what is already held.
 type alwaysUnrelated struct{}
 
-func (alwaysUnrelated) Judge(context.Context, string, []string) (Relation, int, error) {
-	return RelationUnrelated, -1, nil
+func (alwaysUnrelated) Judge(context.Context, string, []string) (Judgement, error) {
+	return Judgement{Relation: RelationUnrelated, TargetIndex: -1, Importance: 3}, nil
 }
 
 func TestSettlingAgainstRepetition(t *testing.T) {
@@ -42,7 +42,7 @@ func TestSettlingAgainstRepetition(t *testing.T) {
 		name  string
 		judge Judge
 	}
-	for _, one := range []arm{{"판정 없음 (지금)", alwaysUnrelated{}}, {"settle 판정", client}} {
+	for _, one := range []arm{{"판정 없음 (지금)", alwaysUnrelated{}}, {"typed 판정", typedJudge{client: client, minMargin: 0.10, sameMinMargin: 0.25, trace: true}}} {
 		store, errorValue := openStore(filepath.Join(t.TempDir(), "m.db"), client, client, registry, time.Now)
 		if errorValue != nil {
 			t.Fatal(errorValue)
