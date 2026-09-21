@@ -16,11 +16,12 @@ import (
 const reciprocalRankOffset = 60.0
 
 type Store struct {
-	database   *sql.DB
-	decomposer Decomposer
-	embedder   Embedder
-	resolver   EntityResolver
-	now        func() time.Time
+	database     *sql.DB
+	decomposer   Decomposer
+	embedder     Embedder
+	triggerMaker TriggerMaker
+	resolver     EntityResolver
+	now          func() time.Time
 }
 
 type Ranked struct {
@@ -38,7 +39,7 @@ func openStore(path string, decomposer Decomposer, embedder Embedder, resolver E
 	if errorValue != nil {
 		return nil, errorValue
 	}
-	if _, errorValue = database.Exec(schemaStatements + settlingSchema); errorValue != nil {
+	if _, errorValue = database.Exec(schemaStatements + settlingSchema + triggerSchema); errorValue != nil {
 		return nil, errorValue
 	}
 	return &Store{database: database, decomposer: decomposer, embedder: embedder, resolver: resolver, now: now}, nil
@@ -155,6 +156,13 @@ func (store *Store) search(ctx context.Context, monads []Monad, limit int) ([]Ra
 		}
 		for _, memoryID := range lexical {
 			scoreByID[memoryID.id] += 1.0 / (reciprocalRankOffset + float64(memoryID.rank))
+		}
+		reached, errorValue := store.rankByTrigger(ctx, vectors[index], limit*3)
+		if errorValue != nil {
+			return nil, errorValue
+		}
+		for _, hit := range reached {
+			scoreByID[hit.memoryID] += 1.0 / (reciprocalRankOffset + float64(hit.rank))
 		}
 	}
 

@@ -28,6 +28,10 @@ create table if not exists relation (
 
 type Relation string
 
+// rehearsalImportanceFloor keeps the write-time cost off items nobody will
+// look for. Every trigger is a model call and an embedding.
+const rehearsalImportanceFloor = 3
+
 const (
 	RelationSame      Relation = "same"
 	RelationUpdates   Relation = "updates"
@@ -159,9 +163,14 @@ func (store *Store) settleProposition(ctx context.Context, judge Judge, monad Mo
 		return store.keepTheBetterOne(ctx, monad, originID, candidates[targetIndex], judgement.Importance)
 	}
 
-	memoryID, errorValue := store.insertMonad(ctx, monad, originID)
+	memoryID, errorValue := store.insertMonadWithImportance(ctx, monad, originID, judgement.Importance)
 	if errorValue != nil {
 		return "", errorValue
+	}
+	if judgement.Importance >= rehearsalImportanceFloor {
+		if errorValue := store.rehearse(ctx, memoryID, monad.Content); errorValue != nil {
+			return "", errorValue
+		}
 	}
 	switch relation {
 	case RelationUpdates:
