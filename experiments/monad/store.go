@@ -16,12 +16,13 @@ import (
 const reciprocalRankOffset = 60.0
 
 type Store struct {
-	database     *sql.DB
-	decomposer   Decomposer
-	embedder     Embedder
-	triggerMaker TriggerMaker
-	resolver     EntityResolver
-	now          func() time.Time
+	database        *sql.DB
+	decomposer      Decomposer
+	embedder        Embedder
+	triggerMaker    TriggerMaker
+	droppedTriggers []string
+	resolver        EntityResolver
+	now             func() time.Time
 }
 
 type Ranked struct {

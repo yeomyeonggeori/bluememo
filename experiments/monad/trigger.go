@@ -128,7 +128,20 @@ func (store *Store) rehearse(ctx context.Context, memoryID string, proposition s
 	if errorValue != nil {
 		return errorValue
 	}
+	ownVector, errorValue := store.vectorOf(ctx, memoryID)
+	if errorValue != nil {
+		return errorValue
+	}
+	otherVectors, errorValue := store.vectorsExcept(ctx, memoryID)
+	if errorValue != nil {
+		return errorValue
+	}
+
 	for index, trigger := range triggers {
+		if !picksOutOne(vectors[index], ownVector, otherVectors) {
+			store.droppedTriggers = append(store.droppedTriggers, trigger.Phrase)
+			continue
+		}
 		triggerID := newIdentifier()
 		if _, errorValue := store.database.ExecContext(ctx,
 			`insert into trigger_phrase(trigger_id, memory_id, phrase, route) values(?,?,?,?)`,
@@ -198,4 +211,48 @@ func (store *Store) rankByTrigger(ctx context.Context, queryVector []float32, li
 		}
 	}
 	return hits, nil
+}
+
+// specificityMargin is how much closer a phrase must sit to the memory it
+// rehearses than to the rest of the store. A phrase that is no nearer its own
+// memory than to everything else does not pick that memory out; it drags
+// whatever holds it into queries it has nothing to do with.
+const specificityMargin = 0.05
+
+func picksOutOne(phrase []float32, own []float32, others [][]float32) bool {
+	if len(others) == 0 {
+		return true
+	}
+	total := 0.0
+	for _, other := range others {
+		total += cosineSimilarity(phrase, other)
+	}
+	return cosineSimilarity(phrase, own) > total/float64(len(others))+specificityMargin
+}
+
+func (store *Store) vectorOf(ctx context.Context, memoryID string) ([]float32, error) {
+	blob := []byte{}
+	if errorValue := store.database.QueryRowContext(ctx,
+		`select vector from memory_vector where memory_id = ?`, memoryID).Scan(&blob); errorValue != nil {
+		return nil, errorValue
+	}
+	return decodeVector(blob), nil
+}
+
+func (store *Store) vectorsExcept(ctx context.Context, memoryID string) ([][]float32, error) {
+	rows, errorValue := store.database.QueryContext(ctx,
+		`select vector from memory_vector where memory_id <> ?`, memoryID)
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	vectors := [][]float32{}
+	for rows.Next() {
+		blob := []byte{}
+		if errorValue := rows.Scan(&blob); errorValue != nil {
+			return nil, errorValue
+		}
+		vectors = append(vectors, decodeVector(blob))
+	}
+	return vectors, nil
 }
