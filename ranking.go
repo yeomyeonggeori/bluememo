@@ -1,15 +1,11 @@
 package bluememo
 
 import (
-	"math"
 	"sort"
 	"time"
 )
 
-const (
-	reciprocalRankOffset     = 60.0
-	episodeDecayHalfLifeDays = 90.0
-)
+const reciprocalRankOffset = 60.0
 
 type ScoredFact struct {
 	Fact        Fact    `json:"fact"`
@@ -23,7 +19,7 @@ func RankFacts(hits []RankedFact, referenceTime time.Time) []ScoredFact {
 	for _, hit := range hits {
 		scoredFacts = append(scoredFacts, ScoredFact{
 			Fact:        hit.Fact,
-			Score:       adjustedScore(hit, referenceTime),
+			Score:       reciprocalRankScore(hit.VectorRank) + reciprocalRankScore(hit.LexicalRank),
 			VectorRank:  hit.VectorRank,
 			LexicalRank: hit.LexicalRank,
 		})
@@ -40,21 +36,52 @@ func RankFacts(hits []RankedFact, referenceTime time.Time) []ScoredFact {
 	return scoredFacts
 }
 
-func adjustedScore(hit RankedFact, referenceTime time.Time) float64 {
-	score := reciprocalRankScore(hit.VectorRank) + reciprocalRankScore(hit.LexicalRank)
-	if hit.Fact.Kind != FactKindEpisode {
-		return score
-	}
-	ageDays := referenceTime.Sub(hit.Fact.ValidFrom).Hours() / 24
-	if ageDays <= 0 {
-		return score
-	}
-	return score * math.Exp(-ageDays/episodeDecayHalfLifeDays)
-}
-
 func reciprocalRankScore(rank int) float64 {
 	if rank <= 0 {
 		return 0
 	}
 	return 1 / (reciprocalRankOffset + float64(rank))
+}
+
+func ExpandWithSiblings(scoredFacts []ScoredFact, siblings []Fact, limit int) []ScoredFact {
+	if len(scoredFacts) == 0 || len(siblings) == 0 {
+		return limitScoredFacts(scoredFacts, limit)
+	}
+	leadingEpisodeID := scoredFacts[0].Fact.EpisodeID
+	if leadingEpisodeID == "" {
+		return limitScoredFacts(scoredFacts, limit)
+	}
+	alreadyPresent := make(map[string]bool, len(scoredFacts))
+	for _, scoredFact := range scoredFacts {
+		alreadyPresent[scoredFact.Fact.FactID] = true
+	}
+	expanded := []ScoredFact{scoredFacts[0]}
+	for _, sibling := range siblings {
+		if sibling.EpisodeID != leadingEpisodeID || alreadyPresent[sibling.FactID] {
+			continue
+		}
+		alreadyPresent[sibling.FactID] = true
+		expanded = append(expanded, ScoredFact{Fact: sibling, Score: scoredFacts[0].Score})
+	}
+	return limitScoredFacts(append(expanded, scoredFacts[1:]...), limit)
+}
+
+func MergeRankedFacts(primary []RankedFact, secondary []RankedFact) []RankedFact {
+	position := make(map[string]int, len(primary))
+	merged := append([]RankedFact{}, primary...)
+	for index, hit := range merged {
+		position[hit.Fact.FactID] = index
+	}
+	for _, hit := range secondary {
+		index, alreadyRanked := position[hit.Fact.FactID]
+		if !alreadyRanked {
+			position[hit.Fact.FactID] = len(merged)
+			merged = append(merged, hit)
+			continue
+		}
+		if merged[index].VectorRank == 0 || (hit.VectorRank > 0 && hit.VectorRank < merged[index].VectorRank) {
+			merged[index].VectorRank = hit.VectorRank
+		}
+	}
+	return merged
 }

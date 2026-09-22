@@ -150,10 +150,20 @@ func TestIngestTemporaryFactsCarryTheirExpiry(t *testing.T) {
 	if result.Facts[0].ValidUntil != time.Date(2026, 9, 6, 0, 0, 0, 0, time.UTC) {
 		t.Fatalf("expected validUntil at the end of the day, got %s", result.Facts[0].ValidUntil)
 	}
+	fixture.model.Queue(bluememotest.IngestResponse(bluememotest.IngestFact{
+		Content: "이샘플 answers in Korean for this quarter", Kind: bluememo.FactKindPreference, Relation: bluememo.FactRelationNew, ValidUntil: "2026-12-31",
+	}))
+	boundedPreference, errorValue := fixture.ingester.Ingest(context.Background(), fixture.request("이샘플 quarter preference"))
+	if errorValue != nil {
+		t.Fatalf("a preference bounded to one quarter should be accepted: %v", errorValue)
+	}
+	if boundedPreference.Facts[0].ValidUntil.IsZero() {
+		t.Fatalf("the bounded preference lost its expiry")
+	}
+
 	for name, fact := range map[string]bluememotest.IngestFact{
 		"temporary without expiry": {Content: "이샘플 is away", Kind: bluememo.FactKindTemporary, Relation: bluememo.FactRelationNew},
 		"expiry in the past":       {Content: "이샘플 was away", Kind: bluememo.FactKindTemporary, Relation: bluememo.FactRelationNew, ValidUntil: "2026-08-01"},
-		"durable fact with expiry": {Content: "이샘플 leads the team", Kind: bluememo.FactKindFact, Relation: bluememo.FactRelationNew, ValidUntil: "2026-09-05"},
 	} {
 		fixture.model.Queue(bluememotest.IngestResponse(fact))
 		_, errorValue := fixture.ingester.Ingest(context.Background(), fixture.request("이샘플 availability "+name))
