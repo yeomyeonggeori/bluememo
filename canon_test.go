@@ -1,8 +1,10 @@
 package bluememo_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"os"
 	"regexp"
 	"slices"
@@ -90,6 +92,14 @@ func sorted(values []string) []string {
 	copied := slices.Clone(values)
 	slices.Sort(copied)
 	return copied
+}
+
+func TestOpenRefusesToGuessWhereTheMemoryLives(t *testing.T) {
+	for _, path := range []string{"", "   "} {
+		if _, errorValue := bluememo.Open(context.Background(), path, bluememo.Configuration{}); !errors.Is(errorValue, bluememo.ErrNoPath) {
+			t.Errorf("Open(%q) returned %v, want ErrNoPath", path, errorValue)
+		}
+	}
 }
 
 func TestTheDatabaseFileIsReadableOnlyByItsOwner(t *testing.T) {

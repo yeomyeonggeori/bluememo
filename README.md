@@ -12,7 +12,7 @@ The design and the measurements behind it are in [issue #3](https://github.com/y
 
 ## One file, one person
 
-`Open` takes a path and creates it with mode `0600`. The store has no access-control model: whoever can open the file can read all of it, so a host that serves several people gives each one their own file and opens it as that person. Nothing is shared between files.
+`Open` takes a path and creates it with mode `0600`. There is no default location: the host decides whose file it is, and an empty path fails with `ErrNoPath`. The store has no access-control model: whoever can open the file can read all of it, so a host that serves several people gives each one their own file and opens it as that person. Nothing is shared between files.
 
 It depends on the standard library and `modernc.org/sqlite`, which is pure Go. Search is exact: every live vector is compared to the query. On an Apple-silicon laptop a recall over 10,000 memories with 1,024-dimension vectors takes about 85 ms. Settling compares each new sentence with every live memory, about 30 ms at that size, which the judge's model calls outweigh.
 

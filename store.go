@@ -54,9 +54,15 @@ type Note struct {
 	IsExplicit  bool
 }
 
-var ErrEmptyNote = errors.New("a note needs a body")
+var (
+	ErrEmptyNote = errors.New("a note needs a body")
+	ErrNoPath    = errors.New("a memory store needs the path of its database file")
+)
 
 func Open(ctx context.Context, path string, configuration Configuration) (*Store, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, ErrNoPath
+	}
 	if errorValue := createPrivateFile(path); errorValue != nil {
 		return nil, errorValue
 	}
