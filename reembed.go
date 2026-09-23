@@ -2,70 +2,94 @@ package bluememo
 
 import (
 	"context"
-	"errors"
-	"strconv"
-	"strings"
+	"fmt"
 )
 
-const DefaultReembedBatchSize = 32
-
-type ReembedJobHandler struct {
-	Store     Store
-	BatchSize int
+type ReembedReport struct {
+	Memories int `json:"memories"`
+	Triggers int `json:"triggers"`
 }
 
-func (handler ReembedJobHandler) Handle(ctx context.Context, job Job) error {
-	embeddingModel := strings.TrimSpace(job.SubjectID)
-	if embeddingModel == "" {
-		return TerminalJobError{Cause: errors.New("reembed job names no embedding model")}
+type staleText struct {
+	identifier string
+	text       string
+}
+
+func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, error) {
+	if store.configuration.Embedder == nil {
+		return ReembedReport{}, ErrNoEmbedder
 	}
-	if embeddingModel != handler.Store.EmbeddingModel {
-		return TerminalJobError{Cause: errors.New("reembed job model does not match the configured embedder model")}
+	if batchSize <= 0 {
+		batchSize = 64
 	}
-	if handler.Store.Embedder == nil || handler.Store.Facts == nil {
-		return TerminalJobError{Cause: errors.New("memory embedder or fact repository is not configured")}
+	memoryCount, errorValue := store.reembedTable(ctx, batchSize,
+		`select memory_id, content from memory where embedding_model <> ? or embedding is null limit ?`,
+		`update memory set embedding = ?, embedding_model = ? where memory_id = ?`)
+	if errorValue != nil {
+		return ReembedReport{}, errorValue
 	}
+	triggerCount, errorValue := store.reembedTable(ctx, batchSize,
+		`select trigger_id, phrase from memory_trigger where embedding_model <> ? limit ?`,
+		`update memory_trigger set embedding = ?, embedding_model = ? where trigger_id = ?`)
+	return ReembedReport{Memories: memoryCount, Triggers: triggerCount}, errorValue
+}
+
+func (store *Store) reembedTable(ctx context.Context, batchSize int, selectStale string, updateEmbedding string) (int, error) {
+	total := 0
 	for {
-		moved, errorValue := handler.reembedBatch(ctx, embeddingModel)
-		if errorValue != nil {
+		stale, errorValue := store.staleTexts(ctx, selectStale, batchSize)
+		if errorValue != nil || len(stale) == 0 {
+			return total, errorValue
+		}
+		if errorValue := store.replaceEmbeddings(ctx, stale, updateEmbedding); errorValue != nil {
+			return total, errorValue
+		}
+		total += len(stale)
+	}
+}
+
+func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSize int) ([]staleText, error) {
+	rows, errorValue := store.database.QueryContext(ctx, selectStale, store.configuration.EmbeddingModel, batchSize)
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	stale := []staleText{}
+	for rows.Next() {
+		var entry staleText
+		if errorValue := rows.Scan(&entry.identifier, &entry.text); errorValue != nil {
+			return nil, errorValue
+		}
+		stale = append(stale, entry)
+	}
+	return stale, rows.Err()
+}
+
+func (store *Store) replaceEmbeddings(ctx context.Context, stale []staleText, updateEmbedding string) error {
+	texts := make([]string, len(stale))
+	for index, entry := range stale {
+		texts[index] = entry.text
+	}
+	embeddings, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, texts)
+	if errorValue != nil {
+		return fmt.Errorf("reembedding failed: %w", errorValue)
+	}
+	if len(embeddings) != len(stale) {
+		return fmt.Errorf("embedder returned %d embeddings for %d texts", len(embeddings), len(stale))
+	}
+	transaction, errorValue := store.database.BeginTx(ctx, nil)
+	if errorValue != nil {
+		return errorValue
+	}
+	defer transaction.Rollback()
+	for index, entry := range stale {
+		if errorValue := ValidateEmbedding(embeddings[index]); errorValue != nil {
+			return fmt.Errorf("reembedding %s: %w", entry.identifier, errorValue)
+		}
+		if _, errorValue := transaction.ExecContext(ctx, updateEmbedding,
+			encodeEmbedding(embeddings[index]), store.configuration.EmbeddingModel, entry.identifier); errorValue != nil {
 			return errorValue
 		}
-		if moved == 0 {
-			return nil
-		}
 	}
-}
-
-func (handler ReembedJobHandler) reembedBatch(ctx context.Context, embeddingModel string) (int, error) {
-	facts, errorValue := handler.Store.Facts.ListLiveFactsNotEmbeddedWith(ctx, embeddingModel, handler.batchSize(), handler.Store.now())
-	if errorValue != nil || len(facts) == 0 {
-		return 0, errorValue
-	}
-	contents := make([]string, 0, len(facts))
-	for _, fact := range facts {
-		contents = append(contents, fact.Content)
-	}
-	embeddings, errorValue := handler.Store.Embedder.EmbedDocuments(ctx, contents)
-	if errorValue != nil {
-		return 0, errorValue
-	}
-	if len(embeddings) != len(facts) {
-		return 0, errors.New("embedder answered " + strconv.Itoa(len(embeddings)) + " embeddings for " + strconv.Itoa(len(facts)) + " facts")
-	}
-	for index, fact := range facts {
-		if errorValue := ValidateEmbedding(embeddings[index]); errorValue != nil {
-			return 0, errorValue
-		}
-		if errorValue := handler.Store.Facts.ReplaceFactEmbedding(ctx, fact.FactID, embeddingModel, embeddings[index]); errorValue != nil {
-			return 0, errorValue
-		}
-	}
-	return len(facts), nil
-}
-
-func (handler ReembedJobHandler) batchSize() int {
-	if handler.BatchSize > 0 {
-		return handler.BatchSize
-	}
-	return DefaultReembedBatchSize
+	return transaction.Commit()
 }

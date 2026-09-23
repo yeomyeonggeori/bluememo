@@ -16,22 +16,6 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        postgres: ["postgres:16", "pgvector/pgvector:pg16"]
-    services:
-      postgres:
-        image: ${{ matrix.postgres }}
-        env:
-          POSTGRES_USER: bluememo
-          POSTGRES_PASSWORD: bluememo
-          POSTGRES_DB: bluememo
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U bluememo"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -47,6 +31,5 @@ jobs:
             exit 1
           fi
       - run: go vet ./...
-      - run: go test ./...
-        env:
-          BLUEMEMO_TEST_POSTGRES_URL: postgres://bluememo:bluememo@127.0.0.1:5432/bluememo?sslmode=disable
+      - run: go test -race ./...
+      - run: go run ./examples/recall
