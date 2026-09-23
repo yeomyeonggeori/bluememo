@@ -12,26 +12,20 @@ import (
 	"github.com/yeomyeonggeori/bluememo"
 )
 
+const EmbeddingDimensionCount = 256
+
 type HashEmbedder struct {
 	Failure error
-	mutex   sync.Mutex
-	calls   int
 }
 
-func (embedder *HashEmbedder) EmbedQuery(_ context.Context, text string) ([]float32, error) {
-	embedder.mutex.Lock()
-	embedder.calls++
-	embedder.mutex.Unlock()
+func (embedder HashEmbedder) EmbedQuery(_ context.Context, text string) ([]float32, error) {
 	if embedder.Failure != nil {
 		return nil, embedder.Failure
 	}
 	return Embed(text), nil
 }
 
-func (embedder *HashEmbedder) EmbedDocuments(_ context.Context, texts []string) ([][]float32, error) {
-	embedder.mutex.Lock()
-	embedder.calls++
-	embedder.mutex.Unlock()
+func (embedder HashEmbedder) EmbedDocuments(_ context.Context, texts []string) ([][]float32, error) {
 	if embedder.Failure != nil {
 		return nil, embedder.Failure
 	}
@@ -42,18 +36,12 @@ func (embedder *HashEmbedder) EmbedDocuments(_ context.Context, texts []string) 
 	return embeddings, nil
 }
 
-func (embedder *HashEmbedder) Calls() int {
-	embedder.mutex.Lock()
-	defer embedder.mutex.Unlock()
-	return embedder.calls
-}
-
 func Embed(text string) []float32 {
-	embedding := make([]float32, bluememo.EmbeddingDimensionCount)
+	embedding := make([]float32, EmbeddingDimensionCount)
 	for _, term := range strings.Fields(strings.ToLower(text)) {
 		hasher := fnv.New32a()
-		_, _ = hasher.Write([]byte(term))
-		embedding[int(hasher.Sum32()%uint32(bluememo.EmbeddingDimensionCount))] += 1
+		_, _ = hasher.Write([]byte(strings.Trim(term, ".,?!")))
+		embedding[int(hasher.Sum32()%uint32(EmbeddingDimensionCount))] += 1
 	}
 	var norm float64
 	for _, value := range embedding {
@@ -72,74 +60,118 @@ func Embed(text string) []float32 {
 
 type ScriptedModel struct {
 	mutex     sync.Mutex
-	responses []string
-	Failure   error
+	responses map[string][]string
 	Requests  []bluememo.StructuredRequest
 }
 
-func NewScriptedModel(responses ...string) *ScriptedModel {
-	return &ScriptedModel{responses: responses}
+func NewScriptedModel() *ScriptedModel {
+	return &ScriptedModel{responses: map[string][]string{}}
 }
 
-func (scripted *ScriptedModel) Queue(response any) {
+func (scripted *ScriptedModel) QueueDecomposition(propositions ...bluememo.Proposition) {
+	for index := range propositions {
+		if propositions[index].Expiry == "" {
+			propositions[index].Expiry = bluememo.ExpiryNone
+		}
+	}
+	if propositions == nil {
+		propositions = []bluememo.Proposition{}
+	}
+	scripted.queue("memory_decomposition", map[string]any{"propositions": propositions})
+}
+
+func (scripted *ScriptedModel) QueueTriggers(phrases ...string) {
+	if phrases == nil {
+		phrases = []string{}
+	}
+	scripted.queue("memory_trigger", map[string]any{"phrases": phrases})
+}
+
+func (scripted *ScriptedModel) queue(schemaName string, response any) {
 	scripted.mutex.Lock()
 	defer scripted.mutex.Unlock()
 	document, _ := json.Marshal(response)
-	scripted.responses = append(scripted.responses, string(document))
+	scripted.responses[schemaName] = append(scripted.responses[schemaName], string(document))
 }
 
 func (scripted *ScriptedModel) GenerateStructured(_ context.Context, request bluememo.StructuredRequest) (string, error) {
 	scripted.mutex.Lock()
 	defer scripted.mutex.Unlock()
 	scripted.Requests = append(scripted.Requests, request)
-	if scripted.Failure != nil {
-		return "", scripted.Failure
-	}
-	if len(scripted.responses) == 0 {
-		return "", errors.New("scripted model has no response left")
-	}
-	response := scripted.responses[0]
-	scripted.responses = scripted.responses[1:]
-	return response, nil
-}
-
-func (scripted *ScriptedModel) RequestCount() int {
-	scripted.mutex.Lock()
-	defer scripted.mutex.Unlock()
-	return len(scripted.Requests)
-}
-
-func (scripted *ScriptedModel) LastSubject() string {
-	scripted.mutex.Lock()
-	defer scripted.mutex.Unlock()
-	if len(scripted.Requests) == 0 {
-		return ""
-	}
-	return scripted.Requests[len(scripted.Requests)-1].Subject
-}
-
-type IngestFact struct {
-	Content           string   `json:"content"`
-	Kind              string   `json:"kind"`
-	CircleIDs         []string `json:"circleIDs"`
-	SubjectPersonHint string   `json:"subjectPersonHint"`
-	Relation          string   `json:"relation"`
-	RelatedFactID     string   `json:"relatedFactID"`
-	ValidUntil        string   `json:"validUntil"`
-}
-
-func IngestResponse(facts ...IngestFact) map[string]any {
-	if facts == nil {
-		facts = []IngestFact{}
-	}
-	for index := range facts {
-		if facts[index].CircleIDs == nil {
-			facts[index].CircleIDs = []string{}
+	queued := scripted.responses[request.SchemaName]
+	if len(queued) == 0 {
+		if request.SchemaName == "memory_trigger" {
+			return `{"phrases":[]}`, nil
 		}
+		return "", errors.New("scripted model has no " + request.SchemaName + " response left")
 	}
-	return map[string]any{"facts": facts}
+	scripted.responses[request.SchemaName] = queued[1:]
+	return queued[0], nil
 }
 
-func ProfileResponse(identityLines []string, currentLines []string) map[string]any {
-	return map[string]any{"identityLines": identityLines, "currentLines": currentLines}
+type ScriptedJudge struct {
+	mutex      sync.Mutex
+	judgements []bluememo.Judgement
+	Seen       [][]string
+}
+
+func (judge *ScriptedJudge) Queue(judgements ...bluememo.Judgement) {
+	judge.mutex.Lock()
+	defer judge.mutex.Unlock()
+	judge.judgements = append(judge.judgements, judgements...)
+}
+
+func (judge *ScriptedJudge) Judge(_ context.Context, _ string, candidates []string) (bluememo.Judgement, error) {
+	judge.mutex.Lock()
+	defer judge.mutex.Unlock()
+	judge.Seen = append(judge.Seen, candidates)
+	if len(judge.judgements) == 0 {
+		return bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: bluememo.DefaultImportance}, nil
+	}
+	next := judge.judgements[0]
+	judge.judgements = judge.judgements[1:]
+	return next, nil
+}
+
+type ScriptedChooser struct {
+	Distributions map[string]map[string]float64
+	Failure       error
+}
+
+func (chooser ScriptedChooser) Choose(_ context.Context, request bluememo.ChoiceRequest) (map[string]float64, error) {
+	if chooser.Failure != nil {
+		return nil, chooser.Failure
+	}
+	return chooser.Distributions[request.Instruction], nil
+}
+
+type TableEmbedder struct {
+	Vectors map[string][]float32
+}
+
+func (embedder TableEmbedder) EmbedQuery(_ context.Context, text string) ([]float32, error) {
+	return embedder.embed(text), nil
+}
+
+func (embedder TableEmbedder) EmbedDocuments(_ context.Context, texts []string) ([][]float32, error) {
+	embeddings := make([][]float32, 0, len(texts))
+	for _, text := range texts {
+		embeddings = append(embeddings, embedder.embed(text))
+	}
+	return embeddings, nil
+}
+
+func (embedder TableEmbedder) embed(text string) []float32 {
+	if vector, isListed := embedder.Vectors[text]; isListed {
+		return vector
+	}
+	return Embed(text)
+}
+
+func Axes(weights map[int]float32) []float32 {
+	vector := make([]float32, EmbeddingDimensionCount)
+	for axis, weight := range weights {
+		vector[axis] = weight
+	}
+	return vector
 }

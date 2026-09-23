@@ -2,73 +2,32 @@ package bluememo_test
 
 import (
 	"context"
-	"errors"
 	"testing"
-	"time"
 
 	"github.com/yeomyeonggeori/bluememo"
 	"github.com/yeomyeonggeori/bluememo/bluememotest"
 )
 
-func TestReembedRejectsAnObsoleteModelBeforeChangingFacts(t *testing.T) {
-	repository := bluememo.NewInMemoryRepository()
-	now := time.Now().UTC()
-	episode := bluememo.Episode{EpisodeID: "original-episode", SourceKind: bluememo.EpisodeSourceKindExplicit, SourceID: "original-source", RequesterPersonID: "reader", Content: "source", OccurredAt: now}
-	fact := bluememo.Fact{FactID: "original-fact", EpisodeID: episode.EpisodeID, OwnerPersonID: "reader", Kind: bluememo.FactKindFact, Content: "a source fact", EmbeddingModel: "original-model", ValidFrom: now}
-	if errorValue := repository.SaveEpisode(context.Background(), bluememo.EpisodeWrite{Episode: episode, Facts: []bluememo.FactWrite{{Fact: fact}}}); errorValue != nil {
+func TestReembedMovesEveryVectorOntoTheCurrentModel(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 4})
+	testFixture.model.QueueTriggers("아침에만 커피를")
+	testFixture.settle(t, "커피", statement("박예시는 아침에만 커피를 마신다."))
+	testFixture.store.Close()
+
+	moved, errorValue := bluememo.Open(context.Background(), testFixture.path, bluememo.Configuration{Embedder: bluememotest.HashEmbedder{}, EmbeddingModel: "hash-v2"})
+	if errorValue != nil {
 		t.Fatal(errorValue)
 	}
-	store := bluememo.Store{Facts: repository, Embedder: &bluememotest.HashEmbedder{}, EmbeddingModel: "current-model"}
-	errorValue := (bluememo.ReembedJobHandler{Store: store}).Handle(context.Background(), bluememo.Job{Kind: bluememo.JobKindReembed, SubjectID: "old-model"})
-	var terminal bluememo.TerminalJobError
-	if !errors.As(errorValue, &terminal) {
-		t.Fatalf("an obsolete model must fail before embedding, got %v", errorValue)
+	defer moved.Close()
+	if result, _ := moved.Recall(context.Background(), "박예시는 아침에만 커피를 마신다", 1); result.Memories[0].VectorRank != 0 {
+		t.Fatalf("a vector from another model must not rank, got %+v", result.Memories[0])
 	}
-	stored, _ := repository.FindFact(fact.FactID)
-	if stored.EmbeddingModel != "original-model" {
-		t.Fatalf("obsolete job changed the fact's embedding model: %+v", stored)
+	report, errorValue := moved.Reembed(context.Background(), 0)
+	if errorValue != nil || report.Memories != 1 || report.Triggers != 1 {
+		t.Fatalf("expected one memory and one trigger reembedded, got %+v (%v)", report, errorValue)
 	}
-}
-
-func TestSearchOnlyRanksVectorsFromTheStoreModelAndReembedMovesTheRest(t *testing.T) {
-	now := time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)
-	repository := bluememo.NewInMemoryRepository()
-	embedder := &bluememotest.HashEmbedder{}
-	store := bluememo.Store{Facts: repository, Jobs: repository, Embedder: embedder, EmbeddingModel: "new-model", Now: func() time.Time { return now }}
-	episode := bluememo.Episode{EpisodeID: "episode-1", SourceKind: bluememo.EpisodeSourceKindExplicit, SourceID: "source-1", RequesterPersonID: "alice", Content: "transcript", OccurredAt: now}
-	content := "the standup moved to 10am"
-	oldEmbedding, _ := embedder.EmbedDocuments(context.Background(), []string{content})
-	fact := bluememo.Fact{FactID: "fact-1", EpisodeID: episode.EpisodeID, OwnerPersonID: "alice", SubjectPersonID: "alice", Kind: bluememo.FactKindFact, Content: content, EmbeddingModel: "old-model", ValidFrom: now.Add(-time.Hour)}
-	if errorValue := repository.SaveEpisode(context.Background(), bluememo.EpisodeWrite{Episode: episode, Facts: []bluememo.FactWrite{{Fact: fact, Embedding: oldEmbedding[0]}}}); errorValue != nil {
-		t.Fatal(errorValue)
+	if result, _ := moved.Recall(context.Background(), "박예시는 아침에만 커피를 마신다", 1); result.Memories[0].VectorRank != 1 {
+		t.Fatalf("after reembedding the vector should rank again, got %+v", result.Memories[0])
 	}
-	reader := bluememo.NewReader("alice", nil, nil, 0, nil)
-
-	before := searchRanks(t, store, reader, content)
-	if before.VectorRank != 0 || before.LexicalRank == 0 {
-		t.Fatalf("expected a fact embedded by another model to rank lexically only, got %+v", before)
-	}
-
-	job, isNew, errorValue := store.EnqueueReembed(context.Background())
-	if errorValue != nil || !isNew {
-		t.Fatalf("expected a reembed job, got new=%v error=%v", isNew, errorValue)
-	}
-	if errorValue := (bluememo.ReembedJobHandler{Store: store}).Handle(context.Background(), job); errorValue != nil {
-		t.Fatalf("expected the reembed to run: %v", errorValue)
-	}
-
-	after := searchRanks(t, store, reader, content)
-	if after.VectorRank != 1 || after.Fact.EmbeddingModel != "new-model" {
-		t.Fatalf("expected the fact to rank by vector under the store model after reembedding, got %+v", after)
-	}
-}
-
-func searchRanks(t *testing.T, store bluememo.Store, reader bluememo.Reader, text string) bluememo.RankedFact {
-	t.Helper()
-	embedding, _ := store.Embedder.EmbedQuery(context.Background(), text)
-	hits, errorValue := store.Facts.SearchFacts(context.Background(), bluememo.FactSearchQuery{Reader: reader, Text: text, Embedding: embedding, EmbeddingModel: store.EmbeddingModel, ReferenceTime: time.Date(2026, 9, 3, 12, 0, 0, 0, time.UTC)})
-	if errorValue != nil || len(hits) != 1 {
-		t.Fatalf("expected one hit, got %d (%v)", len(hits), errorValue)
-	}
-	return hits[0]
 }

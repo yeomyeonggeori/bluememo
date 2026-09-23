@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
+	"path/filepath"
 
 	"github.com/yeomyeonggeori/bluememo"
+	"github.com/yeomyeonggeori/bluememo/bluememotest"
 )
 
 func main() {
@@ -17,45 +18,51 @@ func main() {
 }
 
 func run() error {
-	contextValue := context.Background()
-	referenceTime := time.Date(2026, 9, 2, 9, 0, 0, 0, time.UTC)
-	repository := bluememo.NewInMemoryRepository()
-	episode := bluememo.Episode{
-		EpisodeID:         "example-episode",
-		SourceKind:        bluememo.EpisodeSourceKindExplicit,
-		SourceID:          "example-source",
-		RequesterPersonID: "person-owner",
-		Content:           "synthetic example facts",
-		OccurredAt:        referenceTime,
-	}
-	facts := []bluememo.FactWrite{
-		{Fact: privateFact("owner-fact", episode.EpisodeID, "person-owner", "이샘플 prefers concise project summaries", referenceTime)},
-		{Fact: privateFact("other-fact", episode.EpisodeID, "person-other", "박예시 prefers detailed project summaries", referenceTime)},
-	}
-	if errorValue := repository.SaveEpisode(contextValue, bluememo.EpisodeWrite{Episode: episode, Facts: facts}); errorValue != nil {
-		return errorValue
-	}
-	store := bluememo.Store{Facts: repository, Now: func() time.Time { return referenceTime }}
-	reader := bluememo.NewReader("person-owner", nil, nil, 0, nil)
-	recall, errorValue := store.Recall(contextValue, bluememo.RecallRequest{Reader: reader, Query: "project summaries"})
+	ctx := context.Background()
+	directory, errorValue := os.MkdirTemp("", "bluememo-example")
 	if errorValue != nil {
 		return errorValue
 	}
-	if len(recall.Facts) != 1 || recall.Facts[0].Fact.Content != "이샘플 prefers concise project summaries" {
-		return fmt.Errorf("expected the reader to recall their own private fact only, got %+v", recall.Facts)
-	}
-	fmt.Printf("The reader can recall: %s\n", recall.Facts[0].Fact.Content)
-	return nil
-}
+	defer os.RemoveAll(directory)
 
-func privateFact(factID string, episodeID string, ownerPersonID string, content string, validFrom time.Time) bluememo.Fact {
-	return bluememo.Fact{
-		FactID:          factID,
-		EpisodeID:       episodeID,
-		OwnerPersonID:   ownerPersonID,
-		SubjectPersonID: ownerPersonID,
-		Kind:            bluememo.FactKindPreference,
-		Content:         content,
-		ValidFrom:       validFrom,
+	model := bluememotest.NewScriptedModel()
+	model.QueueDecomposition(
+		bluememo.Proposition{Content: "이샘플은 여명거리의 CTO이다.", IsStatic: true},
+		bluememo.Proposition{Content: "이샘플은 릴리스 때 admind와 capabilityd를 함께 올린다."},
+	)
+	store, errorValue := bluememo.Open(ctx, filepath.Join(directory, "memory.db"), bluememo.Configuration{
+		Embedder:       bluememotest.HashEmbedder{},
+		EmbeddingModel: "hash",
+		Model:          model,
+		Judge:          &bluememotest.ScriptedJudge{},
+	})
+	if errorValue != nil {
+		return errorValue
 	}
+	defer store.Close()
+
+	if errorValue := store.Memorize(ctx, bluememo.Note{Body: "나 여명거리 CTO고, 릴리스 땐 admind랑 capabilityd 같이 올려", SpeakerName: "이샘플", IsExplicit: true}); errorValue != nil {
+		return errorValue
+	}
+	report, errorValue := store.Settle(ctx)
+	if errorValue != nil {
+		return errorValue
+	}
+	fmt.Printf("settled: %+v\n", report)
+
+	profile, errorValue := store.Profile(ctx)
+	if errorValue != nil {
+		return errorValue
+	}
+	for _, memory := range profile {
+		fmt.Println("profile:", memory.Content)
+	}
+	result, errorValue := store.Recall(ctx, "릴리스 때 뭘 같이 올려?", 3)
+	if errorValue != nil {
+		return errorValue
+	}
+	for _, entry := range result.Memories {
+		fmt.Printf("recall (%s): %s\n", result.Mode, entry.Memory.Content)
+	}
+	return nil
 }
