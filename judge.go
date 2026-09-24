@@ -50,65 +50,73 @@ type DistributionJudge struct {
 	SameMargin float64
 }
 
-const RelationInstruction = `너는 기억 저장소의 통합 판정자다. 새 명제 하나와, 저장소가 이미 갖고 있는 후보 명제 목록을 받는다.
-새 명제가 후보 중 하나에 대해 어떤 관계인지 판정한다.
+const RelationInstruction = `You decide how a new statement relates to statements a memory store already holds. You get one new statement and a numbered list of held candidates.
 
-1 same      후보와 같은 것을 서술한다. 표현만 다르고 새로 알게 된 것이 없다.
-2 updates   후보가 서술하던 것이 더는 참이 아니게 만든다.
-3 extends   후보를 무효화하지 않으면서 세부를 더한다. 둘 다 참으로 남는다.
-4 unrelated 후보들과 관계가 없다.
-5 noise     기억할 가치가 없는 잡담이거나 내용이 없다.
+1 same      it says what a candidate says. Only the wording differs and nothing new is learned.
+2 updates   it makes a candidate no longer true.
+3 extends   it adds detail to a candidate without making it false. Both stay true.
+4 unrelated it has nothing to do with the candidates.
 
-same 은 같은 대상에 대한 같은 종류의 말이라는 뜻이 아니다. 같은 것을 서술해야 same 이다.
-잘못 묶으면 사실이 영영 사라지고, 잘못 나누면 중복이 남을 뿐이다.
+same means the two statements say the same thing, not merely that they are about the same subject.
+Merging by mistake loses a fact for good; keeping apart by mistake only leaves a duplicate.
 
-잘못된 판정의 예 (절대 이렇게 하지 마라):
-  새 명제 "이동하는 여명거리의 CTO이다." 와 후보 "이동하의 이름은 이동하이다."
-  틀린 판정 1 · 옳은 판정 4. 둘 다 신원 서술이지만 서술하는 것이 다르다.
-  새 명제 "이동하는 사과보다 배를 더 좋아한다." 와 후보 "이동하는 사과를 좋아한다."
-  틀린 판정 2 · 옳은 판정 3. 후보가 거짓이 되지 않았다.
+Wrong answers (never do this):
+  New "Alex leads the payments team." against candidate "Alex's name is Alex."
+  Wrong 1, right 4. Both describe who Alex is, but they say different things.
+  New "Alex likes pears more than apples." against candidate "Alex likes apples."
+  Wrong 2, right 3. The candidate is still true.
 
-숫자 하나만 출력한다.`
+Answer with one digit.`
 
-const ImportanceInstruction = `너는 기억 저장소의 중요도 평가자다. 명제 하나를 받아 기억으로 얼마나 값어치 있는지 매긴다.
+const ImportanceInstruction = `You rate how much a statement is worth keeping in a memory store.
 
-1 거의 없음   잡담, 내용 없는 맞장구, 동어반복.
-2 낮음        지나가는 말, 곧 무의미해질 세부.
-3 보통        보통의 사실.
-4 높음        그 사람에 대해 오래 쓸 사실, 절차, 선호.
-5 매우 높음   신원, 역할, 반복해서 쓰일 규칙.
+1 almost nothing  small talk, an empty acknowledgement, a tautology.
+2 low             a passing remark, a detail that will soon stop mattering.
+3 ordinary        an ordinary fact.
+4 high            a lasting fact, procedure or preference about the person.
+5 very high       identity, role, or a rule that will be used again and again.
 
-같은 것을 말하는 두 명제 중에서는 더 완전하고 더 자립적인 쪽이 높다.
-"이동하는 사과를 좋아한다" 는 3, "이동하는 사과를 좋아한다는 것을 전제했다" 는 2 다.
+Of two statements that say the same thing, the more complete and self-contained one rates higher.
+"Alex likes apples" is 3; "Alex assumed that liking apples was given" is 2.
 
-숫자 하나만 출력한다.`
+Answer with one digit.`
 
-const TargetInstruction = `너는 기억 저장소의 후보 선택자다. 새 명제 하나와 후보 명제 목록을 받는다.
-새 명제와 관계를 맺는 후보의 번호 하나만 출력한다. 관계 있는 후보가 없으면 9 를 출력한다.
+const TargetInstruction = `You pick which held candidate a new statement relates to. You get one new statement and a numbered list of candidates.
+Answer with the number of that candidate. When none relates, answer 9.
 
-숫자 하나만 출력한다.`
+Answer with one digit.`
 
 var relationByAnswer = map[string]Relation{
 	"1": RelationSame,
 	"2": RelationUpdates,
 	"3": RelationExtends,
 	"4": RelationUnrelated,
-	"5": RelationNoise,
 }
 
-var ratingAnswers = []string{"1", "2", "3", "4", "5"}
+var (
+	relationAnswers = []string{"1", "2", "3", "4"}
+	ratingAnswers   = []string{"1", "2", "3", "4", "5"}
+)
+
+const noiseRating = 1
 
 func (judge DistributionJudge) Judge(ctx context.Context, proposition string, candidates []string) (Judgement, error) {
+	importance, isNoise, errorValue := judge.importance(ctx, proposition)
+	if errorValue != nil {
+		return Judgement{}, errorValue
+	}
+	if isNoise {
+		return Judgement{Relation: RelationNoise, TargetIndex: -1, Importance: importance}, nil
+	}
+	if len(candidates) == 0 {
+		return Judgement{Relation: RelationUnrelated, TargetIndex: -1, Importance: importance}, nil
+	}
 	subject := judgementSubject(proposition, candidates)
 	relation, errorValue := judge.relation(ctx, subject)
 	if errorValue != nil {
 		return Judgement{}, errorValue
 	}
-	importance, errorValue := judge.importance(ctx, proposition)
-	if errorValue != nil {
-		return Judgement{}, errorValue
-	}
-	if relation == RelationUnrelated || relation == RelationNoise {
+	if relation == RelationUnrelated {
 		return Judgement{Relation: relation, TargetIndex: -1, Importance: importance}, nil
 	}
 	targetIndex, errorValue := judge.target(ctx, subject, len(candidates))
@@ -122,11 +130,11 @@ func (judge DistributionJudge) Judge(ctx context.Context, proposition string, ca
 }
 
 func (judge DistributionJudge) relation(ctx context.Context, subject string) (Relation, error) {
-	distribution, errorValue := judge.Chooser.Choose(ctx, ChoiceRequest{Instruction: RelationInstruction, Subject: subject, Answers: ratingAnswers})
+	distribution, errorValue := judge.Chooser.Choose(ctx, ChoiceRequest{Instruction: RelationInstruction, Subject: subject, Answers: relationAnswers})
 	if errorValue != nil {
 		return "", fmt.Errorf("relation judgement failed: %w", errorValue)
 	}
-	answer, margin := leadingAnswer(distribution, ratingAnswers)
+	answer, margin := leadingAnswer(distribution, relationAnswers)
 	relation, isKnown := relationByAnswer[answer]
 	if !isKnown {
 		return RelationUnrelated, nil
@@ -140,17 +148,17 @@ func (judge DistributionJudge) relation(ctx context.Context, subject string) (Re
 	return relation, nil
 }
 
-func (judge DistributionJudge) importance(ctx context.Context, proposition string) (int, error) {
+func (judge DistributionJudge) importance(ctx context.Context, proposition string) (int, bool, error) {
 	distribution, errorValue := judge.Chooser.Choose(ctx, ChoiceRequest{Instruction: ImportanceInstruction, Subject: proposition, Answers: ratingAnswers})
 	if errorValue != nil {
-		return 0, fmt.Errorf("importance rating failed: %w", errorValue)
+		return 0, false, fmt.Errorf("importance rating failed: %w", errorValue)
 	}
-	answer, _ := leadingAnswer(distribution, ratingAnswers)
+	answer, margin := leadingAnswer(distribution, ratingAnswers)
 	rating, errorValue := strconv.Atoi(answer)
 	if errorValue != nil {
-		return DefaultImportance, nil
+		return DefaultImportance, false, nil
 	}
-	return rating, nil
+	return rating, rating == noiseRating && margin >= judge.margin(), nil
 }
 
 func (judge DistributionJudge) target(ctx context.Context, subject string, candidateCount int) (int, error) {
@@ -190,9 +198,9 @@ func judgementSubject(proposition string, candidates []string) string {
 		fmt.Fprintf(&listing, "%d. %s\n", index, candidate)
 	}
 	if len(candidates) == 0 {
-		listing.WriteString("(없음)\n")
+		listing.WriteString("(none)\n")
 	}
-	return fmt.Sprintf("새 명제:\n%s\n\n이미 갖고 있는 후보:\n%s", proposition, listing.String())
+	return fmt.Sprintf("New statement:\n%s\n\nHeld candidates:\n%s", proposition, listing.String())
 }
 
 func leadingAnswer(distribution map[string]float64, answers []string) (string, float64) {

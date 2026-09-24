@@ -36,7 +36,7 @@ A phrase is wasted when it restates the memory in other words, when it is so gen
 
 If you would have to invent something to reach four, return fewer. An empty list is a correct answer for a memory that only ever matters when asked about directly.
 
-For 박예시는 아침에만 커피를 마신다, good phrases are 음료 취향, 아침 회의 준비, 카페 주문. 커피를 마시는 습관 is a restatement, and 사무실 생활 would fit anything.`
+For "Jordan drinks coffee only in the morning", good phrases are drink preferences, preparing a morning meeting, a cafe order. "coffee drinking habit" is a restatement, and "office life" would fit anything.`
 
 type rehearsalOutput struct {
 	Phrases []string `json:"phrases"`
