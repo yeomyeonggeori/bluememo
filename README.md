@@ -9,8 +9,8 @@
 > **Status: pre-alpha.** The exported API, the schema and the prompts change without notice.
 
 ```bash
-go get github.com/yeomyeonggeori/bluememo
-go run ./examples/recall
+ollama pull qwen3.5:4b && ollama pull embeddinggemma
+go run ./examples/quickstart
 ```
 
 The documentation is [DOCS.md](DOCS.md), published at [bluememo.intern.kim](https://bluememo.intern.kim). The design and the measurements behind it are in [issue #3](https://github.com/yeomyeonggeori/bluememo/issues/3).
@@ -19,5 +19,7 @@ The documentation is [DOCS.md](DOCS.md), published at [bluememo.intern.kim](http
 |---|---|
 | `.` | the store, settling, judging, recall, forgetting, sweeping |
 | `migrations/` | the schema, embedded and applied by `Open` through `user_version` |
+| `ollama/` | an adapter that runs the three ports on local Ollama models |
+| `examples/` | `quickstart` on real local models, `recall` on scripted ones |
 | `bluememotest/` | a hash embedder, a table embedder, a scripted model, judge and chooser |
 | `docs/` | the documentation site, generated from `DOCS.md` |
