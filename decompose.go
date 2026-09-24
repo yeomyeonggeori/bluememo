@@ -45,9 +45,10 @@ Example statements:
   isStatic false, expiry end_of_quarter: "Alex wants answers in English."
 
 A wrong statement (never do this):
-  Text: 내 이름은 박예시고, 결제팀 리드야.
-  Wrong: "박예는 결제팀 리드이다." The name was cut where the particle 고 begins.
-  Right: "박예시는 결제팀 리드이다."
+  Context: speaker Jordan Lee
+  Text: I lead the payments team.
+  Wrong: "Jordan leads the payments team." The name was cut short.
+  Right: "Jordan Lee leads the payments team."
 The speaker's name is exactly the string the context gives. Never cut it shorter.`
 
 var DecompositionSchemaDocument = mustMarshalSchema(map[string]any{
