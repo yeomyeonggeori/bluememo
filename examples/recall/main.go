@@ -27,8 +27,8 @@ func run() error {
 
 	model := bluememotest.NewScriptedModel()
 	model.QueueDecomposition(
-		bluememo.Proposition{Content: "이샘플은 여명거리의 CTO이다.", IsStatic: true},
-		bluememo.Proposition{Content: "이샘플은 릴리스 때 admind와 capabilityd를 함께 올린다."},
+		bluememo.Proposition{Content: "Alex leads the payments team.", IsStatic: true},
+		bluememo.Proposition{Content: "Alex ships admind and capabilityd together on every release."},
 	)
 	store, errorValue := bluememo.Open(ctx, filepath.Join(directory, "memory.db"), bluememo.Configuration{
 		Embedder:       bluememotest.HashEmbedder{},
@@ -41,7 +41,7 @@ func run() error {
 	}
 	defer store.Close()
 
-	if errorValue := store.Memorize(ctx, bluememo.Note{Body: "나 여명거리 CTO고, 릴리스 땐 admind랑 capabilityd 같이 올려", SpeakerName: "이샘플", IsExplicit: true}); errorValue != nil {
+	if errorValue := store.Memorize(ctx, bluememo.Note{Body: "I lead the payments team, and a release ships admind and capabilityd together", SpeakerName: "Alex", IsExplicit: true}); errorValue != nil {
 		return errorValue
 	}
 	report, errorValue := store.Settle(ctx)
@@ -57,7 +57,7 @@ func run() error {
 	for _, memory := range profile {
 		fmt.Println("profile:", memory.Content)
 	}
-	result, errorValue := store.Recall(ctx, "릴리스 때 뭘 같이 올려?", 3)
+	result, errorValue := store.Recall(ctx, "What ships together on a release?", 3)
 	if errorValue != nil {
 		return errorValue
 	}

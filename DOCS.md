@@ -9,7 +9,7 @@ An agent that forgets everything between conversations makes a person repeat the
 ## What it is
 
 - **One file per person.** `Open` takes a path and creates the file with mode `0600`. There is no access-control model inside: whoever can open the file can read all of it, so a host that serves several people opens a different file for each one, as that person.
-- **Sentences, not triples.** A memory is one sentence that stands on its own: `이샘플은 회의록을 항상 마크다운으로 받고 싶어 한다.` Conditions, time and source stay inside the sentence.
+- **Sentences, not triples.** A memory is one sentence that stands on its own: `Alex wants meeting notes in Markdown every time.` Conditions, time and source stay inside the sentence.
 - **Pure Go.** It depends on the standard library and `modernc.org/sqlite`. The host supplies the embedder, the language model and the judge through small interfaces.
 
 ## What it is not
@@ -25,57 +25,70 @@ It is not a document store: files are turned into text by the host before they a
 
 # Quickstart
 
-### Add the module
+This runs on a laptop with [Ollama](https://ollama.com) and two small models:
 
 ```bash
+ollama pull qwen3.5:4b
+ollama pull embeddinggemma
 go get github.com/yeomyeonggeori/bluememo
 ```
 
-### Open a person's file
+Alex tells the agent three things once. Later the agent has to write to Alex and asks the store how:
 
 ```go
-store, errorValue := bluememo.Open(ctx, "/workspace/private/people/person-1/memory.db", bluememo.Configuration{
-	Embedder:       embedder,
-	EmbeddingModel: "pplx-embed-v1-0.6b",
-	Model:          structuredModel,
-	Judge:          bluememo.DistributionJudge{Chooser: decisionModel},
-	Location:       seoul,
-})
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/yeomyeonggeori/bluememo"
+	"github.com/yeomyeonggeori/bluememo/ollama"
+)
+
+func main() {
+	ctx := context.Background()
+	model := ollama.New("qwen3.5:4b", "embeddinggemma")
+
+	store, errorValue := bluememo.Open(ctx, "alex.db", bluememo.Configuration{
+		Embedder:       model,
+		EmbeddingModel: model.EmbeddingModel,
+		Model:          model,
+		Judge:          bluememo.DistributionJudge{Chooser: model},
+	})
+	if errorValue != nil {
+		log.Fatal(errorValue)
+	}
+	defer store.Close()
+
+	store.Memorize(ctx, bluememo.Note{
+		SpeakerName: "Alex",
+		Body:        "I lead the payments team. Send me meeting notes in Markdown, and I'm off every Friday this month.",
+	})
+	if _, errorValue := store.Settle(ctx); errorValue != nil {
+		log.Fatal(errorValue)
+	}
+
+	result, errorValue := store.Recall(ctx, "How should I send Alex the notes from today's meeting?", 3)
+	if errorValue != nil {
+		log.Fatal(errorValue)
+	}
+	for _, recalled := range result.Memories {
+		fmt.Println(recalled.Memory.Content)
+	}
+}
 ```
 
-The path is required. An empty path fails with `ErrNoPath` so that a host that forgot it never writes everyone into one file.
-
-### Hand it what was said
-
-```go
-store.Memorize(ctx, bluememo.Note{
-	GroupID:     conversationID,
-	Body:        "나 여명거리 CTO고, 릴리스 땐 admind랑 capabilityd 같이 올려",
-	SpeakerName: "이샘플",
-	IsExplicit:  true,
-})
+```text
+Alex wants meeting notes in Markdown.
+Alex leads the payments team.
+Alex is off every Friday this month.
 ```
 
-`Memorize` stores the note and returns. Nothing is decided yet.
+The one message became three sentences that each stand on their own, and the one about notes answers first. `Alex leads the payments team.` is stored as a permanent trait, so `store.Profile(ctx)` returns it for every conversation, and the Friday sentence expires on the first of next month without anyone deleting it.
 
-### Settle in the background
-
-```go
-report, errorValue := store.Settle(ctx)
-```
-
-Run this from a background worker, as the same person. It turns each group of notes into sentences and decides how each one relates to what the store already holds.
-
-### Recall
-
-```go
-result, errorValue := store.Recall(ctx, "릴리스 때 뭘 같이 올려?", 12)
-profile, errorValue := store.Profile(ctx)
-```
-
-`Recall` makes no model call. `Profile` returns the permanent traits to put in front of every conversation.
-
-`go run ./examples/recall` runs these steps against the scripted model and hash embedder in `bluememotest`.
+The same program is in [`examples/quickstart`](https://github.com/yeomyeonggeori/bluememo/tree/main/examples/quickstart). `ollama` is a small adapter for local models; a host with its own model client implements the three [ports](#ports) instead.
 
 # Concepts
 
@@ -104,13 +117,13 @@ A note carries a group identifier, the speaker's name and whether the person ask
 
 The group of memories that came out of one settled group of notes.
 
-Decomposition splits one message into several sentences, and those siblings belong together: `릴리스는 admind와 capabilityd를 함께 올린다` and `하나만 올리면 프로토콜이 어긋난다` answer the same question. A recall that finds one of them returns the others with it, and eviction moves or keeps a whole origin at once.
+Decomposition splits one message into several sentences, and those siblings belong together: `A release ships admind and capabilityd together` and `Shipping only one of them breaks the protocol` answer the same question. A recall that finds one of them returns the others with it, and eviction moves or keeps a whole origin at once.
 
 ## Expiry
 
 The point at which a memory stops being true, chosen by the model and computed by the runtime.
 
-The model picks one of `none`, `end_of_today`, `end_of_week`, `end_of_month`, `end_of_quarter`, `end_of_year`, or `on_date` with an `expiryDate`. The runtime turns that choice into an instant from the note's arrival time in the configured `Location`, so `이번 분기만` said on 21 September becomes 1 October 00:00. Date arithmetic stays out of the model because small models get it wrong far more often than they get the period wrong.
+The model picks one of `none`, `end_of_today`, `end_of_week`, `end_of_month`, `end_of_quarter`, `end_of_year`, or `on_date` with an `expiryDate`. The runtime turns that choice into an instant from the note's arrival time in the configured `Location`, so "only this quarter" said on 21 September becomes 1 October 00:00. Date arithmetic stays out of the model because small models get it wrong far more often than they get the period wrong.
 
 ## Strength
 
@@ -158,9 +171,9 @@ For each group, settling claims the group with a lease so two workers never proc
 | `extends` | inserted, and linked to the memory it adds detail to |
 | `updates` | inserted, and the old memory goes cold as superseded |
 | `same` | the higher-rated wording stays live and is reinforced; the other goes cold |
-| `noise` | dropped |
+| `noise` | dropped: the judge rated the sentence 1, nothing worth keeping |
 
-Embeddings only gather the candidates; the judge decides. A sentence the judge rates 3 or higher is rehearsed: the model writes up to four trigger phrases a person might use when the memory matters, and a phrase is kept only if it sits at least 0.05 closer to its own memory than to the average live memory. A group whose settling fails keeps its lease until it runs out, then the next `Settle` takes it again.
+Embeddings only gather the candidates; the judge decides. When the store holds nothing close yet, there is nothing to relate to, and the sentence is kept unless it is noise. A sentence the judge rates 3 or higher is rehearsed: the model writes up to four trigger phrases a person might use when the memory matters, and a phrase is kept only if it sits at least 0.05 closer to its own memory than to the average live memory. A group whose settling fails keeps its lease until it runs out, then the next `Settle` takes it again.
 
 The report counts groups, proposals, inserts, reinforcements, supersessions, extensions, drops, rejected sentences and failed rehearsals.
 
@@ -173,7 +186,7 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 func (store *Store) Profile(ctx context.Context) ([]Memory, error)
 ```
 
-Three lanes are ranked and fused by reciprocal rank: cosine similarity over memory vectors, character-bigram overlap over the text, and cosine similarity over trigger phrases. Character bigrams let a two-syllable Korean word such as `정산` or `계약` count. The leading hit brings the rest of its origin with it. Age plays no part in ranking, because a question about last year wants last year's memory; the store keeps what is current by superseding what is not.
+Three lanes are ranked and fused by reciprocal rank: cosine similarity over memory vectors, character-bigram overlap over the text, and cosine similarity over trigger phrases. Character bigrams let a two-character word count, which matters in Korean, where many nouns are two syllables long. The leading hit brings the rest of its origin with it. Age plays no part in ranking, because a question about last year wants last year's memory; the store keeps what is current by superseding what is not.
 
 Every memory returned is reinforced by `1 − retrievability`, so a memory recalled just before it would have faded gains the most, and one recalled a minute after it was written gains nothing. Without an embedder, or when embedding fails, recall answers from the text lane and says why in `DegradedReason`.
 
@@ -243,7 +256,7 @@ type Judge interface {
 }
 ```
 
-`DistributionJudge` is the implementation bluememo ships. It asks three closed questions through a `Chooser` (the relation, an importance rating from 1 to 5, and which candidate the relation is about) and reads the probability of each single-digit answer. When the leading answer is not ahead of the runner-up by 0.10, or by 0.25 for `same`, the verdict falls back to `unrelated`, which keeps both sentences. Keeping two sentences apart can be fixed later; merging them loses one.
+`DistributionJudge` is the implementation bluememo ships. It asks up to three closed questions through a `Chooser` and reads the probability of each single-digit answer: how much the sentence is worth (1 to 5), how it relates to the candidates, and which candidate that is. A rating of 1 is noise and the sentence is dropped. The relation is only asked when there are candidates. When the leading answer is not ahead of the runner-up by 0.10, or by 0.25 for `same`, the verdict falls back to `unrelated`, which keeps both sentences. Keeping two sentences apart can be fixed later; merging them loses one.
 
 ```go
 type Chooser interface {
@@ -251,7 +264,7 @@ type Chooser interface {
 }
 ```
 
-A host that already has a decision model returning answer probabilities adapts it to `Chooser` in a few lines.
+A host that already has a decision model returning answer probabilities adapts it to `Chooser` in a few lines. `ollama.Client` implements it with the log probabilities Ollama returns.
 
 ## EntityResolver
 
@@ -296,6 +309,6 @@ Measured on an Apple-silicon laptop with 1,024-dimension vectors, a recall over 
 
 **Why does time not affect ranking?** Measured, it only hurt. Decay buried the right answer to questions about the past, and a recency bonus lifted near-duplicates over the correct older memory. Time decides what gets evicted.
 
-**Why a separate judge instead of a similarity threshold?** A similarity score cannot tell `이동하는 사과를 좋아한다` from `이동하는 사과보다 배를 더 좋아한다`, and merging them loses a fact for good. Embeddings gather candidates; a model reads them.
+**Why a separate judge instead of a similarity threshold?** A similarity score cannot tell `Alex likes apples` from `Alex likes pears more than apples`, and merging them loses a fact for good. Embeddings gather candidates; a model reads them.
 
 **Where did the design come from?** [Issue #3](https://github.com/yeomyeonggeori/bluememo/issues/3) holds the decisions and the measurements behind each of them.
