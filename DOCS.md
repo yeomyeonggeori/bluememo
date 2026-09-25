@@ -8,9 +8,9 @@ An agent that forgets everything between conversations makes a person repeat the
 
 ## What it is
 
-- **One file per person.** `Open` takes a path and creates the file with mode `0600`. There is no access-control model inside: whoever can open the file can read all of it, so a host that serves several people opens a different file for each one, as that person.
-- **Sentences, not triples.** A memory is one sentence that stands on its own: `Alex wants meeting notes in Markdown every time.` Conditions, time and source stay inside the sentence.
-- **Pure Go.** It depends on the standard library and `modernc.org/sqlite`. The host supplies the embedder, the language model and the judge through small interfaces.
+- One file per person. `Open` takes a path and creates the file with mode `0600`. There is no access-control model inside: whoever can open the file can read all of it, so a host that serves several people opens a different file for each one, as that person.
+- One sentence per memory. A memory stands on its own: `Alex wants meeting notes in Markdown every time.` Conditions, time and source stay inside the sentence.
+- Pure Go. It depends on the standard library and `modernc.org/sqlite`. The host supplies the embedder, the language model and the judge through small interfaces.
 
 ## What it is not
 
@@ -129,7 +129,7 @@ The model picks one of `none`, `end_of_today`, `end_of_week`, `end_of_month`, `e
 
 How much a memory has been needed, which decides what survives when the store is full.
 
-`storage_strength` starts at 1, or 2 when the person asked for the memory to be kept, and only ever grows. Retrievability is computed from it rather than stored: it halves every `HalfLife × storage_strength` since the memory was last recalled. Usefulness is their product, and it orders eviction. It never orders search results.
+`storage_strength` starts at 1, or 2 when the person asked for the memory to be kept, and only ever grows. The runtime computes retrievability from storage strength; it halves every `HalfLife × storage_strength` since the memory was last recalled. Usefulness is their product, and it orders eviction. It never orders search results.
 
 ## Cold
 
@@ -276,7 +276,7 @@ type EntityResolver interface {
 }
 ```
 
-`PeopleRegistry` resolves a name only when exactly one person answers to it, and reports the rest as unresolved so an ambiguous name is visible instead of silently empty. When the directory changes, `ResolveEntitiesAgain` recomputes every memory. A memory whose name stayed unresolved is still found by its words.
+`PeopleRegistry` resolves a name only when exactly one person answers to it, and reports the rest as unresolved so an ambiguous name remains visible. When the directory changes, `ResolveEntitiesAgain` recomputes every memory. A memory whose name stayed unresolved is still found by its words.
 
 # Configuration
 
@@ -305,10 +305,10 @@ Measured on an Apple-silicon laptop with 1,024-dimension vectors, a recall over 
 
 # Q&A
 
-**Why SQLite and not a server database?** One file per person makes the operating system the access boundary. A host that opens the file as the person it serves cannot read anyone else's memory, and there is no permission model to get wrong.
+**Why SQLite?** One file per person makes the operating system the access boundary. A host that opens the file as the person it serves cannot read anyone else's memory, and there is no permission model to get wrong.
 
 **Why does time not affect ranking?** Measured, it only hurt. Decay buried the right answer to questions about the past, and a recency bonus lifted near-duplicates over the correct older memory. Time decides what gets evicted.
 
-**Why a separate judge instead of a similarity threshold?** A similarity score cannot tell `Alex likes apples` from `Alex likes pears more than apples`, and merging them loses a fact for good. Embeddings gather candidates; a model reads them.
+**Why use a separate judge?** A similarity score cannot tell `Alex likes apples` from `Alex likes pears more than apples`, and merging them loses a fact for good. Embeddings gather candidates; a model reads them.
 
 **Where did the design come from?** [Issue #3](https://github.com/yeomyeonggeori/bluememo/issues/3) holds the decisions and the measurements behind each of them.
