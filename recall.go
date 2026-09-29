@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -19,7 +20,35 @@ const (
 	reciprocalRankOffset = 60.0
 )
 
-var ErrEmptyQuery = errors.New("a recall needs a query")
+var (
+	ErrEmptyQuery    = errors.New("a recall needs a query")
+	ErrInvertedRange = errors.New("a recall range ends before it begins")
+)
+
+type RecallRequest struct {
+	Query string
+	Limit int
+	From  time.Time
+	To    time.Time
+}
+
+func (request RecallRequest) hasRange() bool {
+	return !request.From.IsZero() || !request.To.IsZero()
+}
+
+func (request RecallRequest) occurrenceClause(column string) (string, []any) {
+	if !request.hasRange() {
+		return "", nil
+	}
+	lowest, highest := int64(math.MinInt64), int64(math.MaxInt64)
+	if !request.From.IsZero() {
+		lowest = toMilliseconds(request.From)
+	}
+	if !request.To.IsZero() {
+		highest = toMilliseconds(request.To)
+	}
+	return ` and ` + column + ` between ? and ?`, []any{lowest, highest}
+}
 
 type RecalledMemory struct {
 	Memory      Memory  `json:"memory"`
@@ -47,17 +76,26 @@ type searchQuery struct {
 	embedding []float32
 	limit     int
 	now       time.Time
+	request   RecallRequest
 }
 
 func (store *Store) Recall(ctx context.Context, query string, limit int) (RecallResult, error) {
-	trimmed := strings.TrimSpace(query)
+	return store.RecallWithin(ctx, RecallRequest{Query: query, Limit: limit})
+}
+
+func (store *Store) RecallWithin(ctx context.Context, request RecallRequest) (RecallResult, error) {
+	trimmed := strings.TrimSpace(request.Query)
 	if trimmed == "" {
 		return RecallResult{}, ErrEmptyQuery
 	}
+	if !request.From.IsZero() && !request.To.IsZero() && request.To.Before(request.From) {
+		return RecallResult{}, ErrInvertedRange
+	}
+	limit := request.Limit
 	if limit <= 0 {
 		limit = DefaultRecallLimit
 	}
-	search := searchQuery{text: trimmed, limit: limit, now: store.now()}
+	search := searchQuery{text: trimmed, limit: limit, now: store.now(), request: request}
 	result := RecallResult{Mode: SearchModeHybrid}
 	search.embedding, result.DegradedReason = store.embedQuery(ctx, trimmed)
 	if search.embedding == nil {
@@ -67,11 +105,12 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
-	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
+	result.Memories, errorValue = store.withSiblings(ctx, ranked, search)
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
-	if result.Unsettled, errorValue = store.unsettledNotes(ctx, trimmed); errorValue != nil {
+	result.Unsettled, errorValue = store.unsettledNotesFor(ctx, search)
+	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
 	return result, store.reinforce(ctx, result.Memories, search.now)
@@ -105,7 +144,7 @@ func (store *Store) embedQuery(ctx context.Context, text string) ([]float32, str
 }
 
 func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMemory, error) {
-	retrievable, errorValue := store.retrievable(ctx, query.now)
+	retrievable, errorValue := store.retrievable(ctx, query)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -130,7 +169,7 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	for rank, memoryID := range rankByLexeme(retrievable, query.text, depth) {
 		record(memoryID, rank+1, func(entry *RecalledMemory, rank int) { entry.LexicalRank = rank })
 	}
-	triggerIDs, errorValue := store.rankByTrigger(ctx, query.embedding, depth)
+	triggerIDs, errorValue := store.rankByTrigger(ctx, query, depth)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -140,12 +179,13 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	return sortedByScore(byID), nil
 }
 
-func (store *Store) retrievable(ctx context.Context, now time.Time) (map[string]candidate, error) {
+func (store *Store) retrievable(ctx context.Context, query searchQuery) (map[string]candidate, error) {
+	occurrence, occurrenceArguments := query.request.occurrenceClause("occurred_at")
 	rows, errorValue := store.database.QueryContext(ctx, `select `+memoryColumns+`,
 		case when embedding_model = ? then embedding end
 		from memory
-		where (cold_since is null or cold_reason = ?) and (valid_until is null or valid_until > ?)`,
-		store.configuration.EmbeddingModel, ColdReasonPressure, toMilliseconds(now))
+		where (cold_since is null or cold_reason = ?) and (valid_until is null or valid_until > ?)`+occurrence,
+		append([]any{store.configuration.EmbeddingModel, ColdReasonPressure, toMilliseconds(query.now)}, occurrenceArguments...)...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -190,13 +230,16 @@ func rankByVector(retrievable map[string]candidate, query []float32, depth int) 
 	return identifiers
 }
 
-func (store *Store) rankByTrigger(ctx context.Context, query []float32, depth int) ([]string, error) {
+func (store *Store) rankByTrigger(ctx context.Context, search searchQuery, depth int) ([]string, error) {
+	query := search.embedding
 	if query == nil {
 		return nil, nil
 	}
+	occurrence, occurrenceArguments := search.request.occurrenceClause("m.occurred_at")
 	rows, errorValue := store.database.QueryContext(ctx, `
 		select t.memory_id, t.embedding from memory_trigger t join memory m using (memory_id)
-		where m.cold_since is null and t.embedding_model = ?`, store.configuration.EmbeddingModel)
+		where m.cold_since is null and t.embedding_model = ?`+occurrence,
+		append([]any{store.configuration.EmbeddingModel}, occurrenceArguments...)...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -229,14 +272,15 @@ func (store *Store) rankByTrigger(ctx context.Context, query []float32, depth in
 	return identifiers[:min(depth, len(identifiers))], nil
 }
 
-func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, limit int) ([]RecalledMemory, error) {
+func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, search searchQuery) ([]RecalledMemory, error) {
 	if len(ranked) == 0 {
 		return []RecalledMemory{}, nil
 	}
 	leading := ranked[0]
+	occurrence, occurrenceArguments := search.request.occurrenceClause("occurred_at")
 	siblings, errorValue := queryMemories(ctx, store.database,
-		`where origin_id = ? and memory_id <> ? and cold_since is null and (valid_until is null or valid_until > ?) order by created_at`,
-		leading.Memory.OriginID, leading.Memory.MemoryID, toMilliseconds(store.now()))
+		`where origin_id = ? and memory_id <> ? and cold_since is null and (valid_until is null or valid_until > ?)`+occurrence+` order by created_at`,
+		append([]any{leading.Memory.OriginID, leading.Memory.MemoryID, toMilliseconds(store.now())}, occurrenceArguments...)...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -251,7 +295,14 @@ func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, l
 			expanded = append(expanded, entry)
 		}
 	}
-	return expanded[:min(limit, len(expanded))], nil
+	return expanded[:min(search.limit, len(expanded))], nil
+}
+
+func (store *Store) unsettledNotesFor(ctx context.Context, search searchQuery) ([]UnsettledNote, error) {
+	if search.request.hasRange() {
+		return []UnsettledNote{}, nil
+	}
+	return store.unsettledNotes(ctx, search.text)
 }
 
 func (store *Store) unsettledNotes(ctx context.Context, text string) ([]UnsettledNote, error) {

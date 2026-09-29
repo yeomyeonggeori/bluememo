@@ -145,3 +145,127 @@ func TestDefaultIdentifiersAreDistinctAndFixedWidth(t *testing.T) {
 		seen[identifier] = struct{}{}
 	}
 }
+
+func occurring(content string, day string) bluememo.Proposition {
+	return bluememo.Proposition{Content: content, OccurredOn: day, Expiry: bluememo.ExpiryNone}
+}
+
+func (testFixture *fixture) recallWithin(t *testing.T, request bluememo.RecallRequest) bluememo.RecallResult {
+	t.Helper()
+	result, errorValue := testFixture.store.RecallWithin(context.Background(), request)
+	if errorValue != nil {
+		t.Fatalf("recall within %+v: %v", request, errorValue)
+	}
+	return result
+}
+
+func day(year int, month time.Month, dayOfMonth int) time.Time {
+	return time.Date(year, month, dayOfMonth, 0, 0, 0, 0, time.UTC)
+}
+
+func TestARangeReturnsOnlyMemoriesThatOccurredInsideIt(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "봄과 여름 출장",
+		occurring("이샘플은 3월에 부산으로 출장을 다녀왔다.", "2026-03-10"),
+		occurring("이샘플은 7월에 제주로 출장을 다녀왔다.", "2026-07-14"),
+		statement("이샘플은 출장 뒤에 보고서를 쓴다."))
+	testFixture.settle(t, "가을 출장", occurring("이샘플은 9월에 대구로 출장을 다녀왔다.", "2026-09-02"))
+
+	result := testFixture.recallWithin(t, bluememo.RecallRequest{
+		Query: "이샘플이 어디로 출장을 다녀왔지", Limit: 10,
+		From: day(2026, time.March, 1), To: day(2026, time.March, 31),
+	})
+	if want := []string{"이샘플은 3월에 부산으로 출장을 다녀왔다."}; !slices.Equal(recalledContents(result), want) {
+		t.Fatalf("expected only the March memory, got %v", recalledContents(result))
+	}
+}
+
+func TestARangeIsInclusiveAtBothEnds(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "경계",
+		occurring("이샘플은 3월 1일에 계약서를 보냈다.", "2026-03-01"),
+		occurring("이샘플은 3월 31일에 계약서를 받았다.", "2026-03-31"),
+		occurring("이샘플은 4월 1일에 계약서를 보관했다.", "2026-04-01"))
+
+	result := testFixture.recallWithin(t, bluememo.RecallRequest{
+		Query: "이샘플 계약서", Limit: 10,
+		From: day(2026, time.March, 1), To: day(2026, time.March, 31),
+	})
+	if len(result.Memories) != 2 {
+		t.Fatalf("expected both boundary days and nothing after, got %v", recalledContents(result))
+	}
+}
+
+func TestARangeKeepsSiblingsAndUnsettledNotesInsideIt(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "봄과 여름 출장",
+		occurring("이샘플은 3월에 부산으로 출장을 다녀왔다.", "2026-03-10"),
+		occurring("이샘플은 3월 말에 부산 출장 정산을 했다.", "2026-03-28"),
+		occurring("이샘플은 7월에 제주로 출장을 다녀왔다.", "2026-07-14"),
+		statement("이샘플은 출장 뒤에 보고서를 쓴다."))
+	if errorValue := testFixture.store.Memorize(context.Background(), bluememo.Note{Body: "이샘플이 출장을 다녀온 이야기를 아직 정리하지 못했다", SpeakerName: "이샘플"}); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	request := bluememo.RecallRequest{Query: "이샘플이 어디로 출장을 다녀왔지", Limit: 10}
+
+	unbounded := testFixture.recallWithin(t, request)
+	if len(unbounded.Unsettled) == 0 || len(unbounded.Memories) != 4 {
+		t.Fatalf("without a range the sibling, the undated memory and the unsettled note are all present, got %v and %d unsettled", recalledContents(unbounded), len(unbounded.Unsettled))
+	}
+	request.From, request.To = day(2026, time.March, 1), day(2026, time.March, 31)
+	bounded := testFixture.recallWithin(t, request)
+	want := []string{"이샘플은 3월에 부산으로 출장을 다녀왔다.", "이샘플은 3월 말에 부산 출장 정산을 했다."}
+	if !slices.Equal(recalledContents(bounded), want) || len(bounded.Unsettled) != 0 {
+		t.Fatalf("expected the two March memories and no unsettled note, got %v and %d unsettled", recalledContents(bounded), len(bounded.Unsettled))
+	}
+}
+
+func TestAMemoryWithoutAnOccurrenceIsOutsideEveryRange(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "날짜 없음", statement("이샘플은 회의 때 노트북으로 메모를 한다."))
+
+	unbounded := testFixture.recallWithin(t, bluememo.RecallRequest{Query: "이샘플 노트북 메모"})
+	if len(unbounded.Memories) != 1 {
+		t.Fatalf("expected the undated memory without a range, got %v", recalledContents(unbounded))
+	}
+	bounded := testFixture.recallWithin(t, bluememo.RecallRequest{Query: "이샘플 노트북 메모", From: day(2026, time.January, 1), To: day(2026, time.December, 31)})
+	if len(bounded.Memories) != 0 {
+		t.Fatalf("expected no undated memory inside a range, got %v", recalledContents(bounded))
+	}
+}
+
+func TestARangeMayBeOpenAtOneEnd(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "두 번",
+		occurring("이샘플은 2월에 건강검진을 받았다.", "2026-02-09"),
+		occurring("이샘플은 9월에 치과에 갔다.", "2026-09-15"))
+
+	result := testFixture.recallWithin(t, bluememo.RecallRequest{Query: "이샘플 병원", To: day(2026, time.March, 1)})
+	if want := []string{"이샘플은 2월에 건강검진을 받았다."}; !slices.Equal(recalledContents(result), want) {
+		t.Fatalf("expected only the memory before the end, got %v", recalledContents(result))
+	}
+}
+
+func TestAnInvertedRangeIsRefused(t *testing.T) {
+	testFixture := newFixture(t)
+	_, errorValue := testFixture.store.RecallWithin(context.Background(), bluememo.RecallRequest{
+		Query: "이샘플", From: day(2026, time.April, 1), To: day(2026, time.March, 1),
+	})
+	if !errors.Is(errorValue, bluememo.ErrInvertedRange) {
+		t.Fatalf("expected ErrInvertedRange, got %v", errorValue)
+	}
+}
+
+func TestRecallWithoutARangeMatchesRecallWithinAnEmptyRange(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "봄과 여름 출장",
+		occurring("이샘플은 3월에 부산으로 출장을 다녀왔다.", "2026-03-10"),
+		occurring("이샘플은 7월에 제주로 출장을 다녀왔다.", "2026-07-14"),
+		statement("이샘플은 출장 뒤에 보고서를 쓴다."))
+
+	plain := testFixture.recall(t, "이샘플이 어디로 출장을 다녀왔지", 10)
+	within := testFixture.recallWithin(t, bluememo.RecallRequest{Query: "이샘플이 어디로 출장을 다녀왔지", Limit: 10})
+	if len(plain.Memories) != 3 || !slices.Equal(recalledContents(plain), recalledContents(within)) {
+		t.Fatalf("Recall returned %v and RecallWithin an empty range returned %v", recalledContents(plain), recalledContents(within))
+	}
+}

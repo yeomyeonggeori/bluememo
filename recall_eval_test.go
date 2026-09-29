@@ -27,13 +27,14 @@ const evalIdentifierSeed = 20260921
 
 const (
 	evalCategoryTemporal   evalCategory = "temporal"
+	evalCategoryPeriodic   evalCategory = "periodic"
 	evalCategoryCrossNote  evalCategory = "cross_note"
 	evalCategoryPreference evalCategory = "preference"
 	evalCategoryUpdate     evalCategory = "update"
 	evalCategorySingleNote evalCategory = "single_note"
 )
 
-var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote}
+var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryPeriodic, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote}
 
 type evalSplit string
 
@@ -41,6 +42,8 @@ const (
 	evalSplitEvolve  evalSplit = "evolve"
 	evalSplitHoldout evalSplit = "holdout"
 )
+
+var evalRangedCategories = []evalCategory{evalCategoryTemporal, evalCategoryPeriodic}
 
 var evalSplits = []evalSplit{evalSplitEvolve, evalSplitHoldout}
 
@@ -81,6 +84,8 @@ type evalCase struct {
 	Propositions []evalProposition `json:"propositions"`
 	Question     string            `json:"question"`
 	Expected     []string          `json:"expected"`
+	OccurredFrom string            `json:"occurredFrom,omitempty"`
+	OccurredTo   string            `json:"occurredTo,omitempty"`
 }
 
 type evalFile struct {
@@ -137,10 +142,54 @@ func validateEvalCase(testCase evalCase) error {
 	if strings.TrimSpace(testCase.Question) == "" || len(testCase.Notes) == 0 || len(testCase.Expected) == 0 {
 		return errors.New("a case needs notes, a question and expected sentences")
 	}
+	if errorValue := validateEvalRange(testCase); errorValue != nil {
+		return errorValue
+	}
 	if errorValue := validateEvalNotes(testCase); errorValue != nil {
 		return errorValue
 	}
 	return validateEvalPropositions(testCase)
+}
+
+func validateEvalRange(testCase evalCase) error {
+	if testCase.OccurredFrom == "" && testCase.OccurredTo == "" {
+		return nil
+	}
+	if !slices.Contains(evalRangedCategories, testCase.Category) {
+		return fmt.Errorf("only a case of %v may carry an occurrence range, and this one is %s", evalRangedCategories, testCase.Category)
+	}
+	from, errorValue := parseEvalDay(testCase.OccurredFrom)
+	if errorValue != nil {
+		return errorValue
+	}
+	to, errorValue := parseEvalDay(testCase.OccurredTo)
+	if errorValue != nil {
+		return errorValue
+	}
+	if !from.IsZero() && !to.IsZero() && to.Before(from) {
+		return fmt.Errorf("occurredTo %s is before occurredFrom %s", testCase.OccurredTo, testCase.OccurredFrom)
+	}
+	return nil
+}
+
+func parseEvalDay(value string) (time.Time, error) {
+	if value == "" {
+		return time.Time{}, nil
+	}
+	day, errorValue := time.Parse(time.DateOnly, value)
+	if errorValue != nil {
+		return time.Time{}, fmt.Errorf("range date %q is not a date", value)
+	}
+	return day, nil
+}
+
+func recallRequestOf(testCase evalCase) bluememo.RecallRequest {
+	from, _ := parseEvalDay(testCase.OccurredFrom)
+	to, _ := parseEvalDay(testCase.OccurredTo)
+	if !to.IsZero() {
+		to = to.AddDate(0, 0, 1).Add(-time.Millisecond)
+	}
+	return bluememo.RecallRequest{Query: testCase.Question, Limit: evalRecallDepth, From: from, To: to}
 }
 
 func validateEvalNotes(testCase evalCase) error {
@@ -265,7 +314,7 @@ func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string
 	for _, groupID := range groupIDsInOrder(testCase.Notes) {
 		memorizeAndSettleGroup(t, store, model, testClock, testCase, groupID)
 	}
-	result, errorValue := store.Recall(ctx, testCase.Question, evalRecallDepth)
+	result, errorValue := store.RecallWithin(ctx, recallRequestOf(testCase))
 	if errorValue != nil {
 		t.Fatalf("%s: recall: %v", testCase.ID, errorValue)
 	}
@@ -491,6 +540,34 @@ func TestEvalRefusesAnUnknownCategoryOrSplit(t *testing.T) {
 	for name, refused := range map[string]evalCase{"category": unknownCategory, "split": unknownSplit, "expected sentence": unlisted} {
 		if validateEvalCase(refused) == nil {
 			t.Errorf("a case with an unknown %s was accepted", name)
+		}
+	}
+}
+
+func TestEvalRefusesARangeThatIsNotTemporalOrIsInverted(t *testing.T) {
+	valid := evalCase{
+		ID:           "guard",
+		Category:     evalCategoryTemporal,
+		Split:        evalSplitHoldout,
+		Notes:        []evalNote{{GroupID: "guard-g1", SpeakerName: "이샘플", ArrivedOn: evalDefaultArrivalDate, Body: "서울에 산다"}},
+		Propositions: []evalProposition{{GroupID: "guard-g1", Content: "이샘플은 서울에 산다.", Expiry: bluememo.ExpiryNone}},
+		Question:     "이샘플은 어디 살아?",
+		Expected:     []string{"이샘플은 서울에 산다."},
+		OccurredFrom: "2026-03-01",
+		OccurredTo:   "2026-03-31",
+	}
+	if errorValue := validateEvalCase(valid); errorValue != nil {
+		t.Fatalf("a well-formed ranged case was refused: %v", errorValue)
+	}
+	nonTemporal := valid
+	nonTemporal.Category = evalCategoryUpdate
+	inverted := valid
+	inverted.OccurredFrom, inverted.OccurredTo = "2026-03-31", "2026-03-01"
+	malformed := valid
+	malformed.OccurredTo = "March"
+	for name, refused := range map[string]evalCase{"non-temporal": nonTemporal, "inverted": inverted, "malformed": malformed} {
+		if validateEvalCase(refused) == nil {
+			t.Errorf("a %s range was accepted", name)
 		}
 	}
 }
