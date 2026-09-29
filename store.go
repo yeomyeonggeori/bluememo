@@ -40,6 +40,7 @@ type Configuration struct {
 	Location          *time.Location
 	Logger            *slog.Logger
 	Now               func() time.Time
+	NewIdentifier     func() string
 }
 
 type Store struct {
@@ -88,11 +89,11 @@ func (store *Store) Memorize(ctx context.Context, note Note) error {
 	}
 	groupID := strings.TrimSpace(note.GroupID)
 	if groupID == "" {
-		groupID = NewIdentifier()
+		groupID = store.newIdentifier()
 	}
 	_, errorValue := store.database.ExecContext(ctx,
 		`insert into pending_note (note_id, group_id, body, speaker_name, is_explicit, arrived_at) values (?, ?, ?, ?, ?, ?)`,
-		NewIdentifier(), groupID, body, strings.TrimSpace(note.SpeakerName), note.IsExplicit, toMilliseconds(store.now()))
+		store.newIdentifier(), groupID, body, strings.TrimSpace(note.SpeakerName), note.IsExplicit, toMilliseconds(store.now()))
 	return errorValue
 }
 
@@ -203,6 +204,13 @@ func (store *Store) now() time.Time {
 		return store.configuration.Now().UTC()
 	}
 	return time.Now().UTC()
+}
+
+func (store *Store) newIdentifier() string {
+	if store.configuration.NewIdentifier != nil {
+		return store.configuration.NewIdentifier()
+	}
+	return NewIdentifier()
 }
 
 const memoryColumns = `memory_id, content, is_static, occurred_at, valid_until, origin_id, importance, storage_strength,

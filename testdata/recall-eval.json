@@ -1,0 +1,5476 @@
+{
+ "cases": [
+  {
+   "id": "temporal-01",
+   "category": "temporal",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "temporal-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-03-10",
+     "body": "3월 10일에 부산 출장 다녀왔어."
+    },
+    {
+     "groupID": "temporal-01-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-07-14",
+     "body": "7월 14일에 제주 워크숍 갔었어."
+    },
+    {
+     "groupID": "temporal-01-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "temporal-01-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "temporal-01-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "temporal-01-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "temporal-01-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "temporal-01-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-01-g1",
+     "content": "이샘플은 2026년 3월에 부산으로 출장을 다녀왔다.",
+     "isStatic": false,
+     "occurredOn": "2026-03-10",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-g2",
+     "content": "이샘플은 2026년 7월에 제주 워크숍에 참석했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-14",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d1",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d2",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d3",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d4",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d5",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-01-d6",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 3월에 어디로 출장 갔었지?",
+   "expected": [
+    "이샘플은 2026년 3월에 부산으로 출장을 다녀왔다."
+   ]
+  },
+  {
+   "id": "temporal-02",
+   "category": "temporal",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "temporal-02-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-08",
+     "body": "어제 거래처 미팅했어."
+    },
+    {
+     "groupID": "temporal-02-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-16",
+     "body": "오늘 신규 견적서를 보냈어."
+    },
+    {
+     "groupID": "temporal-02-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "오늘은 월요일이라 주간 보고 썼어."
+    },
+    {
+     "groupID": "temporal-02-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "temporal-02-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "temporal-02-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "temporal-02-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "temporal-02-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "temporal-02-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-02-g1",
+     "content": "박예시는 2026-09-07에 거래처와 미팅했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-07",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-g2",
+     "content": "박예시는 2026-09-16에 신규 견적서를 보냈다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-16",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-g3",
+     "content": "박예시는 2026-09-21에 주간 보고를 작성했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d1",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d2",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d3",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d4",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d5",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-02-d6",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 지난주에 뭘 보냈어?",
+   "expected": [
+    "박예시는 2026-09-16에 신규 견적서를 보냈다."
+   ]
+  },
+  {
+   "id": "temporal-03",
+   "category": "temporal",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "temporal-03-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-05-12",
+     "body": "5월 12일에 이사 갔어."
+    },
+    {
+     "groupID": "temporal-03-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-08-03",
+     "body": "8월 3일에 이직 면접 봤어."
+    },
+    {
+     "groupID": "temporal-03-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "temporal-03-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "temporal-03-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "temporal-03-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "temporal-03-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "temporal-03-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-03-g1",
+     "content": "최견본은 2026년 5월에 판교로 이사했다.",
+     "isStatic": false,
+     "occurredOn": "2026-05-12",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-g2",
+     "content": "최견본은 2026년 8월에 이직 면접을 봤다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-03",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d1",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d2",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d3",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d4",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d5",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-03-d6",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본이 8월에 뭐 했어?",
+   "expected": [
+    "최견본은 2026년 8월에 이직 면접을 봤다."
+   ]
+  },
+  {
+   "id": "temporal-04",
+   "category": "temporal",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "temporal-04-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-01-20",
+     "body": "1월 20일에 신입 채용 공고 올렸어."
+    },
+    {
+     "groupID": "temporal-04-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-05-18",
+     "body": "5월 18일에 최종 합격자 발표했어."
+    },
+    {
+     "groupID": "temporal-04-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-25",
+     "body": "8월 25일에 신입 온보딩 진행했어."
+    },
+    {
+     "groupID": "temporal-04-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "temporal-04-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "temporal-04-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "temporal-04-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "temporal-04-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "temporal-04-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-04-g1",
+     "content": "이샘플은 2026-01-20에 신입 채용 공고를 올렸다.",
+     "isStatic": false,
+     "occurredOn": "2026-01-20",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-g2",
+     "content": "이샘플은 2026-05-18에 최종 합격자를 발표했다.",
+     "isStatic": false,
+     "occurredOn": "2026-05-18",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-g3",
+     "content": "이샘플은 2026-08-25에 신입 온보딩을 진행했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-25",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d1",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d2",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d3",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d4",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d5",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-04-d6",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 2분기에 채용 관련해서 한 일이 뭐야?",
+   "expected": [
+    "이샘플은 2026-05-18에 최종 합격자를 발표했다."
+   ]
+  },
+  {
+   "id": "temporal-05",
+   "category": "temporal",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "temporal-05-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-06-02",
+     "body": "6월 2일에 계약서 서명했어."
+    },
+    {
+     "groupID": "temporal-05-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-01",
+     "body": "9월 1일에 계약 갱신 협의 시작했어."
+    },
+    {
+     "groupID": "temporal-05-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "temporal-05-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "temporal-05-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "temporal-05-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "temporal-05-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "temporal-05-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-05-g1",
+     "content": "박예시는 2026-06-02에 공급 계약서에 서명했다.",
+     "isStatic": false,
+     "occurredOn": "2026-06-02",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-g2",
+     "content": "박예시는 2026-09-01에 공급 계약 갱신 협의를 시작했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-01",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d1",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d2",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d3",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d4",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d5",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-05-d6",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 이번 달 초에 시작한 협의가 뭐야?",
+   "expected": [
+    "박예시는 2026-09-01에 공급 계약 갱신 협의를 시작했다."
+   ]
+  },
+  {
+   "id": "temporal-06",
+   "category": "temporal",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "temporal-06-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-04-06",
+     "body": "4월 6일에 신제품 발표회 했어."
+    },
+    {
+     "groupID": "temporal-06-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-04-27",
+     "body": "4월 27일에 발표회 후기 정리했어."
+    },
+    {
+     "groupID": "temporal-06-g3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-10",
+     "body": "9월 10일에 후속 행사 기획 시작했어."
+    },
+    {
+     "groupID": "temporal-06-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "temporal-06-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "temporal-06-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "temporal-06-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "temporal-06-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "temporal-06-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-06-g1",
+     "content": "최견본은 2026년 4월에 신제품 발표회를 열었다.",
+     "isStatic": false,
+     "occurredOn": "2026-04-06",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-g2",
+     "content": "최견본은 2026년 4월에 발표회 후기를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "2026-04-27",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-g3",
+     "content": "최견본은 2026년 9월에 후속 행사 기획을 시작했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-10",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d1",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d2",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d3",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d4",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d5",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-06-d6",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본이 올해 봄에 연 행사가 뭐였지?",
+   "expected": [
+    "최견본은 2026년 4월에 신제품 발표회를 열었다."
+   ]
+  },
+  {
+   "id": "temporal-07",
+   "category": "temporal",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "temporal-07-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-02-09",
+     "body": "2월 9일에 건강검진 받았어."
+    },
+    {
+     "groupID": "temporal-07-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-15",
+     "body": "화요일에 치과 갔어."
+    },
+    {
+     "groupID": "temporal-07-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "temporal-07-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "temporal-07-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "temporal-07-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "temporal-07-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "temporal-07-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-07-g1",
+     "content": "이샘플은 2026년 2월에 건강검진을 받았다.",
+     "isStatic": false,
+     "occurredOn": "2026-02-09",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-g2",
+     "content": "이샘플은 2026-09-15에 치과에 갔다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-15",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d1",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d2",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d3",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d4",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d5",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-07-d6",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 이번 주 화요일 전에 병원 간 게 언제야?",
+   "expected": [
+    "이샘플은 2026-09-15에 치과에 갔다."
+   ]
+  },
+  {
+   "id": "temporal-08",
+   "category": "temporal",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "temporal-08-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-07-06",
+     "body": "7월 6일부터 휴가야."
+    },
+    {
+     "groupID": "temporal-08-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-08-10",
+     "body": "8월 10일에 복귀 후 첫 발표했어."
+    },
+    {
+     "groupID": "temporal-08-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "temporal-08-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "temporal-08-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "temporal-08-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "temporal-08-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "temporal-08-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "temporal-08-g1",
+     "content": "박예시는 2026년 7월 첫째 주에 휴가를 갔다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-06",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-g2",
+     "content": "박예시는 2026년 8월에 팀 앞에서 첫 발표를 했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-10",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d1",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d2",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d3",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d4",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d5",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "temporal-08-d6",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 여름 휴가 다녀온 게 언제야?",
+   "expected": [
+    "박예시는 2026년 7월 첫째 주에 휴가를 갔다."
+   ]
+  },
+  {
+   "id": "cross-01",
+   "category": "cross_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "cross-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시가 다음 주 대구 출장 간대."
+    },
+    {
+     "groupID": "cross-01-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "대구 출장은 KTX로 가는 게 제일 빠르대."
+    },
+    {
+     "groupID": "cross-01-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 기차 멀미가 심해."
+    },
+    {
+     "groupID": "cross-01-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "cross-01-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "cross-01-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "cross-01-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "cross-01-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "cross-01-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-01-g1",
+     "content": "박예시는 다음 주에 대구로 출장을 간다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-g2",
+     "content": "대구 출장은 KTX로 가는 것이 가장 빠르다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-g3",
+     "content": "박예시는 기차 멀미가 심하다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d1",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d2",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d3",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d4",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d5",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-01-d6",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시 출장 갈 때 교통편 뭐 추천해야 해?",
+   "expected": [
+    "박예시는 다음 주에 대구로 출장을 간다.",
+    "박예시는 기차 멀미가 심하다."
+   ]
+  },
+  {
+   "id": "cross-02",
+   "category": "cross_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "cross-02-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 결제팀 팀장이야."
+    },
+    {
+     "groupID": "cross-02-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "결제팀은 매주 목요일에 정산 회의를 한다."
+    },
+    {
+     "groupID": "cross-02-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "cross-02-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "cross-02-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "cross-02-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "cross-02-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "cross-02-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-02-g1",
+     "content": "이샘플은 결제팀 팀장이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-g2",
+     "content": "결제팀은 매주 목요일에 정산 회의를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d1",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d2",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d3",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d4",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d5",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-02-d6",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 정산 회의를 언제 주재해?",
+   "expected": [
+    "이샘플은 결제팀 팀장이다.",
+    "결제팀은 매주 목요일에 정산 회의를 한다."
+   ]
+  },
+  {
+   "id": "cross-03",
+   "category": "cross_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "cross-03-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 갑각류 알레르기가 있어."
+    },
+    {
+     "groupID": "cross-03-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "금요일 회식은 새우 전문점으로 잡았어."
+    },
+    {
+     "groupID": "cross-03-g3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "이번 회식 참석자는 이샘플과 박예시와 최견본이다."
+    },
+    {
+     "groupID": "cross-03-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "cross-03-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "cross-03-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "cross-03-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "cross-03-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "cross-03-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-03-g1",
+     "content": "박예시는 갑각류 알레르기가 있다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-g2",
+     "content": "금요일 회식은 새우 전문점에서 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-g3",
+     "content": "금요일 회식 참석자는 이샘플, 박예시, 최견본이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d1",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d2",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d3",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d4",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d5",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-03-d6",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "금요일 회식 장소가 박예시한테 문제 없어?",
+   "expected": [
+    "박예시는 갑각류 알레르기가 있다.",
+    "금요일 회식은 새우 전문점에서 한다."
+   ]
+  },
+  {
+   "id": "cross-04",
+   "category": "cross_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "cross-04-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 화요일에는 재택근무를 한다."
+    },
+    {
+     "groupID": "cross-04-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "다음 고객 방문은 화요일 오후 2시야."
+    },
+    {
+     "groupID": "cross-04-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "cross-04-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "cross-04-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "cross-04-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "cross-04-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "cross-04-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-04-g1",
+     "content": "이샘플은 화요일에 재택근무를 한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-g2",
+     "content": "다음 고객 방문은 화요일 오후 2시이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d1",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d2",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d3",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d4",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d5",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-04-d6",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 다음 고객 방문에 대면으로 참석할 수 있어?",
+   "expected": [
+    "이샘플은 화요일에 재택근무를 한다.",
+    "다음 고객 방문은 화요일 오후 2시이다."
+   ]
+  },
+  {
+   "id": "cross-05",
+   "category": "cross_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "cross-05-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본이 보고서 초안을 쓰고 있어."
+    },
+    {
+     "groupID": "cross-05-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "보고서 검토는 박예시가 맡기로 했어."
+    },
+    {
+     "groupID": "cross-05-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "보고서 마감은 다음 주 금요일이야."
+    },
+    {
+     "groupID": "cross-05-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "cross-05-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "cross-05-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "cross-05-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "cross-05-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "cross-05-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-05-g1",
+     "content": "최견본은 보고서 초안을 쓰고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-g2",
+     "content": "보고서 검토는 박예시가 맡는다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-g3",
+     "content": "보고서 마감은 다음 주 금요일이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d1",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d2",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d3",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d4",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d5",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-05-d6",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "보고서 담당이 누구고 언제까지야?",
+   "expected": [
+    "보고서 검토는 박예시가 맡는다.",
+    "보고서 마감은 다음 주 금요일이다."
+   ]
+  },
+  {
+   "id": "cross-06",
+   "category": "cross_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "cross-06-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 아침 회의를 싫어해."
+    },
+    {
+     "groupID": "cross-06-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "다음 스프린트 회의는 오전 8시 반이야."
+    },
+    {
+     "groupID": "cross-06-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 오후에 집중이 제일 잘 된다고 했어."
+    },
+    {
+     "groupID": "cross-06-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "cross-06-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "cross-06-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "cross-06-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "cross-06-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "cross-06-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-06-g1",
+     "content": "최견본은 아침 회의를 싫어한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-g2",
+     "content": "다음 스프린트 회의는 오전 8시 반이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-g3",
+     "content": "최견본은 오후에 집중이 가장 잘 된다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d1",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d2",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d3",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d4",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d5",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-06-d6",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본이 다음 스프린트 회의에 대해 불만일 만한 이유가 뭐야?",
+   "expected": [
+    "최견본은 아침 회의를 싫어한다.",
+    "다음 스프린트 회의는 오전 8시 반이다."
+   ]
+  },
+  {
+   "id": "cross-07",
+   "category": "cross_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "cross-07-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플이 쓰는 노트북은 맥북이야."
+    },
+    {
+     "groupID": "cross-07-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "사내 VPN 클라이언트는 윈도우 전용이야."
+    },
+    {
+     "groupID": "cross-07-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "cross-07-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "cross-07-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "cross-07-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "cross-07-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "cross-07-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-07-g1",
+     "content": "이샘플은 맥북을 쓴다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-g2",
+     "content": "사내 VPN 클라이언트는 윈도우에서만 동작한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d1",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d2",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d3",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d4",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d5",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-07-d6",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이 사내 VPN 접속하려면 어떻게 해야 해?",
+   "expected": [
+    "이샘플은 맥북을 쓴다.",
+    "사내 VPN 클라이언트는 윈도우에서만 동작한다."
+   ]
+  },
+  {
+   "id": "cross-08",
+   "category": "cross_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "cross-08-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시 아이가 초등학교에 입학했어."
+    },
+    {
+     "groupID": "cross-08-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 오후 4시에 퇴근해."
+    },
+    {
+     "groupID": "cross-08-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "고객 회의는 오후 5시 이후에 잡히는 경우가 많아."
+    },
+    {
+     "groupID": "cross-08-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "cross-08-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "cross-08-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "cross-08-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "cross-08-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "cross-08-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "cross-08-g1",
+     "content": "박예시의 아이는 올해 초등학교에 입학했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-g2",
+     "content": "박예시는 오후 4시에 퇴근한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-g3",
+     "content": "고객 회의는 오후 5시 이후에 잡히는 경우가 많다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d1",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d2",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d3",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d4",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d5",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "cross-08-d6",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 고객 회의에 자주 빠지는 이유가 뭘까?",
+   "expected": [
+    "박예시는 오후 4시에 퇴근한다.",
+    "고객 회의는 오후 5시 이후에 잡히는 경우가 많다."
+   ]
+  },
+  {
+   "id": "preference-01",
+   "category": "preference",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "preference-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 회의록을 항상 마크다운으로 받고 싶어."
+    },
+    {
+     "groupID": "preference-01-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 점심에 국밥을 좋아해."
+    },
+    {
+     "groupID": "preference-01-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "preference-01-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "preference-01-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "preference-01-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "preference-01-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "preference-01-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-01-g1",
+     "content": "이샘플은 회의록을 항상 마크다운으로 받고 싶어 한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-g2",
+     "content": "박예시는 점심에 국밥을 좋아한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d1",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d2",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d3",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d4",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d5",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-01-d6",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플한테 회의록 어떤 형식으로 보내줄까?",
+   "expected": [
+    "이샘플은 회의록을 항상 마크다운으로 받고 싶어 한다."
+   ]
+  },
+  {
+   "id": "preference-02",
+   "category": "preference",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "preference-02-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 슬랙보다 전화로 급한 일을 받는 게 편해."
+    },
+    {
+     "groupID": "preference-02-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 이메일 확인을 하루 두 번만 해."
+    },
+    {
+     "groupID": "preference-02-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "preference-02-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "preference-02-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "preference-02-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "preference-02-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "preference-02-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-02-g1",
+     "content": "최견본은 급한 일은 슬랙보다 전화로 받는 것을 편해한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-g2",
+     "content": "박예시는 이메일을 하루 두 번만 확인한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d1",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d2",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d3",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d4",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d5",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-02-d6",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본에게 긴급 건은 어떻게 연락해야 해?",
+   "expected": [
+    "최견본은 급한 일은 슬랙보다 전화로 받는 것을 편해한다."
+   ]
+  },
+  {
+   "id": "preference-03",
+   "category": "preference",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "preference-03-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "커피는 오전에만 마셔. 오후에는 안 마셔."
+    },
+    {
+     "groupID": "preference-03-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 차를 좋아해."
+    },
+    {
+     "groupID": "preference-03-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "preference-03-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "preference-03-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "preference-03-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "preference-03-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "preference-03-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-03-g1",
+     "content": "박예시는 커피를 오전에만 마신다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-g2",
+     "content": "이샘플은 차를 좋아한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d1",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d2",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d3",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d4",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d5",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-03-d6",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시한테 오후 회의 때 뭐 마실 거 준비하지?",
+   "expected": [
+    "박예시는 커피를 오전에만 마신다."
+   ]
+  },
+  {
+   "id": "preference-04",
+   "category": "preference",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "preference-04-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "요약은 세 줄 이내로 해줘."
+    },
+    {
+     "groupID": "preference-04-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 요약 말고 원문을 다 보는 편이야."
+    },
+    {
+     "groupID": "preference-04-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "preference-04-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "preference-04-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "preference-04-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "preference-04-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "preference-04-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-04-g1",
+     "content": "최견본은 요약을 세 줄 이내로 받고 싶어 한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-g2",
+     "content": "이샘플은 요약보다 원문 전체를 보는 편이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d1",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d2",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d3",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d4",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d5",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-04-d6",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본이 좋아하는 보고 길이가 어느 정도야?",
+   "expected": [
+    "최견본은 요약을 세 줄 이내로 받고 싶어 한다."
+   ]
+  },
+  {
+   "id": "preference-05",
+   "category": "preference",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "preference-05-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "코드 리뷰는 작은 단위로 자주 받는 게 좋아."
+    },
+    {
+     "groupID": "preference-05-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "코드 리뷰 코멘트는 반드시 이유를 같이 적어줘."
+    },
+    {
+     "groupID": "preference-05-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "preference-05-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "preference-05-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "preference-05-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "preference-05-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "preference-05-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-05-g1",
+     "content": "이샘플은 코드 리뷰를 작은 단위로 자주 받는 것을 선호한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-g2",
+     "content": "박예시는 코드 리뷰 코멘트에 이유가 함께 적히기를 원한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d1",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d2",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d3",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d4",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d5",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-05-d6",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플한테 PR 보낼 때 크기를 어떻게 하면 좋을까?",
+   "expected": [
+    "이샘플은 코드 리뷰를 작은 단위로 자주 받는 것을 선호한다."
+   ]
+  },
+  {
+   "id": "preference-06",
+   "category": "preference",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "preference-06-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 창가 자리보다 통로 자리가 좋아."
+    },
+    {
+     "groupID": "preference-06-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 출장 때 호텔보다 에어비앤비가 편해."
+    },
+    {
+     "groupID": "preference-06-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "preference-06-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "preference-06-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "preference-06-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "preference-06-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "preference-06-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-06-g1",
+     "content": "박예시는 비행기에서 통로 자리를 선호한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-g2",
+     "content": "최견본은 출장 때 호텔보다 에어비앤비를 편해한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d1",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d2",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d3",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d4",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d5",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-06-d6",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시 항공권 예약할 때 좌석 어디로 잡아?",
+   "expected": [
+    "박예시는 비행기에서 통로 자리를 선호한다."
+   ]
+  },
+  {
+   "id": "preference-07",
+   "category": "preference",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "preference-07-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 한국어로만 답을 받고 싶어. 영어 약어는 풀어서 써줘."
+    },
+    {
+     "groupID": "preference-07-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 영어 문서도 그냥 읽어."
+    },
+    {
+     "groupID": "preference-07-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "preference-07-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "preference-07-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "preference-07-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "preference-07-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "preference-07-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-07-g1",
+     "content": "최견본은 답을 한국어로 받고 싶어 하며 영어 약어는 풀어 쓰기를 원한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-g2",
+     "content": "이샘플은 영어 문서를 번역 없이 읽는다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d1",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d2",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d3",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d4",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d5",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-07-d6",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본한테 기술 문서를 요약해 줄 때 주의할 점이 뭐야?",
+   "expected": [
+    "최견본은 답을 한국어로 받고 싶어 하며 영어 약어는 풀어 쓰기를 원한다."
+   ]
+  },
+  {
+   "id": "preference-08",
+   "category": "preference",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "preference-08-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "금요일 오후에는 회의 잡지 말아줘."
+    },
+    {
+     "groupID": "preference-08-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 월요일 오전이 회의하기 제일 좋아."
+    },
+    {
+     "groupID": "preference-08-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "preference-08-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "preference-08-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "preference-08-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "preference-08-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "preference-08-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "preference-08-g1",
+     "content": "이샘플은 금요일 오후에 회의를 잡지 않기를 원한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-g2",
+     "content": "박예시는 월요일 오전 회의를 선호한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d1",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d2",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d3",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d4",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d5",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "preference-08-d6",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플이랑 주간 리뷰를 언제 잡을까?",
+   "expected": [
+    "이샘플은 금요일 오후에 회의를 잡지 않기를 원한다."
+   ]
+  },
+  {
+   "id": "update-01",
+   "category": "update",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "update-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-06-01",
+     "body": "나 플랫폼팀에서 일해."
+    },
+    {
+     "groupID": "update-01-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-01",
+     "body": "9월부터 결제팀으로 옮겼어."
+    },
+    {
+     "groupID": "update-01-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "update-01-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "update-01-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "update-01-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "update-01-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "update-01-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-01-g1",
+     "content": "이샘플은 플랫폼팀에서 일한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-g2",
+     "content": "이샘플은 결제팀으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "이샘플은 플랫폼팀에서 일한다."
+    },
+    {
+     "groupID": "update-01-d1",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-d2",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-d3",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-d4",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-d5",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-01-d6",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플은 지금 어느 팀이야?",
+   "expected": [
+    "이샘플은 결제팀으로 옮겼다."
+   ]
+  },
+  {
+   "id": "update-02",
+   "category": "update",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "update-02-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-05-01",
+     "body": "나는 서울 마포에 살아."
+    },
+    {
+     "groupID": "update-02-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-08-20",
+     "body": "8월에 성남으로 이사했어."
+    },
+    {
+     "groupID": "update-02-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "update-02-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "update-02-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "update-02-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "update-02-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "update-02-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-02-g1",
+     "content": "박예시는 서울 마포에 산다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-g2",
+     "content": "박예시는 성남으로 이사했다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "박예시는 서울 마포에 산다."
+    },
+    {
+     "groupID": "update-02-d1",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-d2",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-d3",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-d4",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-d5",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-02-d6",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시 지금 사는 곳이 어디야?",
+   "expected": [
+    "박예시는 성남으로 이사했다."
+   ]
+  },
+  {
+   "id": "update-03",
+   "category": "update",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "update-03-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-04-01",
+     "body": "배포는 금요일에 해."
+    },
+    {
+     "groupID": "update-03-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-14",
+     "body": "앞으로는 사고가 나서 금요일 배포 안 해."
+    },
+    {
+     "groupID": "update-03-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "update-03-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "update-03-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "update-03-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "update-03-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "update-03-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-03-g1",
+     "content": "최견본은 금요일에 배포한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-g2",
+     "content": "최견본은 금요일에 배포하지 않는다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "최견본은 금요일에 배포한다."
+    },
+    {
+     "groupID": "update-03-d1",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-d2",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-d3",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-d4",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-d5",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-03-d6",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본은 금요일에 배포해도 돼?",
+   "expected": [
+    "최견본은 금요일에 배포하지 않는다."
+   ]
+  },
+  {
+   "id": "update-04",
+   "category": "update",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "update-04-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-03-01",
+     "body": "회의 시간은 오전 10시야."
+    },
+    {
+     "groupID": "update-04-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-10",
+     "body": "주간 회의 시간이 오후 3시로 바뀌었어."
+    },
+    {
+     "groupID": "update-04-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "update-04-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "update-04-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "update-04-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "update-04-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "update-04-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-04-g1",
+     "content": "팀 주간 회의는 오전 10시에 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-g2",
+     "content": "팀 주간 회의는 오후 3시에 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "팀 주간 회의는 오전 10시에 한다."
+    },
+    {
+     "groupID": "update-04-d1",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-d2",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-d3",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-d4",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-d5",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-04-d6",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "팀 주간 회의 몇 시에 해?",
+   "expected": [
+    "팀 주간 회의는 오후 3시에 한다."
+   ]
+  },
+  {
+   "id": "update-05",
+   "category": "update",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "update-05-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-02-01",
+     "body": "나는 아이폰을 써."
+    },
+    {
+     "groupID": "update-05-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-08-01",
+     "body": "안드로이드로 갈아탔어."
+    },
+    {
+     "groupID": "update-05-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "update-05-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "update-05-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "update-05-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "update-05-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "update-05-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-05-g1",
+     "content": "박예시는 아이폰을 쓴다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-g2",
+     "content": "박예시는 안드로이드 폰을 쓴다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d1",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d2",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d3",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d4",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d5",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-05-d6",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 쓰는 폰이 뭐야?",
+   "expected": [
+    "박예시는 안드로이드 폰을 쓴다."
+   ]
+  },
+  {
+   "id": "update-06",
+   "category": "update",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "update-06-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-07-01",
+     "body": "이번 프로젝트 리드는 최견본이야."
+    },
+    {
+     "groupID": "update-06-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-15",
+     "body": "프로젝트 리드를 이샘플로 바꿨어."
+    },
+    {
+     "groupID": "update-06-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-18",
+     "body": "프로젝트 킥오프는 다음 주야."
+    },
+    {
+     "groupID": "update-06-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "update-06-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "update-06-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "update-06-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "update-06-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "update-06-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-06-g1",
+     "content": "이번 프로젝트의 리드는 최견본이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-g2",
+     "content": "이번 프로젝트의 리드는 이샘플이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "이번 프로젝트의 리드는 최견본이다."
+    },
+    {
+     "groupID": "update-06-g3",
+     "content": "프로젝트 킥오프는 다음 주이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d1",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d2",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d3",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d4",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d5",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-06-d6",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "프로젝트 리드가 누구야?",
+   "expected": [
+    "이번 프로젝트의 리드는 이샘플이다."
+   ]
+  },
+  {
+   "id": "update-07",
+   "category": "update",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "update-07-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-05-01",
+     "body": "나는 점심에 도시락을 싸와."
+    },
+    {
+     "groupID": "update-07-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-05",
+     "body": "요즘은 도시락 안 싸고 사 먹어."
+    },
+    {
+     "groupID": "update-07-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "update-07-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "update-07-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "update-07-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "update-07-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "update-07-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-07-g1",
+     "content": "이샘플은 점심에 도시락을 싸온다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-g2",
+     "content": "이샘플은 점심을 사 먹는다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": "이샘플은 점심에 도시락을 싸온다."
+    },
+    {
+     "groupID": "update-07-d1",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-d2",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-d3",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-d4",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-d5",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-07-d6",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플은 점심을 어떻게 해결해?",
+   "expected": [
+    "이샘플은 점심을 사 먹는다."
+   ]
+  },
+  {
+   "id": "update-08",
+   "category": "update",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "update-08-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-06-01",
+     "body": "고객사 담당자는 최견본이야."
+    },
+    {
+     "groupID": "update-08-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-12",
+     "body": "고객사 담당자가 바뀐 걸로 알아. 이제 박예시가 맡아."
+    },
+    {
+     "groupID": "update-08-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "update-08-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "update-08-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "update-08-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "update-08-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "update-08-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "update-08-g1",
+     "content": "고객사 담당자는 최견본이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-g2",
+     "content": "고객사 담당자는 박예시이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d1",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d2",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d3",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d4",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d5",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "update-08-d6",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "고객사 담당자가 누구야?",
+   "expected": [
+    "고객사 담당자는 박예시이다."
+   ]
+  },
+  {
+   "id": "single-01",
+   "category": "single_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "single-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나 여명거리 CTO야."
+    },
+    {
+     "groupID": "single-01-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 마케팅 담당이야."
+    },
+    {
+     "groupID": "single-01-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "single-01-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "single-01-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "single-01-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "single-01-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "single-01-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-01-g1",
+     "content": "이샘플은 여명거리의 CTO이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-g2",
+     "content": "박예시는 마케팅을 담당한다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d1",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d2",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d3",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d4",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d5",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-01-d6",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이샘플 직책이 뭐야?",
+   "expected": [
+    "이샘플은 여명거리의 CTO이다."
+   ]
+  },
+  {
+   "id": "single-02",
+   "category": "single_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "single-02-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "내 생일은 11월 3일이야."
+    },
+    {
+     "groupID": "single-02-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플 생일은 4월 9일이야."
+    },
+    {
+     "groupID": "single-02-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "single-02-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "single-02-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "single-02-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "single-02-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "single-02-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-02-g1",
+     "content": "최견본의 생일은 11월 3일이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-g2",
+     "content": "이샘플의 생일은 4월 9일이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d1",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d2",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d3",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d4",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d5",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-02-d6",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본 생일이 언제야?",
+   "expected": [
+    "최견본의 생일은 11월 3일이다."
+   ]
+  },
+  {
+   "id": "single-03",
+   "category": "single_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "single-03-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 주 3일 사무실에 나와."
+    },
+    {
+     "groupID": "single-03-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 매일 사무실에 나와."
+    },
+    {
+     "groupID": "single-03-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "single-03-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "single-03-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "single-03-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "single-03-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "single-03-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-03-g1",
+     "content": "박예시는 주 3일 사무실에 나온다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-g2",
+     "content": "최견본은 매일 사무실에 나온다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d1",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d2",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d3",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d4",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d5",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-03-d6",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시는 사무실에 얼마나 나와?",
+   "expected": [
+    "박예시는 주 3일 사무실에 나온다."
+   ]
+  },
+  {
+   "id": "single-04",
+   "category": "single_note",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "single-04-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "릴리스 때는 admind와 capabilityd를 같이 올려."
+    },
+    {
+     "groupID": "single-04-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "점심은 12시야."
+    },
+    {
+     "groupID": "single-04-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "single-04-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "single-04-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "single-04-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "single-04-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "single-04-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-04-g1",
+     "content": "이샘플은 릴리스 때 admind와 capabilityd를 함께 올린다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-g1",
+     "content": "하나만 올리면 프로토콜이 어긋난다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-g2",
+     "content": "박예시는 12시에 점심을 먹는다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d1",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d2",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d3",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d4",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d5",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-04-d6",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "릴리스 때 뭘 같이 올려?",
+   "expected": [
+    "이샘플은 릴리스 때 admind와 capabilityd를 함께 올린다."
+   ]
+  },
+  {
+   "id": "single-05",
+   "category": "single_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "single-05-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "우리 회사 대표번호는 02-000-0000이야."
+    },
+    {
+     "groupID": "single-05-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "팩스는 안 써."
+    },
+    {
+     "groupID": "single-05-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "single-05-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "single-05-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "single-05-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "single-05-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    },
+    {
+     "groupID": "single-05-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-05-g1",
+     "content": "회사 대표번호는 02-000-0000이다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-g2",
+     "content": "이샘플은 팩스를 쓰지 않는다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d1",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d2",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d3",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d4",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d5",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-05-d6",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "회사 대표번호 알려줘.",
+   "expected": [
+    "회사 대표번호는 02-000-0000이다."
+   ]
+  },
+  {
+   "id": "single-06",
+   "category": "single_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "single-06-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "나 반려견 이름은 보리야."
+    },
+    {
+     "groupID": "single-06-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 고양이를 키워."
+    },
+    {
+     "groupID": "single-06-d1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "single-06-d2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "single-06-d3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "single-06-d4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "single-06-d5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    },
+    {
+     "groupID": "single-06-d6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-06-g1",
+     "content": "박예시의 반려견 이름은 보리이다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-g2",
+     "content": "최견본은 고양이를 키운다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d1",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d2",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d3",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d4",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d5",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-06-d6",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "박예시가 키우는 동물이 뭐야?",
+   "expected": [
+    "박예시의 반려견 이름은 보리이다."
+   ]
+  },
+  {
+   "id": "single-07",
+   "category": "single_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "single-07-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "회의실 예약은 총무팀 박예시한테 부탁해."
+    },
+    {
+     "groupID": "single-07-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "주차는 지하 2층에 해."
+    },
+    {
+     "groupID": "single-07-d1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 사내 교육 자료를 정리했다."
+    },
+    {
+     "groupID": "single-07-d2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 지난달 팀 회식 장소를 알아봤다."
+    },
+    {
+     "groupID": "single-07-d3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 회의 때 노트북으로 메모를 한다."
+    },
+    {
+     "groupID": "single-07-d4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 다음 분기 예산안을 검토하고 있다."
+    },
+    {
+     "groupID": "single-07-d5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 회의 자료를 슬라이드로 정리한다."
+    },
+    {
+     "groupID": "single-07-d6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 주간 보고서 양식을 새로 만들었다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-07-g1",
+     "content": "회의실 예약은 총무팀의 박예시에게 부탁한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-g2",
+     "content": "주차는 지하 2층에 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d1",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d2",
+     "content": "이샘플은 지난달 팀 회식 장소를 알아봤다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d3",
+     "content": "최견본은 회의 때 노트북으로 메모를 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d4",
+     "content": "박예시는 다음 분기 예산안을 검토하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d5",
+     "content": "이샘플은 회의 자료를 슬라이드로 정리한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-07-d6",
+     "content": "최견본은 주간 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "회의실 예약 누구한테 해야 해?",
+   "expected": [
+    "회의실 예약은 총무팀의 박예시에게 부탁한다."
+   ]
+  },
+  {
+   "id": "single-08",
+   "category": "single_note",
+   "split": "holdout",
+   "notes": [
+    {
+     "groupID": "single-08-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 대학에서 통계학을 전공했어."
+    },
+    {
+     "groupID": "single-08-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "나는 컴퓨터공학을 전공했어."
+    },
+    {
+     "groupID": "single-08-d1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다."
+    },
+    {
+     "groupID": "single-08-d2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 워크숍 일정을 조율하고 있다."
+    },
+    {
+     "groupID": "single-08-d3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 출장 경비를 매달 정산한다."
+    },
+    {
+     "groupID": "single-08-d4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "이샘플은 고객 문의에 당일 답변을 보내려고 한다."
+    },
+    {
+     "groupID": "single-08-d5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "최견본은 팀 점심 메뉴를 자주 고른다."
+    },
+    {
+     "groupID": "single-08-d6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "박예시는 신규 고객사 소개 자료를 준비하고 있다."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "single-08-g1",
+     "content": "최견본은 대학에서 통계학을 전공했다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-g2",
+     "content": "이샘플은 컴퓨터공학을 전공했다.",
+     "isStatic": true,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d1",
+     "content": "이샘플은 사무실 자리를 창가 쪽으로 옮겼다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d2",
+     "content": "최견본은 팀 워크숍 일정을 조율하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d3",
+     "content": "박예시는 출장 경비를 매달 정산한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d4",
+     "content": "이샘플은 고객 문의에 당일 답변을 보내려고 한다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d5",
+     "content": "최견본은 팀 점심 메뉴를 자주 고른다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "single-08-d6",
+     "content": "박예시는 신규 고객사 소개 자료를 준비하고 있다.",
+     "isStatic": false,
+     "occurredOn": "",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "최견본은 무슨 공부를 했어?",
+   "expected": [
+    "최견본은 대학에서 통계학을 전공했다."
+   ]
+  }
+ ]
+}
