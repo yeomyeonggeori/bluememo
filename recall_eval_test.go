@@ -27,13 +27,14 @@ const evalIdentifierSeed = 20260921
 
 const (
 	evalCategoryTemporal   evalCategory = "temporal"
+	evalCategoryPeriodic   evalCategory = "periodic"
 	evalCategoryCrossNote  evalCategory = "cross_note"
 	evalCategoryPreference evalCategory = "preference"
 	evalCategoryUpdate     evalCategory = "update"
 	evalCategorySingleNote evalCategory = "single_note"
 )
 
-var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote}
+var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryPeriodic, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote}
 
 type evalSplit string
 
