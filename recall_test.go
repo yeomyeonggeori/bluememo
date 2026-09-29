@@ -130,3 +130,18 @@ func TestProfileHoldsOnlyLiveStaticMemories(t *testing.T) {
 		t.Fatalf("expected only the static trait, got %v", contents(profile))
 	}
 }
+
+func TestDefaultIdentifiersAreDistinctAndFixedWidth(t *testing.T) {
+	const identifierCount = 10000
+	seen := make(map[string]struct{}, identifierCount)
+	for range identifierCount {
+		identifier := bluememo.NewIdentifier()
+		if len(identifier) != 32 {
+			t.Fatalf("identifier %q has length %d, want 32", identifier, len(identifier))
+		}
+		if _, repeated := seen[identifier]; repeated {
+			t.Fatalf("identifier %q repeated", identifier)
+		}
+		seen[identifier] = struct{}{}
+	}
+}

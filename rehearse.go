@@ -91,7 +91,7 @@ func (store *Store) saveTriggers(ctx context.Context, memoryID string, phrases [
 	for index, phrase := range phrases {
 		if _, errorValue := transaction.ExecContext(ctx, `
 			insert into memory_trigger (trigger_id, memory_id, phrase, embedding_model, embedding) values (?, ?, ?, ?, ?)`,
-			NewIdentifier(), memoryID, phrase, store.configuration.EmbeddingModel, encodeEmbedding(embeddings[index])); errorValue != nil {
+			store.newIdentifier(), memoryID, phrase, store.configuration.EmbeddingModel, encodeEmbedding(embeddings[index])); errorValue != nil {
 			return errorValue
 		}
 	}

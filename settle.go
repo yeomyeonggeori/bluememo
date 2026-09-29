@@ -115,7 +115,7 @@ func (store *Store) unclaimedGroupIDs(ctx context.Context) ([]string, error) {
 
 func (store *Store) claimGroup(ctx context.Context, groupID string) (pendingGroup, bool, error) {
 	now := store.now()
-	claimToken := NewIdentifier()
+	claimToken := store.newIdentifier()
 	result, errorValue := store.database.ExecContext(ctx, `
 		update pending_note set claim_token = ?, claimed_until = ?
 		where group_id = ? and settled_at is null and (claimed_until is null or claimed_until < ?)`,
@@ -163,7 +163,7 @@ func (store *Store) settleGroup(ctx context.Context, group pendingGroup, report 
 	if errorValue != nil {
 		return errorValue
 	}
-	originID := NewIdentifier()
+	originID := store.newIdentifier()
 	for _, proposition := range propositions {
 		if errorValue := store.settleProposition(ctx, group, proposition, originID, report); errorValue != nil {
 			return errorValue
@@ -213,7 +213,7 @@ func (store *Store) newMemory(proposition Proposition, dates dated, originID str
 		importance = DefaultImportance
 	}
 	memory := Memory{
-		MemoryID:        NewIdentifier(),
+		MemoryID:        store.newIdentifier(),
 		Content:         proposition.Content,
 		IsStatic:        proposition.IsStatic,
 		OccurredAt:      dates.occurredAt,
