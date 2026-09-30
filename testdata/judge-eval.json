@@ -1,0 +1,424 @@
+{
+ "cases": [
+  {
+   "id": "clear_same-01",
+   "kind": "clear_same",
+   "split": "evolve",
+   "statement": "이샘플은 매일 아침 7시에 일어난다.",
+   "candidates": [
+    "박예시는 아침 6시에 일어난다.",
+    "이샘플은 아침 7시에 기상한다."
+   ],
+   "relation": "same",
+   "target": 1
+  },
+  {
+   "id": "clear_same-02",
+   "kind": "clear_same",
+   "split": "evolve",
+   "statement": "박예시의 이메일 주소는 park@example.com이다.",
+   "candidates": [
+    "박예시에게 연락하려면 park@example.com으로 메일을 보내면 된다."
+   ],
+   "relation": "same",
+   "target": 0
+  },
+  {
+   "id": "clear_same-03",
+   "kind": "clear_same",
+   "split": "evolve",
+   "statement": "최견본은 커피보다 차를 좋아한다.",
+   "candidates": [
+    "최견본은 서울에 산다.",
+    "이샘플은 커피를 즐겨 마신다.",
+    "최견본은 차를 커피보다 더 선호한다."
+   ],
+   "relation": "same",
+   "target": 2
+  },
+  {
+   "id": "clear_same-04",
+   "kind": "clear_same",
+   "split": "evolve",
+   "statement": "팀 회의는 매주 월요일 오전 10시에 열린다.",
+   "candidates": [
+    "매주 월요일 10시(오전)에 팀 회의를 한다.",
+    "분기 회의는 3개월마다 열린다."
+   ],
+   "relation": "same",
+   "target": 0
+  },
+  {
+   "id": "clear_same-05",
+   "kind": "clear_same",
+   "split": "holdout",
+   "statement": "이샘플은 고양이 두 마리를 키운다.",
+   "candidates": [
+    "이샘플의 집에는 고양이가 두 마리 있다."
+   ],
+   "relation": "same",
+   "target": 0
+  },
+  {
+   "id": "clear_same-06",
+   "kind": "clear_same",
+   "split": "holdout",
+   "statement": "박예시는 부산에서 태어났다.",
+   "candidates": [
+    "박예시는 지금 대전에 산다.",
+    "박예시의 고향은 부산이다.",
+    "최견본은 대구에서 태어났다."
+   ],
+   "relation": "same",
+   "target": 1
+  },
+  {
+   "id": "clear_updates-01",
+   "kind": "clear_updates",
+   "split": "evolve",
+   "statement": "최견본은 이제 판교 사무실로 출근한다.",
+   "candidates": [
+    "최견본은 커피를 좋아한다.",
+    "최견본은 강남 사무실로 출근한다."
+   ],
+   "relation": "updates",
+   "target": 1
+  },
+  {
+   "id": "clear_updates-02",
+   "kind": "clear_updates",
+   "split": "evolve",
+   "statement": "박예시는 지난달에 퇴사했다.",
+   "candidates": [
+    "박예시는 마케팅팀에서 일한다."
+   ],
+   "relation": "updates",
+   "target": 0
+  },
+  {
+   "id": "clear_updates-03",
+   "kind": "clear_updates",
+   "split": "evolve",
+   "statement": "이샘플의 새 전화번호는 010-0000-1234이다.",
+   "candidates": [
+    "이샘플의 이메일은 sample@example.com이다.",
+    "이샘플의 전화번호는 010-0000-5678이다."
+   ],
+   "relation": "updates",
+   "target": 1
+  },
+  {
+   "id": "clear_updates-04",
+   "kind": "clear_updates",
+   "split": "evolve",
+   "statement": "다음 주 정기 회의가 목요일로 옮겨졌다.",
+   "candidates": [
+    "다음 주 정기 회의는 화요일 오후 2시에 열린다.",
+    "회의실은 3층 대회의실이다."
+   ],
+   "relation": "updates",
+   "target": 0
+  },
+  {
+   "id": "clear_updates-05",
+   "kind": "clear_updates",
+   "split": "holdout",
+   "statement": "최견본은 채식을 그만두고 다시 고기를 먹기 시작했다.",
+   "candidates": [
+    "최견본은 채식을 한다."
+   ],
+   "relation": "updates",
+   "target": 0
+  },
+  {
+   "id": "clear_updates-06",
+   "kind": "clear_updates",
+   "split": "holdout",
+   "statement": "프로젝트 마감일이 12월 15일로 연장되었다.",
+   "candidates": [
+    "프로젝트 책임자는 박예시이다.",
+    "이샘플은 프로젝트 예산을 관리한다.",
+    "프로젝트 마감일은 11월 30일이다."
+   ],
+   "relation": "updates",
+   "target": 2
+  },
+  {
+   "id": "clear_extends-01",
+   "kind": "clear_extends",
+   "split": "evolve",
+   "statement": "이샘플은 강아지를 키우는데, 이름은 보리이고 골든리트리버이다.",
+   "candidates": [
+    "이샘플은 강아지를 키운다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "clear_extends-02",
+   "kind": "clear_extends",
+   "split": "evolve",
+   "statement": "박예시는 저녁마다 한강에서 5킬로미터를 달린다.",
+   "candidates": [
+    "박예시는 서울에 산다.",
+    "박예시는 러닝을 취미로 한다."
+   ],
+   "relation": "extends",
+   "target": 1
+  },
+  {
+   "id": "clear_extends-03",
+   "kind": "clear_extends",
+   "split": "evolve",
+   "statement": "이번 워크숍은 제주에서 열리고 숙소는 바닷가 호텔이다.",
+   "candidates": [
+    "이번 워크숍은 제주에서 열린다.",
+    "워크숍 참가자는 서른 명이다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "clear_extends-04",
+   "kind": "clear_extends",
+   "split": "holdout",
+   "statement": "박예시는 알레르기가 있는데 특히 땅콩에 심하게 반응한다.",
+   "candidates": [
+    "박예시는 음식 알레르기가 있다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "clear_extends-05",
+   "kind": "clear_extends",
+   "split": "holdout",
+   "statement": "이샘플은 대학에서 컴퓨터공학을 전공했고 졸업논문은 검색 엔진에 관한 것이었다.",
+   "candidates": [
+    "최견본은 경영학을 전공했다.",
+    "이샘플은 컴퓨터공학을 전공했다."
+   ],
+   "relation": "extends",
+   "target": 1
+  },
+  {
+   "id": "clear_extends-06",
+   "kind": "clear_extends",
+   "split": "holdout",
+   "statement": "팀 점심은 목요일마다 회사 근처 국숫집에서 먹는다.",
+   "candidates": [
+    "팀은 목요일에 점심을 함께 먹는다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "clear_unrelated-01",
+   "kind": "clear_unrelated",
+   "split": "evolve",
+   "statement": "최견본은 다음 달에 제주로 여행을 간다.",
+   "candidates": [
+    "이샘플은 매일 아침 7시에 일어난다.",
+    "박예시의 이메일 주소는 park@example.com이다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "clear_unrelated-02",
+   "kind": "clear_unrelated",
+   "split": "evolve",
+   "statement": "회사 주차장은 지하 2층에 있다.",
+   "candidates": [
+    "박예시는 커피를 좋아한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "clear_unrelated-03",
+   "kind": "clear_unrelated",
+   "split": "evolve",
+   "statement": "이샘플은 기타를 배우고 있다.",
+   "candidates": [
+    "프로젝트 마감일은 11월 30일이다.",
+    "최견본은 판교 사무실로 출근한다.",
+    "팀 회의는 매주 월요일에 열린다.",
+    "박예시는 부산에서 태어났다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "clear_unrelated-04",
+   "kind": "clear_unrelated",
+   "split": "evolve",
+   "statement": "박예시는 안경을 쓴다.",
+   "candidates": [
+    "분기 매출 보고서는 다음 주에 나온다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "clear_unrelated-05",
+   "kind": "clear_unrelated",
+   "split": "holdout",
+   "statement": "최견본의 생일은 3월 2일이다.",
+   "candidates": [
+    "이샘플은 고양이를 키운다.",
+    "회의실 예약은 그룹웨어에서 한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "clear_unrelated-06",
+   "kind": "clear_unrelated",
+   "split": "holdout",
+   "statement": "새 프린터는 2층 복도에 설치되었다.",
+   "candidates": [
+    "이샘플의 이메일은 sample@example.com이다.",
+    "박예시는 마케팅팀에서 일한다.",
+    "최견본은 채식을 한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-01",
+   "kind": "ambiguous",
+   "split": "evolve",
+   "statement": "이샘플은 요즘 서울보다 수원에서 지내는 날이 많다.",
+   "candidates": [
+    "이샘플은 서울에 산다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-02",
+   "kind": "ambiguous",
+   "split": "evolve",
+   "statement": "박예시는 커피를 줄이고 있다.",
+   "candidates": [
+    "박예시는 커피를 좋아한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-03",
+   "kind": "ambiguous",
+   "split": "evolve",
+   "statement": "최견본은 팀장 업무도 맡고 있다.",
+   "candidates": [
+    "최견본은 기획팀 대리이다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-04",
+   "kind": "ambiguous",
+   "split": "evolve",
+   "statement": "발표는 다음 주쯤으로 미뤄질 것 같다.",
+   "candidates": [
+    "발표는 이번 주 금요일이다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-05",
+   "kind": "ambiguous",
+   "split": "holdout",
+   "statement": "이샘플은 주 3일 재택근무를 한다.",
+   "candidates": [
+    "이샘플은 사무실로 출근한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "ambiguous-06",
+   "kind": "ambiguous",
+   "split": "holdout",
+   "statement": "박예시는 요즘 러닝 대신 수영을 자주 한다.",
+   "candidates": [
+    "박예시는 서울에 산다.",
+    "박예시는 러닝을 취미로 한다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "trap_same-01",
+   "kind": "trap_same",
+   "split": "evolve",
+   "statement": "이샘플은 매일 아침 7시에 일어나서 30분 동안 운동한다.",
+   "candidates": [
+    "이샘플은 매일 아침 7시에 일어난다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "trap_same-02",
+   "kind": "trap_same",
+   "split": "evolve",
+   "statement": "박예시의 휴대전화 번호는 010-0000-1111이다.",
+   "candidates": [
+    "박예시의 이메일 주소는 park@example.com이다."
+   ],
+   "relation": "unrelated",
+   "target": -1
+  },
+  {
+   "id": "trap_same-03",
+   "kind": "trap_same",
+   "split": "evolve",
+   "statement": "최견본은 커피보다 차를 좋아하고 특히 보이차를 즐겨 마신다.",
+   "candidates": [
+    "최견본은 커피보다 차를 좋아한다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "trap_same-04",
+   "kind": "trap_same",
+   "split": "holdout",
+   "statement": "팀 회의는 매주 월요일 오전 10시에 열리고 회의록은 이샘플이 쓴다.",
+   "candidates": [
+    "팀 회의는 매주 월요일 오전 10시에 열린다.",
+    "회의실은 3층 대회의실이다."
+   ],
+   "relation": "extends",
+   "target": 0
+  },
+  {
+   "id": "trap_same-05",
+   "kind": "trap_same",
+   "split": "holdout",
+   "statement": "이샘플은 고양이 세 마리를 키운다.",
+   "candidates": [
+    "이샘플은 서울에 산다.",
+    "이샘플은 고양이 두 마리를 키운다."
+   ],
+   "relation": "updates",
+   "target": 1
+  },
+  {
+   "id": "trap_same-06",
+   "kind": "trap_same",
+   "split": "holdout",
+   "statement": "박예시는 부산에서 태어났고 대학은 서울에서 다녔다.",
+   "candidates": [
+    "박예시는 부산에서 태어났다."
+   ],
+   "relation": "extends",
+   "target": 0
+  }
+ ]
+}
