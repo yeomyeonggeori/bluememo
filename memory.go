@@ -48,11 +48,12 @@ const (
 var Edges = []Edge{EdgeUpdates, EdgeExtends}
 
 type Proposition struct {
-	Content    string `json:"content"`
-	IsStatic   bool   `json:"isStatic"`
-	OccurredOn string `json:"occurredOn"`
-	Expiry     Expiry `json:"expiry"`
-	ExpiryDate string `json:"expiryDate"`
+	Content       string `json:"content"`
+	IsStatic      bool   `json:"isStatic"`
+	OccurredOn    string `json:"occurredOn"`
+	OccurredUntil string `json:"occurredUntil"`
+	Expiry        Expiry `json:"expiry"`
+	ExpiryDate    string `json:"expiryDate"`
 }
 
 type Memory struct {
@@ -60,6 +61,7 @@ type Memory struct {
 	Content           string     `json:"content"`
 	IsStatic          bool       `json:"isStatic"`
 	OccurredAt        time.Time  `json:"occurredAt,omitzero"`
+	OccurredUntil     time.Time  `json:"occurredUntil,omitzero"`
 	ValidUntil        time.Time  `json:"validUntil,omitzero"`
 	OriginID          string     `json:"originID"`
 	Importance        int        `json:"importance"`
@@ -98,8 +100,9 @@ var (
 )
 
 type dated struct {
-	occurredAt time.Time
-	validUntil time.Time
+	occurredAt    time.Time
+	occurredUntil time.Time
+	validUntil    time.Time
 }
 
 func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.Location) (dated, error) {
@@ -117,7 +120,16 @@ func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.L
 	if !validUntil.IsZero() && !validUntil.After(arrivedAt) {
 		return dated{}, ErrAlreadyExpired
 	}
-	return dated{occurredAt: parseDay(proposition.OccurredOn, location), validUntil: validUntil}, nil
+	occurredAt := parseDay(proposition.OccurredOn, location)
+	return dated{occurredAt: occurredAt, occurredUntil: resolveOccurredUntil(occurredAt, proposition.OccurredUntil, location), validUntil: validUntil}, nil
+}
+
+func resolveOccurredUntil(occurredAt time.Time, occurredUntil string, location *time.Location) time.Time {
+	lastDay := parseDay(occurredUntil, location)
+	if occurredAt.IsZero() || !lastDay.After(occurredAt) {
+		return time.Time{}
+	}
+	return lastDay
 }
 
 func ExpiryInstant(expiry Expiry, expiryDate string, arrivedAt time.Time, location *time.Location) (time.Time, error) {

@@ -188,7 +188,7 @@ func (store *Store) settleProposition(ctx context.Context, group pendingGroup, p
 		return nil
 	}
 	report.Proposed++
-	embedding, errorValue := store.embedDocument(ctx, store.matchableText(proposition.Content, dates.occurredAt))
+	embedding, errorValue := store.embedDocument(ctx, store.matchableText(proposition.Content, dates.occurredAt, dates.occurredUntil))
 	if errorValue != nil {
 		return errorValue
 	}
@@ -217,6 +217,7 @@ func (store *Store) newMemory(proposition Proposition, dates dated, originID str
 		Content:         proposition.Content,
 		IsStatic:        proposition.IsStatic,
 		OccurredAt:      dates.occurredAt,
+		OccurredUntil:   dates.occurredUntil,
 		ValidUntil:      dates.validUntil,
 		OriginID:        originID,
 		Importance:      importance,
@@ -325,10 +326,10 @@ func insertMemory(ctx context.Context, transaction *sql.Tx, memory Memory, embed
 		return errorValue
 	}
 	_, errorValue = transaction.ExecContext(ctx, `
-		insert into memory (memory_id, content, is_static, occurred_at, valid_until, origin_id, importance, storage_strength,
+		insert into memory (memory_id, content, is_static, occurred_at, occurred_to, valid_until, origin_id, importance, storage_strength,
 		                    resolved_entity_ids, unresolved_names, embedding_model, embedding, created_at)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), nullMilliseconds(memory.ValidUntil),
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), nullMilliseconds(memory.OccurredUntil), nullMilliseconds(memory.ValidUntil),
 		memory.OriginID, memory.Importance, memory.StorageStrength, string(resolvedJSON), string(unresolvedJSON),
 		embeddingModel, encodeEmbedding(embedding), toMilliseconds(memory.CreatedAt))
 	return errorValue

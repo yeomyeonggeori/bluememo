@@ -18,7 +18,9 @@ A statement is self-contained when it reads correctly on its own:
 
 isStatic: true for a lasting trait of the person, such as a name, a role, a team or a standing preference. An event, a one-off request or a passing situation is false. When unsure, false.
 
-occurredOn: the day an event happened (YYYY-MM-DD), counted from today in the context below. Empty when the statement is not an event.
+occurredOn: the first day of the time an event happened (YYYY-MM-DD), counted from today in the context below. Empty when the statement is not an event, or when the text is too vague to place it.
+occurredUntil: the last day of that time (YYYY-MM-DD). Empty when the event happened on one day.
+Give the time at the precision the text gives, and never a narrower one. "last year" is the first and the last day of that year, "in June" the first and the last day of that month, "last quarter" the first and the last day of that quarter. A coarse time is still a time: never leave it out because it is not a single day. "a few weeks ago" does not place the event, so both stay empty.
 
 expiry: when the text says the statement stops being true, pick that end.
   none            it has no end
@@ -38,11 +40,12 @@ Do not:
 - keep small talk, acknowledgements or a request that is done once it is answered. When nothing is worth keeping, return an empty list.
 
 Example context: speaker Alex, today 2026-09-21
-Example text: I met Jordan yesterday. I always want meeting notes in Markdown. Answer me in English this quarter.
+Example text: I met Jordan yesterday. I always want meeting notes in Markdown. Answer me in English this quarter. I moved to Busan last year.
 Example statements:
-  isStatic false, occurredOn 2026-09-20: "Alex met Jordan."
+  isStatic false, occurredOn 2026-09-20, occurredUntil empty: "Alex met Jordan."
   isStatic true: "Alex always wants meeting notes in Markdown."
   isStatic false, expiry end_of_quarter: "Alex wants answers in English."
+  isStatic false, occurredOn 2025-01-01, occurredUntil 2025-12-31: "Alex moved to Busan."
 
 A wrong statement (never do this):
   Context: speaker Jordan Lee
@@ -61,13 +64,14 @@ var DecompositionSchemaDocument = mustMarshalSchema(map[string]any{
 			"items": map[string]any{
 				"type":                 "object",
 				"additionalProperties": false,
-				"required":             []string{"content", "isStatic", "occurredOn", "expiry", "expiryDate"},
+				"required":             []string{"content", "isStatic", "occurredOn", "occurredUntil", "expiry", "expiryDate"},
 				"properties": map[string]any{
-					"content":    map[string]any{"type": "string", "maxLength": ContentCharacterLimit},
-					"isStatic":   map[string]any{"type": "boolean"},
-					"occurredOn": map[string]any{"type": "string"},
-					"expiry":     map[string]any{"type": "string", "enum": Expiries},
-					"expiryDate": map[string]any{"type": "string"},
+					"content":       map[string]any{"type": "string", "maxLength": ContentCharacterLimit},
+					"isStatic":      map[string]any{"type": "boolean"},
+					"occurredOn":    map[string]any{"type": "string"},
+					"occurredUntil": map[string]any{"type": "string"},
+					"expiry":        map[string]any{"type": "string", "enum": Expiries},
+					"expiryDate":    map[string]any{"type": "string"},
 				},
 			},
 		},
