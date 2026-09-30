@@ -26,23 +26,24 @@ const (
 )
 
 type Configuration struct {
-	Embedder          Embedder
-	Reranker          Reranker
-	RerankDepth       int
-	EmbeddingModel    string
-	Model             LanguageModel
-	Judge             Judge
-	People            EntityResolver
-	Capacity          int
-	StaticShare       float64
-	TombstoneCapacity int
-	ColdGrace         time.Duration
-	HalfLife          time.Duration
-	ClaimDuration     time.Duration
-	Location          *time.Location
-	Logger            *slog.Logger
-	Now               func() time.Time
-	NewIdentifier     func() string
+	Embedder           Embedder
+	Reranker           Reranker
+	RerankDepth        int
+	EmbeddingModel     string
+	Model              LanguageModel
+	Judge              Judge
+	People             EntityResolver
+	Capacity           int
+	StaticShare        float64
+	TombstoneCapacity  int
+	ColdGrace          time.Duration
+	HalfLife           time.Duration
+	ClaimDuration      time.Duration
+	Location           *time.Location
+	EmbedTimeReference bool
+	Logger             *slog.Logger
+	Now                func() time.Time
+	NewIdentifier      func() string
 }
 
 type Store struct {
