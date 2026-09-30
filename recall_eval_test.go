@@ -67,6 +67,7 @@ const (
 	evalHTTPAttemptLimit       = 5
 	evalHTTPBackoffBase        = 500 * time.Millisecond
 	evalJuliaRerankDepth       = 10
+	evalChoiceCriteriaLimit    = 30
 
 	evalJuliaCommandVariable  = "BLUEMEMO_EVAL_JULIA_COMMAND"
 	evalJuliaModelDirVariable = "BLUEMEMO_EVAL_JULIA_MODEL_DIR"
@@ -704,6 +705,9 @@ func (reranker decisionsReranker) scorePointwise(ctx context.Context, query stri
 }
 
 func (reranker decisionsReranker) rerankListwise(ctx context.Context, query string, contents []string) ([]float64, error) {
+	if len(contents) > evalChoiceCriteriaLimit {
+		return nil, fmt.Errorf("a choice question takes at most %d criteria and this shortlist holds %d; set RerankDepth to the reranker's capacity", evalChoiceCriteriaLimit, len(contents))
+	}
 	criteria := make(map[string]string, len(contents))
 	for index, content := range contents {
 		criteria[fmt.Sprintf("m%d", index)] = content
@@ -889,6 +893,7 @@ func TestRecallQualityWithARealEmbedder(t *testing.T) {
 		rerankMode := evalRerankModeFromEnvironment(t)
 		rerankLedger = &rerankCostLedger{}
 		reranker = decisionsReranker{url: rerankURL, model: rerankModel, apiKey: os.Getenv(evalRerankKeyVariable), mode: rerankMode, client: &http.Client{Timeout: time.Minute}, ledger: rerankLedger}
+		rerankDepth = evalChoiceCriteriaLimit
 		components += ", reranker " + rerankModel + " " + string(rerankMode)
 	}
 	if juliaReranker, name := newJuliaReranker(t); juliaReranker != nil {

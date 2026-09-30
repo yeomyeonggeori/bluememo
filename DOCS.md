@@ -192,6 +192,20 @@ Every memory returned is reinforced by `1 − retrievability`, so a memory recal
 
 `Profile` returns the live static memories, most useful first.
 
+### Reranking
+
+`Recall` makes no model call, and it stays that way unless the host sets `Configuration.Reranker`. With one set, the fused list is cut to `RerankDepth`, the reranker scores that shortlist, the order it returns is used, and only then does the leading hit's origin travel with it. A reranker that fails keeps the fused order and says so in `DegradedReason`, so a recall never fails because a reranker did.
+
+```go
+type Reranker interface {
+	Rerank(ctx context.Context, query string, contents []string) ([]float64, error)
+}
+```
+
+**`RerankDepth` is not optional in practice.** It defaults to three times the caller's limit, which at the default limit of 12 is a shortlist of 36, and a reranker with a smaller capacity fails on it. A decision model answering a choice question takes at most 32 criteria and reserves two, so 30 is its real ceiling. Set `RerankDepth` to what the host's reranker accepts.
+
+The host supplies the reranker; this library never names a model or a provider. In internkim that means posting to the capability daemon's `/v1/llm/decide` with a choice question over the candidate sentences, leaving the model name out of the request so the daemon picks the decision model. Measured on the evaluation set, that configuration takes overall recall@1 from 0.804 to 0.880 and recall@3 to 1.000 in every category, for 46 calls and about a tenth of a cent.
+
 ## Forget
 
 Deletes what a person asked to forget, and asks when the request is ambiguous.
