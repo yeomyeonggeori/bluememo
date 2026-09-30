@@ -105,6 +105,70 @@ alone reshuffles ranks that were already right. Listwise reached 0.880 and 0.844
 with no category regressing, at a fifth of the cost. A pointwise scorer cannot
 say which of two topically relevant memories answers the question.
 
+## A cosine threshold as the read-time relevance signal
+
+`RecallResult.Relevance` carries the closest cosine, because the vector lane
+computed it and threw it away. The hypothesis was that exposing it would let a
+caller decline when nothing relevant was found, and so escape a trade-off
+measured on LoCoMo: instructing the answering model to decline when unsure
+scores 0.404 on the 1,018 answerable questions and declines 0.922 of the 446
+unanswerable ones, while instructing it to answer what the memories imply
+scores 0.474 and 0.482. Seven points on one side cost forty-four on the other.
+
+The signal is real. The fused RRF top score medians 0.0458 against 0.0443 and
+separates the two sets with an AUC of 0.604; the closest cosine medians 0.6321
+against 0.5325 and separates them at 0.772.
+
+The threshold is not. Declining below it and answering above it was simulated
+across the whole set at every threshold from 0.50 to 0.62, and the best lands
+at 0.541 against the 0.561 of the decline-when-unsure instruction. The field
+shipped anyway, for deciding whether to spend a model call, but the
+accuracy claim did not.
+
+What was wrong: a model reading the retrieved memories judges their relevance
+better than their geometry does. The abstention gap is real and a threshold
+does not close it.
+
+## Where LoCoMo says the loss actually is
+
+The first measurement on a benchmark with published numbers. Ten conversations,
+the first twenty sessions of each, one note per session, 1,464 questions of
+which 446 are unanswerable. Hindsight reports 89.61 and Backboard claims 90.00
+on this set. bluememo's best whole-set score was 0.561.
+
+Splitting the 600 wrong answers by where the gold answer's terms appear, which
+needs no model calls, only a query over each store:
+
+| the gold fact was | share | what that means |
+| --- | --- | --- |
+| in the recalled top 20 | 43% | the answering step, or the fact is present without being usable |
+| in the store, outside the top 20 | 34% | ranking |
+| absent from the store | 23% | the decomposer did not keep it |
+
+Nothing was lost to forgetting, supersession or expiry: `only superseded
+memories` and `only expired memories` are both 0.000 of the gold turns. Whatever
+is wrong here, dedup and the forgetting curve did not cause it.
+
+Retrieval by category, session-level evidence recall@20: multi-hop 0.670,
+temporal 0.777, open-domain 0.751, single-hop 0.811. Accuracy by category:
+multi-hop 0.288, temporal 0.340, open-domain 0.413, single-hop 0.591.
+Multi-hop is the weakest on both. It was read as the same weakness as
+`cross_note` in the Korean set, and that reading was wrong: a `cross_note` case
+expects two sentences, so its recall@1 cannot exceed 0.500, and 0.438 is 87.5%
+of that ceiling with recall@3 at 1.000. Both sentences are always in the top
+three. LoCoMo multi-hop has no such ceiling, so 0.288 stands on its own, but the
+Korean half of the argument does not.
+
+Caveats on the number. The ingestion unit was one note per session, about
+twenty-two turns of dialogue, chosen to fit a thirty-minute budget; memory
+density was 0.42 per turn against 1.0 in a turn-level pilot, and relative time
+words survive unresolved in the store ("Last year" against a gold answer of
+"2022"). Turn-level ingestion could not be measured inside the budget: it makes
+roughly ten times the decomposer calls and becomes rate-limit bound, stalling
+about twenty-two minutes in every attempt. The answering model and the judge
+were both `openai/gpt-6-luna`, while the published figures used GPT-OSS-120B
+and GPT-4o, so the yardstick is not identical.
+
 ## Claims that were wrong
 
 - **Jev returns a one-hot distribution.** It does not. Its relation margin ran
@@ -120,10 +184,30 @@ say which of two topically relevant memories answers the question.
   the target step: one case led with `updates` at a margin of 1.000 and ended
   `unrelated` only because the target question answered none.
 
+## Iterative selection as the reranker
+
+A `choice` question names one winner and zeroes the rest, so the merged reranker
+lifts one memory and leaves the tail in fused order. The hypothesis was that a
+question needing two memories wants a reranker that picks a set, so the choice
+was run three times, excluding the winner each round and scoring by round.
+
+`cross_note` recall@1 did not move, 0.438 either way, and recall@3 fell from
+0.981 to 0.963 overall and from 0.875 to 0.750 on `metadata_date`. Rejected on
+both clauses of its bar.
+
+What was wrong: the premise. `cross_note` recall@1 is capped at 0.500 by the
+metric and already sits at 87.5% of it, with recall@3 at 1.000, so there was no
+headroom for a set-picking reranker to take. Three attempts in one session aimed
+at that category before anyone worked out the ceiling.
+
+The run was not wasted. Its table showed `metadata_date` at recall@1 0.000 with
+a reranker against 0.500 without one, which is how the defect fixed in #21 was
+found.
+
 ## How a measurement here has gone wrong before
 
-Three times a harness reported a number that flattered the change, and each was
-caught by asking what would have to be true for it.
+Four times a harness reported a number that flattered or misdirected the change,
+and each was caught by asking what would have to be true for it.
 
 - A monotonic identifier source made ranking deterministic and handed the
   expected memories the lowest identifiers, so they won every score tie.
@@ -132,6 +216,14 @@ caught by asking what would have to be true for it.
   candidates for free.
 - Recurrence cases written to need a temporal signal put the period in their own
   text, where the lexical lane already had it.
+- A category whose cases expect two sentences was read as the weakest in the set
+  on recall@1, when that metric cannot exceed 0.500 there. Check a category's
+  ceiling before calling it weak.
+
+A fifth kind is worth separating, because it is not flattery. The reranker was
+merged on the 46-case set, where no question's date lived only in metadata. Once
+those eight cases existed it scored worse overall than no reranker at all. A
+change measured on a set that cannot see its failure mode reads as safe.
 
 Ranking ties break on the memory identifier, which `NewIdentifier` draws from
 `crypto/rand`, so a fresh store per case orders tied memories differently on
