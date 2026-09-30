@@ -70,7 +70,7 @@ func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSiz
 func (store *Store) replaceEmbeddings(ctx context.Context, stale []staleText, updateEmbedding string) error {
 	texts := make([]string, len(stale))
 	for index, entry := range stale {
-		texts[index] = store.embeddingText(entry.text, fromNullMilliseconds(entry.occurredAt))
+		texts[index] = store.matchableText(entry.text, fromNullMilliseconds(entry.occurredAt))
 	}
 	embeddings, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, texts)
 	if errorValue != nil {

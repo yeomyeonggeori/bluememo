@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (store *Store) embeddingText(content string, occurredAt time.Time) string {
+func (store *Store) matchableText(content string, occurredAt time.Time) string {
 	if !store.configuration.EmbedTimeReference || occurredAt.IsZero() {
 		return content
 	}
