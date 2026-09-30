@@ -23,3 +23,4 @@ The documentation is [DOCS.md](DOCS.md), published at [bluememo.intern.kim](http
 | `examples/` | `quickstart` on real local models, `recall` on scripted ones |
 | `bluememotest/` | a hash embedder, a table embedder, a scripted model, judge and chooser |
 | `docs/` | the documentation site, generated from `DOCS.md` |
+| `TRIED.md` | what was measured against this store and rejected |
