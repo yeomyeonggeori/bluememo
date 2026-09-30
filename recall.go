@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -17,17 +18,19 @@ const (
 	UnsettledNoteLimit   = 3
 	laneDepthMultiplier  = 3
 	reciprocalRankOffset = 60.0
+	EntityNeighbourLimit = 2
 )
 
 var ErrEmptyQuery = errors.New("a recall needs a query")
 
 type RecalledMemory struct {
-	Memory      Memory  `json:"memory"`
-	Score       float64 `json:"score"`
-	VectorRank  int     `json:"vectorRank,omitempty"`
-	LexicalRank int     `json:"lexicalRank,omitempty"`
-	TriggerRank int     `json:"triggerRank,omitempty"`
-	IsSibling   bool    `json:"isSibling,omitempty"`
+	Memory            Memory  `json:"memory"`
+	Score             float64 `json:"score"`
+	VectorRank        int     `json:"vectorRank,omitempty"`
+	LexicalRank       int     `json:"lexicalRank,omitempty"`
+	TriggerRank       int     `json:"triggerRank,omitempty"`
+	IsSibling         bool    `json:"isSibling,omitempty"`
+	IsEntityNeighbour bool    `json:"isEntityNeighbour,omitempty"`
 }
 
 type UnsettledNote struct {
@@ -67,10 +70,15 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
-	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
+	expanded, errorValue := store.withSiblings(ctx, ranked)
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
+	expanded, errorValue = store.withEntityNeighbours(ctx, ranked, expanded)
+	if errorValue != nil {
+		return RecallResult{}, errorValue
+	}
+	result.Memories = expanded[:min(limit, len(expanded))]
 	if result.Unsettled, errorValue = store.unsettledNotes(ctx, trimmed); errorValue != nil {
 		return RecallResult{}, errorValue
 	}
@@ -229,7 +237,7 @@ func (store *Store) rankByTrigger(ctx context.Context, query []float32, depth in
 	return identifiers[:min(depth, len(identifiers))], nil
 }
 
-func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, limit int) ([]RecalledMemory, error) {
+func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory) ([]RecalledMemory, error) {
 	if len(ranked) == 0 {
 		return []RecalledMemory{}, nil
 	}
@@ -251,7 +259,82 @@ func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, l
 			expanded = append(expanded, entry)
 		}
 	}
-	return expanded[:min(limit, len(expanded))], nil
+	return expanded, nil
+}
+
+func (store *Store) withEntityNeighbours(ctx context.Context, ranked []RecalledMemory, expanded []RecalledMemory) ([]RecalledMemory, error) {
+	if len(ranked) == 0 || len(ranked[0].Memory.ResolvedEntityIDs) == 0 {
+		return expanded, nil
+	}
+	leading := ranked[0].Memory
+	live, errorValue := queryMemories(ctx, store.database,
+		`where resolved_entity_ids <> '[]' and cold_since is null and (valid_until is null or valid_until > ?) order by created_at, memory_id`,
+		toMilliseconds(store.now()))
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	fusedByID := map[string]RecalledMemory{}
+	fusedOrder := map[string]int{}
+	for index, entry := range ranked {
+		fusedByID[entry.Memory.MemoryID] = entry
+		fusedOrder[entry.Memory.MemoryID] = index
+	}
+	neighbours := []RecalledMemory{}
+	for _, memory := range live {
+		if memory.MemoryID == leading.MemoryID || isSiblingIn(expanded, memory.MemoryID) || !sharesEntity(memory, leading) {
+			continue
+		}
+		entry, isFused := fusedByID[memory.MemoryID]
+		if !isFused {
+			entry = RecalledMemory{Memory: memory}
+		}
+		entry.IsEntityNeighbour = true
+		neighbours = append(neighbours, entry)
+	}
+	sort.SliceStable(neighbours, func(left int, right int) bool {
+		leftOrder, isLeftFused := fusedOrder[neighbours[left].Memory.MemoryID]
+		rightOrder, isRightFused := fusedOrder[neighbours[right].Memory.MemoryID]
+		if isLeftFused != isRightFused {
+			return isLeftFused
+		}
+		return isLeftFused && leftOrder < rightOrder
+	})
+	return placeNeighboursBehindLeadingBlock(expanded, neighbours[:min(EntityNeighbourLimit, len(neighbours))]), nil
+}
+
+func isSiblingIn(expanded []RecalledMemory, memoryID string) bool {
+	return slices.ContainsFunc(expanded, func(entry RecalledMemory) bool {
+		return entry.IsSibling && entry.Memory.MemoryID == memoryID
+	})
+}
+
+func sharesEntity(memory Memory, leading Memory) bool {
+	return slices.ContainsFunc(memory.ResolvedEntityIDs, func(entityID string) bool {
+		return slices.Contains(leading.ResolvedEntityIDs, entityID)
+	})
+}
+
+func placeNeighboursBehindLeadingBlock(expanded []RecalledMemory, neighbours []RecalledMemory) []RecalledMemory {
+	blockEnd := 1
+	for blockEnd < len(expanded) && expanded[blockEnd].IsSibling {
+		blockEnd++
+	}
+	isNeighbour := map[string]bool{}
+	for _, neighbour := range neighbours {
+		isNeighbour[neighbour.Memory.MemoryID] = true
+	}
+	placed := slices.Clone(expanded[:blockEnd])
+	for _, neighbour := range neighbours {
+		if !slices.ContainsFunc(placed, func(entry RecalledMemory) bool { return entry.Memory.MemoryID == neighbour.Memory.MemoryID }) {
+			placed = append(placed, neighbour)
+		}
+	}
+	for _, entry := range expanded[blockEnd:] {
+		if !isNeighbour[entry.Memory.MemoryID] {
+			placed = append(placed, entry)
+		}
+	}
+	return placed
 }
 
 func (store *Store) unsettledNotes(ctx context.Context, text string) ([]UnsettledNote, error) {

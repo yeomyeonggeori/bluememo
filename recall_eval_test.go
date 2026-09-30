@@ -246,7 +246,7 @@ func seededIdentifiers() func() string {
 	}
 }
 
-func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string, testCase evalCase) []string {
+func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string, people bluememo.EntityResolver, testCase evalCase) []string {
 	t.Helper()
 	ctx := context.Background()
 	testClock := &clock{current: arrivalInstant(evalDefaultArrivalDate)}
@@ -256,6 +256,7 @@ func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string
 		EmbeddingModel: embeddingModel,
 		Model:          model,
 		Judge:          supersedingJudge{supersedes: supersessionsOf(testCase)},
+		People:         people,
 		Now:            testClock.now,
 		NewIdentifier:  seededIdentifiers(),
 	})
@@ -296,12 +297,20 @@ func memorizeAndSettleGroup(t *testing.T, store *bluememo.Store, model *bluememo
 	}
 }
 
-func runEval(t *testing.T, embedder bluememo.Embedder, embeddingModel string) []evalOutcome {
+func evalPeople() bluememo.EntityResolver {
+	return bluememo.PeopleRegistry{People: []bluememo.Person{
+		{PersonID: "person-isample", Names: []string{"이샘플"}},
+		{PersonID: "person-bakyesi", Names: []string{"박예시"}},
+		{PersonID: "person-choigyeonbon", Names: []string{"최견본"}},
+	}}
+}
+
+func runEval(t *testing.T, embedder bluememo.Embedder, embeddingModel string, people bluememo.EntityResolver) []evalOutcome {
 	t.Helper()
 	cases := loadEvalCases(t)
 	outcomes := make([]evalOutcome, 0, len(cases))
 	for _, testCase := range cases {
-		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, embeddingModel, testCase)})
+		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, embeddingModel, people, testCase)})
 	}
 	return outcomes
 }
@@ -525,7 +534,7 @@ func TestEvalScoringIsComputedFromRanks(t *testing.T) {
 }
 
 func TestEvalHarnessRunsEveryCaseWithTheDeterministicStack(t *testing.T) {
-	outcomes := runEval(t, bluememotest.HashEmbedder{}, "hash")
+	outcomes := runEval(t, bluememotest.HashEmbedder{}, "hash", nil)
 	if len(outcomes) != len(loadEvalCases(t)) {
 		t.Fatalf("scored %d outcomes for %d cases", len(outcomes), len(loadEvalCases(t)))
 	}
@@ -553,6 +562,15 @@ func TestRecallQualityWithARealEmbedder(t *testing.T) {
 		t.Skipf("set %s and %s (and optionally %s) to score recall with a real embedder", evalEmbeddingURLVariable, evalEmbeddingModelVariable, evalEmbeddingKeyVariable)
 	}
 	embedder := httpEmbedder{url: endpoint, model: embeddingModel, apiKey: os.Getenv(evalEmbeddingKeyVariable), client: &http.Client{Timeout: time.Minute}}
-	outcomes := runEval(t, embedder, embeddingModel)
-	t.Log("embedder " + embeddingModel + formatScoreTable(outcomes) + formatCaseTable(outcomes))
+	outcomes := runEval(t, embedder, embeddingModel, nil)
+	t.Log("embedder " + embeddingModel + " without a resolver" + formatScoreTable(outcomes) + formatCaseTable(outcomes))
+	withPeople := runEval(t, embedder, embeddingModel, evalPeople())
+	t.Log("embedder " + embeddingModel + " with a resolver" + formatScoreTable(withPeople) + formatCaseTable(withPeople))
+}
+
+func TestEntityExpansionOnTheDeterministicStack(t *testing.T) {
+	without := runEval(t, bluememotest.HashEmbedder{}, "hash", nil)
+	t.Log("deterministic, no resolver" + formatScoreTable(without) + formatCaseTable(without))
+	with := runEval(t, bluememotest.HashEmbedder{}, "hash", evalPeople())
+	t.Log("deterministic, with a resolver" + formatScoreTable(with) + formatCaseTable(with))
 }

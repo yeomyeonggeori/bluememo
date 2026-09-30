@@ -145,3 +145,101 @@ func TestDefaultIdentifiersAreDistinctAndFixedWidth(t *testing.T) {
 		seen[identifier] = struct{}{}
 	}
 }
+
+func newEntityFixture(t *testing.T) *fixture {
+	t.Helper()
+	return newFixture(t, func(configuration *bluememo.Configuration) {
+		configuration.People = bluememo.PeopleRegistry{People: []bluememo.Person{
+			{PersonID: "person-sample", Names: []string{"이샘플"}},
+			{PersonID: "person-example", Names: []string{"박예시"}},
+		}}
+	})
+}
+
+func settleEntityNotes(t *testing.T, testFixture *fixture, sentences ...string) {
+	t.Helper()
+	for index, sentence := range sentences {
+		testFixture.settle(t, "노트 "+string(rune('가'+index)), statement(sentence))
+	}
+}
+
+func TestTheLeadingHitPullsInMemoriesAboutTheSameEntity(t *testing.T) {
+	testFixture := newEntityFixture(t)
+	settleEntityNotes(t, testFixture,
+		"이샘플은 부산 출장 일정을 잡았다.",
+		"박예시는 점심으로 국수를 먹는다.",
+		"이샘플은 알레르기 때문에 땅콩을 피한다.",
+		"박예시는 목요일마다 운동한다.")
+
+	result := testFixture.recall(t, "이샘플은 부산 출장 일정을 잡았다", 2)
+	want := []string{"이샘플은 부산 출장 일정을 잡았다.", "이샘플은 알레르기 때문에 땅콩을 피한다."}
+	if !slices.Equal(recalledContents(result), want) || !result.Memories[1].IsEntityNeighbour {
+		t.Fatalf("expected the leading hit and its entity neighbour within the limit, got %v", recalledContents(result))
+	}
+}
+
+func TestEntityExpansionNeverPassesTheLimit(t *testing.T) {
+	testFixture := newEntityFixture(t)
+	settleEntityNotes(t, testFixture,
+		"이샘플은 부산 출장 일정을 잡았다.",
+		"이샘플은 땅콩을 피한다.",
+		"이샘플은 커피를 마신다.")
+
+	result := testFixture.recall(t, "이샘플은 부산 출장 일정을 잡았다", 1)
+	if len(result.Memories) != 1 {
+		t.Fatalf("expected one memory, got %v", recalledContents(result))
+	}
+}
+
+func TestAMemoryWithoutASharedEntityIsNotPulledIn(t *testing.T) {
+	testFixture := newEntityFixture(t)
+	settleEntityNotes(t, testFixture,
+		"이샘플은 부산 출장 일정을 잡았다.",
+		"박예시는 점심으로 국수를 먹는다.",
+		"화요일 회의실은 3층이다.")
+
+	result := testFixture.recall(t, "이샘플은 부산 출장 일정을 잡았다", 3)
+	for _, entry := range result.Memories {
+		if entry.IsEntityNeighbour {
+			t.Fatalf("expected no entity neighbour, got %v", recalledContents(result))
+		}
+	}
+}
+
+func TestEntityExpansionPullsInNoMoreThanTheNeighbourLimit(t *testing.T) {
+	testFixture := newEntityFixture(t)
+	settleEntityNotes(t, testFixture,
+		"이샘플은 부산 출장 일정을 잡았다.",
+		"이샘플은 땅콩을 피한다.",
+		"이샘플은 커피를 마신다.",
+		"이샘플은 아침에 걷는다.",
+		"이샘플은 안경을 쓴다.")
+
+	result := testFixture.recall(t, "이샘플은 부산 출장 일정을 잡았다", 10)
+	neighbours := 0
+	for _, entry := range result.Memories {
+		if entry.IsEntityNeighbour {
+			neighbours++
+		}
+	}
+	if neighbours != bluememo.EntityNeighbourLimit {
+		t.Fatalf("expected %d entity neighbours, got %d in %v", bluememo.EntityNeighbourLimit, neighbours, recalledContents(result))
+	}
+}
+
+func TestWithoutAResolverRecallIsUnchanged(t *testing.T) {
+	sentences := []string{"이샘플은 부산 출장 일정을 잡았다.", "이샘플은 땅콩을 피한다.", "박예시는 국수를 먹는다."}
+	plain := newFixture(t)
+	resolving := newEntityFixture(t)
+	settleEntityNotes(t, plain, sentences...)
+	settleEntityNotes(t, resolving, sentences...)
+	plainResult := plain.recall(t, "이샘플은 부산 출장 일정을 잡았다", 3)
+	for _, entry := range plainResult.Memories {
+		if entry.IsEntityNeighbour {
+			t.Fatalf("a store without a resolver marked %q as an entity neighbour", entry.Memory.Content)
+		}
+	}
+	if len(plainResult.Memories) != 3 {
+		t.Fatalf("expected the three lane hits, got %v", recalledContents(plainResult))
+	}
+}
