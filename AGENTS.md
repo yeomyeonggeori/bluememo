@@ -7,3 +7,4 @@
 - Every enum is declared once in Go. `canon_test.go` fails when a schema CHECK or the decomposition schema drifts from it.
 - `migrations/` is the schema of record. Add the next file; never edit an applied one.
 - No comments in code, full names, gofmt clean.
+- `TRIED.md` records what was measured and rejected. Read it before proposing a retrieval or judging change, and add to it when a change is built far enough to score and then dropped.
