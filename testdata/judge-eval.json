@@ -419,6 +419,80 @@
    ],
    "relation": "extends",
    "target": 0
+  },
+  {
+   "id": "restatement-01",
+   "kind": "restatement",
+   "split": "evolve",
+   "statement": "이샘플은 자전거를 타고 회사에 간다.",
+   "candidates": [
+    "박예시는 지하철로 출근한다.",
+    "이샘플의 출근 수단은 자전거이다.",
+    "최견본은 회사 근처에 산다."
+   ],
+   "relation": "same",
+   "target": 1
+  },
+  {
+   "id": "restatement-02",
+   "kind": "restatement",
+   "split": "evolve",
+   "statement": "최견본은 금요일 저녁마다 수영을 하러 간다.",
+   "candidates": [
+    "최견본은 매주 금요일 저녁에 수영장에 다닌다.",
+    "이샘플은 토요일 아침에 달리기를 한다."
+   ],
+   "relation": "same",
+   "target": 0
+  },
+  {
+   "id": "restatement-03",
+   "kind": "restatement",
+   "split": "evolve",
+   "statement": "땅콩이 들어간 음식은 박예시에게 알레르기 반응을 일으킨다.",
+   "candidates": [
+    "박예시는 커피를 하루에 두 잔 마신다.",
+    "박예시는 땅콩 알레르기가 있다."
+   ],
+   "relation": "same",
+   "target": 1
+  },
+  {
+   "id": "restatement-04",
+   "kind": "restatement",
+   "split": "holdout",
+   "statement": "다음 분기 예산 보고서는 11월 15일까지 제출해야 한다.",
+   "candidates": [
+    "다음 분기 예산 보고서의 마감은 11월 15일이다.",
+    "분기 회의는 3개월마다 열린다.",
+    "이샘플은 월간 보고서를 매달 말에 낸다."
+   ],
+   "relation": "same",
+   "target": 0
+  },
+  {
+   "id": "restatement-05",
+   "kind": "restatement",
+   "split": "holdout",
+   "statement": "최견본은 이샘플에게 직접 보고한다.",
+   "candidates": [
+    "박예시는 최견본과 같은 팀이다.",
+    "이샘플은 최견본의 직속 상사이다."
+   ],
+   "relation": "same",
+   "target": 1
+  },
+  {
+   "id": "restatement-06",
+   "kind": "restatement",
+   "split": "holdout",
+   "statement": "평일에는 아침 9시에 전화 상담을 시작해 저녁 6시에 마친다.",
+   "candidates": [
+    "고객 지원 전화는 평일 오전 9시부터 오후 6시까지 받는다.",
+    "고객 지원 게시판은 24시간 열려 있다."
+   ],
+   "relation": "same",
+   "target": 0
   }
  ]
 }
