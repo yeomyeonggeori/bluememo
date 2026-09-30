@@ -30,15 +30,16 @@ type evalCategory string
 const evalIdentifierSeed = 20260921
 
 const (
-	evalCategoryTemporal   evalCategory = "temporal"
-	evalCategoryPeriodic   evalCategory = "periodic"
-	evalCategoryCrossNote  evalCategory = "cross_note"
-	evalCategoryPreference evalCategory = "preference"
-	evalCategoryUpdate     evalCategory = "update"
-	evalCategorySingleNote evalCategory = "single_note"
+	evalCategoryTemporal     evalCategory = "temporal"
+	evalCategoryPeriodic     evalCategory = "periodic"
+	evalCategoryCrossNote    evalCategory = "cross_note"
+	evalCategoryPreference   evalCategory = "preference"
+	evalCategoryUpdate       evalCategory = "update"
+	evalCategorySingleNote   evalCategory = "single_note"
+	evalCategoryMetadataDate evalCategory = "metadata_date"
 )
 
-var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryPeriodic, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote}
+var evalCategories = []evalCategory{evalCategoryTemporal, evalCategoryPeriodic, evalCategoryCrossNote, evalCategoryPreference, evalCategoryUpdate, evalCategorySingleNote, evalCategoryMetadataDate}
 
 type evalSplit string
 
