@@ -6524,6 +6524,875 @@
    "expected": [
     "박예시는 8월 첫째 주 스프린트 회고에서 리뷰 대기를 문제로 꼽았다."
    ]
+  },
+  {
+   "id": "metadata-date-01",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-01-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-07-08",
+     "body": "배포 일정 관련해서 이샘플이랑 얘기했어."
+    },
+    {
+     "groupID": "metadata-date-01-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-08-12",
+     "body": "배포 일정 관련해서 최견본이랑 얘기했어."
+    },
+    {
+     "groupID": "metadata-date-01-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-16",
+     "body": "배포 일정 관련해서 박예시랑 얘기했어."
+    },
+    {
+     "groupID": "metadata-date-01-g4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-17",
+     "body": "점심 메뉴를 박예시랑 골랐어."
+    },
+    {
+     "groupID": "metadata-date-01-g5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-15",
+     "body": "견적서 양식을 최견본이랑 얘기했어."
+    },
+    {
+     "groupID": "metadata-date-01-g6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-09",
+     "body": "배포 뒤 점검 결과를 이샘플이랑 봤어."
+    },
+    {
+     "groupID": "metadata-date-01-g7",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "사무실 정수기 필터를 새로 주문했어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-01-g1",
+     "content": "이샘플과 배포 일정에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-08",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g2",
+     "content": "최견본과 배포 일정에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-12",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g3",
+     "content": "박예시와 배포 일정에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-16",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g4",
+     "content": "박예시와 점심 메뉴에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-17",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g5",
+     "content": "최견본과 견적서 양식에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-15",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g6",
+     "content": "이샘플과 배포 뒤 점검 결과에 대해 이야기를 나눴다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-09",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-01-g7",
+     "content": "최견본은 사무실 정수기 필터를 새로 주문했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "9월 셋째 주에 배포 얘기 누구랑 했지?",
+   "expected": [
+    "박예시와 배포 일정에 대해 이야기를 나눴다."
+   ]
+  },
+  {
+   "id": "metadata-date-02",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-02-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-01-20",
+     "body": "가나상사 담당자를 만났어."
+    },
+    {
+     "groupID": "metadata-date-02-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-05-13",
+     "body": "다라물산 담당자를 만났어."
+    },
+    {
+     "groupID": "metadata-date-02-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-05",
+     "body": "마바전자 담당자를 만났어."
+    },
+    {
+     "groupID": "metadata-date-02-g4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-04-22",
+     "body": "신규 견적서를 검토했어."
+    },
+    {
+     "groupID": "metadata-date-02-g5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-06-11",
+     "body": "교육 자료를 정리했어."
+    },
+    {
+     "groupID": "metadata-date-02-g6",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "회의실 예약 시스템을 바꿨어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-02-g1",
+     "content": "이샘플은 가나상사 담당자를 만났다.",
+     "isStatic": false,
+     "occurredOn": "2026-01-20",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-02-g2",
+     "content": "이샘플은 다라물산 담당자를 만났다.",
+     "isStatic": false,
+     "occurredOn": "2026-05-13",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-02-g3",
+     "content": "이샘플은 마바전자 담당자를 만났다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-05",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-02-g4",
+     "content": "박예시는 신규 견적서를 검토했다.",
+     "isStatic": false,
+     "occurredOn": "2026-04-22",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-02-g5",
+     "content": "최견본은 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "2026-06-11",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-02-g6",
+     "content": "박예시는 회의실 예약 시스템을 바꿨다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "2분기에 이샘플이 만난 거래처가 어디였지?",
+   "expected": [
+    "이샘플은 다라물산 담당자를 만났다."
+   ]
+  },
+  {
+   "id": "metadata-date-03",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-03-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-25",
+     "body": "병원에 다녀왔어."
+    },
+    {
+     "groupID": "metadata-date-03-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-02",
+     "body": "병원에 다녀왔어."
+    },
+    {
+     "groupID": "metadata-date-03-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-16",
+     "body": "병원에 다녀왔어."
+    },
+    {
+     "groupID": "metadata-date-03-g4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-15",
+     "body": "감기약을 샀어."
+    },
+    {
+     "groupID": "metadata-date-03-g5",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-17",
+     "body": "건강보험 서류를 냈어."
+    },
+    {
+     "groupID": "metadata-date-03-g6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "사무용품을 주문했어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-03-g1",
+     "content": "이샘플은 병원에 다녀왔다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-25",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-03-g2",
+     "content": "최견본은 병원에 다녀왔다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-02",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-03-g3",
+     "content": "박예시는 병원에 다녀왔다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-16",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-03-g4",
+     "content": "이샘플은 약국에서 감기약을 샀다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-15",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-03-g5",
+     "content": "최견본은 건강보험 서류를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-17",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-03-g6",
+     "content": "이샘플은 사무용품을 주문했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "지난주에 병원 다녀온 사람이 누구였지?",
+   "expected": [
+    "박예시는 병원에 다녀왔다."
+   ]
+  },
+  {
+   "id": "metadata-date-04",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-04-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-07-03",
+     "body": "고객이 환불 문의를 했어."
+    },
+    {
+     "groupID": "metadata-date-04-g2",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-08-06",
+     "body": "고객이 배송 문의를 했어."
+    },
+    {
+     "groupID": "metadata-date-04-g3",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-03",
+     "body": "고객이 교환 문의를 했어."
+    },
+    {
+     "groupID": "metadata-date-04-g4",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-18",
+     "body": "고객이 설치 문의를 했어."
+    },
+    {
+     "groupID": "metadata-date-04-g5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-04",
+     "body": "환불 요청을 처리했어."
+    },
+    {
+     "groupID": "metadata-date-04-g6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-21",
+     "body": "콜센터 응대 스크립트를 고쳤어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-04-g1",
+     "content": "최견본은 고객에게서 환불 문의를 받았다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-03",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-04-g2",
+     "content": "최견본은 고객에게서 배송 문의를 받았다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-06",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-04-g3",
+     "content": "최견본은 고객에게서 교환 문의를 받았다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-03",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-04-g4",
+     "content": "최견본은 고객에게서 설치 문의를 받았다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-18",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-04-g5",
+     "content": "박예시는 환불 요청을 처리했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-04",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-04-g6",
+     "content": "이샘플은 콜센터 응대 스크립트를 고쳤다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "이번 달 초에 최견본이 받은 문의가 뭐였지?",
+   "expected": [
+    "최견본은 고객에게서 교환 문의를 받았다."
+   ]
+  },
+  {
+   "id": "metadata-date-05",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-05-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-06-26",
+     "body": "판매 보고서를 냈어."
+    },
+    {
+     "groupID": "metadata-date-05-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-07-31",
+     "body": "재고 보고서를 냈어."
+    },
+    {
+     "groupID": "metadata-date-05-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-28",
+     "body": "비용 보고서를 냈어."
+    },
+    {
+     "groupID": "metadata-date-05-g4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-11",
+     "body": "고객 만족도 보고서를 냈어."
+    },
+    {
+     "groupID": "metadata-date-05-g5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-08-27",
+     "body": "보고서를 냈어."
+    },
+    {
+     "groupID": "metadata-date-05-g6",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-26",
+     "body": "회의록을 정리했어."
+    },
+    {
+     "groupID": "metadata-date-05-g7",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "보고서 양식을 새로 만들었어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-05-g1",
+     "content": "이샘플은 판매 보고서를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-06-26",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g2",
+     "content": "이샘플은 재고 보고서를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-31",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g3",
+     "content": "이샘플은 비용 보고서를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-28",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g4",
+     "content": "이샘플은 고객 만족도 보고서를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-11",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g5",
+     "content": "박예시는 분석 보고서를 제출했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-27",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g6",
+     "content": "이샘플은 회의록을 정리했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-26",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-05-g7",
+     "content": "최견본은 보고서 양식을 새로 만들었다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "8월 마지막 주에 이샘플이 낸 보고서가 뭐였지?",
+   "expected": [
+    "이샘플은 비용 보고서를 제출했다."
+   ]
+  },
+  {
+   "id": "metadata-date-06",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-06-g1",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-01-14",
+     "body": "신입 교육을 내가 했어."
+    },
+    {
+     "groupID": "metadata-date-06-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-04-08",
+     "body": "신입 교육을 내가 했어."
+    },
+    {
+     "groupID": "metadata-date-06-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-07-15",
+     "body": "신입 교육을 내가 했어."
+    },
+    {
+     "groupID": "metadata-date-06-g4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-01-21",
+     "body": "교육 자료를 정리했어."
+    },
+    {
+     "groupID": "metadata-date-06-g5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-03-25",
+     "body": "교육장을 예약했어."
+    },
+    {
+     "groupID": "metadata-date-06-g6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "연수 만족도 조사를 열었어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-06-g1",
+     "content": "최견본은 신입 교육을 진행했다.",
+     "isStatic": false,
+     "occurredOn": "2026-01-14",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-06-g2",
+     "content": "박예시는 신입 사원 교육을 진행했다.",
+     "isStatic": false,
+     "occurredOn": "2026-04-08",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-06-g3",
+     "content": "이샘플은 신입 교육 과정을 진행했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-15",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-06-g4",
+     "content": "박예시는 사내 교육 자료를 정리했다.",
+     "isStatic": false,
+     "occurredOn": "2026-01-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-06-g5",
+     "content": "이샘플은 교육장을 예약했다.",
+     "isStatic": false,
+     "occurredOn": "2026-03-25",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-06-g6",
+     "content": "최견본은 연수 만족도 조사를 열었다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "1월에 신입 교육은 누가 했지?",
+   "expected": [
+    "최견본은 신입 교육을 진행했다."
+   ]
+  },
+  {
+   "id": "metadata-date-07",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-07-g1",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-03-11",
+     "body": "본사 회의실에서 팀 회의를 했어."
+    },
+    {
+     "groupID": "metadata-date-07-g2",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-07-02",
+     "body": "부산 사무실에서 팀 회의를 했어."
+    },
+    {
+     "groupID": "metadata-date-07-g3",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-07-22",
+     "body": "강남 지점에서 팀 회의를 했어."
+    },
+    {
+     "groupID": "metadata-date-07-g4",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-09",
+     "body": "화상으로 팀 회의를 했어."
+    },
+    {
+     "groupID": "metadata-date-07-g5",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-07-01",
+     "body": "부산 사무실 임대 계약을 확인했어."
+    },
+    {
+     "groupID": "metadata-date-07-g6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-09-21",
+     "body": "회의실 조명을 교체 요청했어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-07-g1",
+     "content": "박예시는 본사 회의실에서 팀 회의를 했다.",
+     "isStatic": false,
+     "occurredOn": "2026-03-11",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-07-g2",
+     "content": "박예시는 부산 사무실에서 팀 회의를 했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-02",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-07-g3",
+     "content": "박예시는 강남 지점에서 팀 회의를 했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-22",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-07-g4",
+     "content": "박예시는 화상으로 팀 회의를 했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-09",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-07-g5",
+     "content": "이샘플은 부산 사무실 임대 계약을 확인했다.",
+     "isStatic": false,
+     "occurredOn": "2026-07-01",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-07-g6",
+     "content": "최견본은 회의실 조명 교체를 요청했다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "7월 첫째 주에 박예시는 팀 회의를 어디서 했지?",
+   "expected": [
+    "박예시는 부산 사무실에서 팀 회의를 했다."
+   ]
+  },
+  {
+   "id": "metadata-date-08",
+   "category": "metadata_date",
+   "split": "evolve",
+   "notes": [
+    {
+     "groupID": "metadata-date-08-g1",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-05-14",
+     "body": "회사 근처 국수집에서 점심을 먹었어."
+    },
+    {
+     "groupID": "metadata-date-08-g2",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-27",
+     "body": "시장 골목 순대국집에서 점심을 먹었어."
+    },
+    {
+     "groupID": "metadata-date-08-g3",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-09-10",
+     "body": "강변 카페에서 점심을 먹었어."
+    },
+    {
+     "groupID": "metadata-date-08-g4",
+     "speakerName": "이샘플",
+     "arrivedOn": "2026-08-06",
+     "body": "지하 식당에서 점심을 먹었어."
+    },
+    {
+     "groupID": "metadata-date-08-g5",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-08-26",
+     "body": "김밥으로 점심을 때웠어."
+    },
+    {
+     "groupID": "metadata-date-08-g6",
+     "speakerName": "최견본",
+     "arrivedOn": "2026-08-28",
+     "body": "회식 장소를 예약했어."
+    },
+    {
+     "groupID": "metadata-date-08-g7",
+     "speakerName": "박예시",
+     "arrivedOn": "2026-09-21",
+     "body": "커피 머신 청소를 맡았어."
+    }
+   ],
+   "propositions": [
+    {
+     "groupID": "metadata-date-08-g1",
+     "content": "이샘플은 회사 근처 국수집에서 점심을 먹었다.",
+     "isStatic": false,
+     "occurredOn": "2026-05-14",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g2",
+     "content": "이샘플은 시장 골목 순대국집에서 점심을 먹었다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-27",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g3",
+     "content": "이샘플은 강변 카페에서 점심을 먹었다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-10",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g4",
+     "content": "이샘플은 지하 식당에서 점심을 먹었다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-06",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g5",
+     "content": "박예시는 점심으로 김밥을 먹었다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-26",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g6",
+     "content": "최견본은 회식 장소를 예약했다.",
+     "isStatic": false,
+     "occurredOn": "2026-08-28",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    },
+    {
+     "groupID": "metadata-date-08-g7",
+     "content": "박예시는 커피 머신 청소를 맡았다.",
+     "isStatic": false,
+     "occurredOn": "2026-09-21",
+     "expiry": "none",
+     "expiryDate": "",
+     "supersedes": ""
+    }
+   ],
+   "question": "8월 말에 이샘플이 점심을 어디서 먹었더라?",
+   "expected": [
+    "이샘플은 시장 골목 순대국집에서 점심을 먹었다."
+   ]
   }
  ]
 }
