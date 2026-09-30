@@ -64,7 +64,7 @@ func (store *Store) resolveForgetTarget(ctx context.Context, target string) ([]M
 func (store *Store) forgetCandidates(ctx context.Context, target string) ([]Memory, error) {
 	search := searchQuery{text: target, limit: ForgetCandidateLimit, now: store.now()}
 	search.embedding, _ = store.embedQuery(ctx, target)
-	ranked, errorValue := store.search(ctx, search)
+	ranked, _, errorValue := store.search(ctx, search)
 	if errorValue != nil {
 		return nil, errorValue
 	}
