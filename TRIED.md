@@ -25,6 +25,35 @@ about the past: `exp(-400/90)` zeroes a 400-day-old episode that "채용 얘기
 oracle, and an embedding probe in its place fell back to 9/10. **Time does not
 enter ranking.**
 
+## Running the LoCoMo benchmark
+
+`locomo_accuracy_test.go` ingests LoCoMo conversations, answers its questions from
+recalled memories and grades the answers. It skips unless its variables are set.
+
+The dataset is not in the repository. Fetch `locomo10.json` (2.7 MB, 10 conversations,
+1986 questions) from `https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json`.
+
+| variable | meaning |
+| --- | --- |
+| `BLUEMEMO_LOCOMO_DATASET` | path to `locomo10.json` |
+| `BLUEMEMO_LOCOMO_OUTPUT` | directory for the store, the log and the result JSON |
+| `BLUEMEMO_LOCOMO_CONVERSATION` | index 0 to 9; one process per conversation |
+| `BLUEMEMO_LOCOMO_SESSION_LIMIT` | sessions to ingest; a question whose evidence lies beyond it is not scored |
+| `BLUEMEMO_LOCOMO_ARM` | a name for the run, used in the result filename |
+| `BLUEMEMO_LOCOMO_TURN_WINDOW` | turns per note; unset means one note per session |
+
+It also needs the embedder, reranker and answerer variables the other live evals use.
+Ten conversations at a session limit of 10 take about 25 minutes when the ten run at
+once, and cost about a dollar. Turn-level ingestion does not fit that budget: the
+decompose calls are rate-limit bound, and three attempts stalled for around twenty
+minutes each.
+
+Score categories 1 to 4 on correctness and category 5 on whether the answer declines,
+and report them separately. Published baselines grade categories 1 to 4.
+
+Run each arm twice. The within-arm spread on this benchmark is 0.026 overall and up to
+0.079 on open-domain, so a single run cannot separate a small gain from noise.
+
 ## An occurrence-range filter
 
 Branch `feat/recall-within-an-occurrence-range`. The hypothesis was that the
