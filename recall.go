@@ -40,6 +40,7 @@ type UnsettledNote struct {
 
 type RecallResult struct {
 	Memories       []RecalledMemory `json:"memories"`
+	Relevance      float64          `json:"relevance"`
 	Unsettled      []UnsettledNote  `json:"unsettled"`
 	Mode           string           `json:"mode"`
 	DegradedReason string           `json:"degradedReason,omitempty"`
@@ -66,10 +67,11 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if search.embedding == nil {
 		result.Mode = SearchModeLexical
 	}
-	ranked, errorValue := store.search(ctx, search)
+	ranked, closest, errorValue := store.search(ctx, search)
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
+	result.Relevance = closest
 	ranked, rerankFailure := store.rerank(ctx, trimmed, ranked, limit)
 	result.DegradedReason = joinReasons(result.DegradedReason, rerankFailure)
 	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
@@ -109,10 +111,10 @@ func (store *Store) embedQuery(ctx context.Context, text string) ([]float32, str
 	return embedding, ""
 }
 
-func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMemory, error) {
+func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMemory, float64, error) {
 	retrievable, errorValue := store.retrievable(ctx, query.now)
 	if errorValue != nil {
-		return nil, errorValue
+		return nil, 0, errorValue
 	}
 	depth := laneDepth(query.limit)
 	byID := map[string]*RecalledMemory{}
@@ -129,7 +131,8 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 		assign(entry, rank)
 		entry.Score += 1 / (reciprocalRankOffset + float64(rank))
 	}
-	for rank, memoryID := range rankByVector(retrievable, query.embedding, depth) {
+	vectorIDs, closest := rankByVector(retrievable, query.embedding, depth)
+	for rank, memoryID := range vectorIDs {
 		record(memoryID, rank+1, func(entry *RecalledMemory, rank int) { entry.VectorRank = rank })
 	}
 	for rank, memoryID := range rankByLexeme(retrievable, query.text, depth) {
@@ -137,12 +140,12 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	}
 	triggerIDs, errorValue := store.rankByTrigger(ctx, query.embedding, depth)
 	if errorValue != nil {
-		return nil, errorValue
+		return nil, 0, errorValue
 	}
 	for rank, memoryID := range triggerIDs {
 		record(memoryID, rank+1, func(entry *RecalledMemory, rank int) { entry.TriggerRank = rank })
 	}
-	return sortedByScore(byID), nil
+	return sortedByScore(byID), closest, nil
 }
 
 func laneDepth(limit int) int {
@@ -220,9 +223,9 @@ func (store *Store) retrievable(ctx context.Context, now time.Time) (map[string]
 	return retrievable, rows.Err()
 }
 
-func rankByVector(retrievable map[string]candidate, query []float32, depth int) []string {
+func rankByVector(retrievable map[string]candidate, query []float32, depth int) ([]string, float64) {
 	if query == nil {
-		return nil
+		return nil, 0
 	}
 	type scored struct {
 		memoryID   string
@@ -245,7 +248,10 @@ func rankByVector(retrievable map[string]candidate, query []float32, depth int) 
 	for _, entry := range all[:min(depth, len(all))] {
 		identifiers = append(identifiers, entry.memoryID)
 	}
-	return identifiers
+	if len(all) == 0 {
+		return identifiers, 0
+	}
+	return identifiers, all[0].similarity
 }
 
 func (store *Store) rankByTrigger(ctx context.Context, query []float32, depth int) ([]string, error) {
