@@ -14,7 +14,7 @@ A statement is self-contained when it reads correctly on its own:
 - Resolve every pronoun and omission. "I", "my", "he", "there" become the actual name or place.
 - Keep conditions, time, source and degree inside the statement.
 - Something a person was told keeps its source in the same statement. Never split the source into a statement of its own.
-- Write each statement in the language the text is written in.
+- Write each statement in English. Keep every proper noun exactly as the text spells it, in its own script: a person, a place, a company, a product, a team or a title stays as written. "홍길동이 사과를 좋아한다" becomes "홍길동 likes apples".
 
 isStatic: true for a lasting trait of the person, such as a name, a role, a team or a standing preference. An event, a one-off request or a passing situation is false. When unsure, false.
 

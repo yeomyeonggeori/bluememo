@@ -2,6 +2,7 @@ package bluememo
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -20,17 +21,17 @@ func timeReference(occurredAt time.Time, occurredUntil time.Time, location *time
 	last := occurredUntil.In(location)
 	switch {
 	case coversWholeYear(first, last):
-		return fmt.Sprintf("%d년", first.Year())
+		return strconv.Itoa(first.Year())
 	case coversWholeQuarter(first, last):
-		return fmt.Sprintf("%d년 %d분기", first.Year(), (int(first.Month())-1)/3+1)
+		return fmt.Sprintf("Q%d %d", (int(first.Month())-1)/3+1, first.Year())
 	case coversWholeMonth(first, last):
-		return fmt.Sprintf("%d년 %d월", first.Year(), int(first.Month()))
+		return fmt.Sprintf("%s %d", first.Month().String(), first.Year())
 	}
-	return formatDay(first) + "부터 " + formatDay(last) + "까지"
+	return formatDay(first) + " to " + formatDay(last)
 }
 
 func formatDay(day time.Time) string {
-	return fmt.Sprintf("%d년 %d월 %d일", day.Year(), int(day.Month()), day.Day())
+	return fmt.Sprintf("%d %s %d", day.Day(), day.Month().String(), day.Year())
 }
 
 func coversWholeMonth(first time.Time, last time.Time) bool {
