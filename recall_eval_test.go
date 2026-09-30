@@ -10,9 +10,13 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"text/tabwriter"
 	"time"
@@ -55,7 +59,28 @@ const (
 	evalEmbeddingURLVariable   = "BLUEMEMO_EVAL_EMBEDDING_URL"
 	evalEmbeddingModelVariable = "BLUEMEMO_EVAL_EMBEDDING_MODEL"
 	evalEmbeddingKeyVariable   = "BLUEMEMO_EVAL_EMBEDDING_KEY"
+	evalRerankURLVariable      = "BLUEMEMO_EVAL_RERANK_URL"
+	evalRerankModelVariable    = "BLUEMEMO_EVAL_RERANK_MODEL"
+	evalRerankKeyVariable      = "BLUEMEMO_EVAL_RERANK_KEY"
+	evalRerankModeVariable     = "BLUEMEMO_EVAL_RERANK_MODE"
+	evalRerankWorkerCount      = 4
+	evalHTTPAttemptLimit       = 5
+	evalHTTPBackoffBase        = 500 * time.Millisecond
+	evalJuliaRerankDepth       = 10
+
+	evalJuliaCommandVariable  = "BLUEMEMO_EVAL_JULIA_COMMAND"
+	evalJuliaModelDirVariable = "BLUEMEMO_EVAL_JULIA_MODEL_DIR"
+	evalJuliaModeVariable     = "BLUEMEMO_EVAL_JULIA_MODE"
 )
+
+type evalJuliaMode string
+
+const (
+	evalJuliaModeListwise  evalJuliaMode = "listwise"
+	evalJuliaModePointwise evalJuliaMode = "pointwise"
+)
+
+var evalJuliaModes = []evalJuliaMode{evalJuliaModeListwise, evalJuliaModePointwise}
 
 type evalNote struct {
 	GroupID     string `json:"groupID"`
@@ -246,13 +271,15 @@ func seededIdentifiers() func() string {
 	}
 }
 
-func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string, testCase evalCase) []string {
+func runEvalCase(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string, testCase evalCase) []string {
 	t.Helper()
 	ctx := context.Background()
 	testClock := &clock{current: arrivalInstant(evalDefaultArrivalDate)}
 	model := bluememotest.NewScriptedModel()
 	store, errorValue := bluememo.Open(ctx, filepath.Join(t.TempDir(), "memory.db"), bluememo.Configuration{
 		Embedder:       embedder,
+		Reranker:       reranker,
+		RerankDepth:    rerankDepth,
 		EmbeddingModel: embeddingModel,
 		Model:          model,
 		Judge:          supersedingJudge{supersedes: supersessionsOf(testCase)},
@@ -269,6 +296,9 @@ func runEvalCase(t *testing.T, embedder bluememo.Embedder, embeddingModel string
 	result, errorValue := store.Recall(ctx, testCase.Question, evalRecallDepth)
 	if errorValue != nil {
 		t.Fatalf("%s: recall: %v", testCase.ID, errorValue)
+	}
+	if strings.Contains(result.DegradedReason, bluememo.RerankFailureReason) {
+		t.Errorf("%s: the live reranker failed, so this case is not a measurement of reranking: %s", testCase.ID, result.DegradedReason)
 	}
 	return recalledContents(result)
 }
@@ -296,12 +326,12 @@ func memorizeAndSettleGroup(t *testing.T, store *bluememo.Store, model *bluememo
 	}
 }
 
-func runEval(t *testing.T, embedder bluememo.Embedder, embeddingModel string) []evalOutcome {
+func runEval(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string) []evalOutcome {
 	t.Helper()
 	cases := loadEvalCases(t)
 	outcomes := make([]evalOutcome, 0, len(cases))
 	for _, testCase := range cases {
-		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, embeddingModel, testCase)})
+		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, reranker, rerankDepth, embeddingModel, testCase)})
 	}
 	return outcomes
 }
@@ -410,30 +440,64 @@ func (embedder httpEmbedder) EmbedQuery(ctx context.Context, text string) ([]flo
 	return embeddings[0], nil
 }
 
-func (embedder httpEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
-	requestBody, errorValue := json.Marshal(map[string]any{"model": embedder.model, "input": texts})
+func postJSONWithRetry(ctx context.Context, client *http.Client, url string, apiKey string, payload any) ([]byte, error) {
+	requestBody, errorValue := json.Marshal(payload)
 	if errorValue != nil {
 		return nil, errorValue
 	}
-	request, errorValue := http.NewRequestWithContext(ctx, http.MethodPost, embedder.url, bytes.NewReader(requestBody))
+	var lastError error
+	for attempt := range evalHTTPAttemptLimit {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(evalHTTPBackoffBase << (attempt - 1)):
+			}
+		}
+		responseBody, isRetryable, errorValue := postJSONOnce(ctx, client, url, apiKey, requestBody)
+		if errorValue == nil {
+			return responseBody, nil
+		}
+		lastError = errorValue
+		if !isRetryable {
+			return nil, errorValue
+		}
+	}
+	return nil, fmt.Errorf("gave up after %d attempts: %w", evalHTTPAttemptLimit, lastError)
+}
+
+func postJSONOnce(ctx context.Context, client *http.Client, url string, apiKey string, requestBody []byte) ([]byte, bool, error) {
+	request, errorValue := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestBody))
 	if errorValue != nil {
-		return nil, errorValue
+		return nil, false, errorValue
 	}
 	request.Header.Set("Content-Type", "application/json")
-	if embedder.apiKey != "" {
-		request.Header.Set("Authorization", "Bearer "+embedder.apiKey)
+	if apiKey != "" {
+		request.Header.Set("Authorization", "Bearer "+apiKey)
 	}
-	response, errorValue := embedder.client.Do(request)
+	response, errorValue := client.Do(request)
 	if errorValue != nil {
-		return nil, errorValue
+		return nil, true, errorValue
 	}
 	defer response.Body.Close()
 	responseBody, errorValue := io.ReadAll(response.Body)
 	if errorValue != nil {
-		return nil, errorValue
+		return nil, true, errorValue
+	}
+	if response.StatusCode == http.StatusTooManyRequests || response.StatusCode >= http.StatusInternalServerError {
+		return nil, true, fmt.Errorf("endpoint returned %d: %s", response.StatusCode, responseBody)
 	}
 	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("embedding endpoint returned %d: %s", response.StatusCode, responseBody)
+		return nil, false, fmt.Errorf("endpoint returned %d: %s", response.StatusCode, responseBody)
+	}
+	return responseBody, false, nil
+}
+
+func (embedder httpEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
+	responseBody, errorValue := postJSONWithRetry(ctx, embedder.client, embedder.url, embedder.apiKey,
+		map[string]any{"model": embedder.model, "input": texts})
+	if errorValue != nil {
+		return nil, errorValue
 	}
 	var parsed struct {
 		Data []struct {
@@ -525,7 +589,7 @@ func TestEvalScoringIsComputedFromRanks(t *testing.T) {
 }
 
 func TestEvalHarnessRunsEveryCaseWithTheDeterministicStack(t *testing.T) {
-	outcomes := runEval(t, bluememotest.HashEmbedder{}, "hash")
+	outcomes := runEval(t, bluememotest.HashEmbedder{}, nil, 0, "hash")
 	if len(outcomes) != len(loadEvalCases(t)) {
 		t.Fatalf("scored %d outcomes for %d cases", len(outcomes), len(loadEvalCases(t)))
 	}
@@ -546,6 +610,269 @@ func TestEvalHarnessRunsEveryCaseWithTheDeterministicStack(t *testing.T) {
 	t.Log("deterministic hash embedder; the numbers check the harness, not recall quality" + formatScoreTable(outcomes))
 }
 
+type evalRerankMode string
+
+const (
+	evalRerankModePointwise evalRerankMode = "pointwise"
+	evalRerankModeListwise  evalRerankMode = "listwise"
+)
+
+var evalRerankModes = []evalRerankMode{evalRerankModePointwise, evalRerankModeListwise}
+
+type decisionsReranker struct {
+	url    string
+	model  string
+	apiKey string
+	mode   evalRerankMode
+	client *http.Client
+	ledger *rerankCostLedger
+}
+
+type rerankCostLedger struct {
+	mutex sync.Mutex
+	total float64
+	calls int
+}
+
+func (ledger *rerankCostLedger) record(cost float64) {
+	ledger.mutex.Lock()
+	defer ledger.mutex.Unlock()
+	ledger.total += cost
+	ledger.calls++
+}
+
+type decisionsResponse struct {
+	Answers map[string]struct {
+		Noul          *float64           `json:"noul"`
+		Probabilities map[string]float64 `json:"probabilities"`
+	} `json:"answers"`
+	Usage struct {
+		Cost float64 `json:"cost"`
+	} `json:"usage"`
+}
+
+func (reranker decisionsReranker) Rerank(ctx context.Context, query string, contents []string) ([]float64, error) {
+	switch reranker.mode {
+	case evalRerankModePointwise:
+		return reranker.rerankPointwise(ctx, query, contents)
+	case evalRerankModeListwise:
+		return reranker.rerankListwise(ctx, query, contents)
+	}
+	return nil, fmt.Errorf("unknown rerank mode %q", reranker.mode)
+}
+
+func (reranker decisionsReranker) rerankPointwise(ctx context.Context, query string, contents []string) ([]float64, error) {
+	scores := make([]float64, len(contents))
+	errorsByIndex := make([]error, len(contents))
+	indexes := make(chan int)
+	var workers sync.WaitGroup
+	for range min(evalRerankWorkerCount, len(contents)) {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for index := range indexes {
+				scores[index], errorsByIndex[index] = reranker.scorePointwise(ctx, query, contents[index])
+			}
+		}()
+	}
+	for index := range contents {
+		indexes <- index
+	}
+	close(indexes)
+	workers.Wait()
+	if errorValue := errors.Join(errorsByIndex...); errorValue != nil {
+		return nil, errorValue
+	}
+	return scores, nil
+}
+
+func (reranker decisionsReranker) scorePointwise(ctx context.Context, query string, content string) (float64, error) {
+	parsed, responseBody, errorValue := reranker.decide(ctx, content, map[string]any{
+		"relevant": map[string]any{
+			"type":         "noul",
+			"instructions": "Does this memory answer the question: " + query,
+		},
+	})
+	if errorValue != nil {
+		return 0, errorValue
+	}
+	answer, isPresent := parsed.Answers["relevant"]
+	if !isPresent || answer.Noul == nil {
+		return 0, fmt.Errorf("rerank response carries no relevant score: %s", responseBody)
+	}
+	return *answer.Noul, nil
+}
+
+func (reranker decisionsReranker) rerankListwise(ctx context.Context, query string, contents []string) ([]float64, error) {
+	criteria := make(map[string]string, len(contents))
+	for index, content := range contents {
+		criteria[fmt.Sprintf("m%d", index)] = content
+	}
+	parsed, responseBody, errorValue := reranker.decide(ctx, query, map[string]any{
+		"pick": map[string]any{
+			"type":         "choice",
+			"instructions": "Which memory answers this question?",
+			"criteria":     criteria,
+		},
+	})
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	answer, isPresent := parsed.Answers["pick"]
+	if !isPresent {
+		return nil, fmt.Errorf("rerank response carries no pick answer: %s", responseBody)
+	}
+	scores := make([]float64, len(contents))
+	for index := range scores {
+		score, isPresent := answer.Probabilities[fmt.Sprintf("m%d", index)]
+		if !isPresent {
+			return nil, fmt.Errorf("rerank response has no probability for m%d: %s", index, responseBody)
+		}
+		scores[index] = score
+	}
+	return scores, nil
+}
+
+func (reranker decisionsReranker) decide(ctx context.Context, state string, questions map[string]any) (decisionsResponse, []byte, error) {
+	responseBody, errorValue := postJSONWithRetry(ctx, reranker.client, reranker.url, reranker.apiKey, map[string]any{
+		"model":     reranker.model,
+		"state":     state,
+		"questions": questions,
+	})
+	if errorValue != nil {
+		return decisionsResponse{}, nil, errorValue
+	}
+	var parsed decisionsResponse
+	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil {
+		return decisionsResponse{}, nil, fmt.Errorf("rerank response is not the expected shape: %w", errorValue)
+	}
+	reranker.ledger.record(parsed.Usage.Cost)
+	return parsed, responseBody, nil
+}
+
+type juliaReranker struct {
+	command  string
+	modelDir string
+	mode     evalJuliaMode
+}
+
+func (reranker juliaReranker) Rerank(ctx context.Context, query string, contents []string) ([]float64, error) {
+	switch reranker.mode {
+	case evalJuliaModeListwise:
+		return reranker.rerankListwise(ctx, query, contents)
+	case evalJuliaModePointwise:
+		return reranker.rerankPointwise(ctx, query, contents)
+	}
+	return nil, fmt.Errorf("unknown julia mode %q", reranker.mode)
+}
+
+func (reranker juliaReranker) run(ctx context.Context, arguments []string) (string, error) {
+	command := exec.CommandContext(ctx, reranker.command, append([]string{"decide", "--model-dir", reranker.modelDir}, arguments...)...)
+	var standardError bytes.Buffer
+	command.Stderr = &standardError
+	output, errorValue := command.Output()
+	if errorValue != nil {
+		return "", fmt.Errorf("julia decide failed: %w: %s", errorValue, standardError.String())
+	}
+	return string(output), nil
+}
+
+func (reranker juliaReranker) rerankListwise(ctx context.Context, query string, contents []string) ([]float64, error) {
+	arguments := []string{"--state", query, "--question", "Which memory answers this question?", "--type", "choice"}
+	for index, content := range contents {
+		arguments = append(arguments, "--option", fmt.Sprintf("m%d=%s", index, content))
+	}
+	output, errorValue := reranker.run(ctx, append(arguments, "--probabilities"))
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	return parseListwiseScores(output, len(contents))
+}
+
+var listwiseScorePattern = regexp.MustCompile(`\b(m\d+): ([0-9.eE+-]+)`)
+
+func parseListwiseScores(output string, count int) ([]float64, error) {
+	_, probabilities, isPresent := strings.Cut(output, "(")
+	if !isPresent {
+		return nil, fmt.Errorf("julia listwise output carries no probabilities: %q", output)
+	}
+	scoresByName := map[string]float64{}
+	for _, match := range listwiseScorePattern.FindAllStringSubmatch(probabilities, -1) {
+		score, errorValue := strconv.ParseFloat(match[2], 64)
+		if errorValue != nil {
+			return nil, fmt.Errorf("julia listwise probability %q: %w", match[2], errorValue)
+		}
+		scoresByName[match[1]] = score
+	}
+	scores := make([]float64, count)
+	for index := range scores {
+		score, isPresent := scoresByName[fmt.Sprintf("m%d", index)]
+		if !isPresent {
+			return nil, fmt.Errorf("julia listwise output has no probability for m%d: %q", index, output)
+		}
+		scores[index] = score
+	}
+	return scores, nil
+}
+
+func (reranker juliaReranker) rerankPointwise(ctx context.Context, query string, contents []string) ([]float64, error) {
+	questions := make(map[string]any, len(contents))
+	for index, content := range contents {
+		questions[fmt.Sprintf("c%d", index)] = map[string]any{
+			"type":         "noul",
+			"instructions": "Does this memory answer the question? Memory: " + content,
+		}
+	}
+	requestBody, errorValue := json.Marshal(map[string]any{"state": query, "questions": questions})
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	inputPath := filepath.Join(os.TempDir(), fmt.Sprintf("bluememo-julia-%d-%d.json", os.Getpid(), time.Now().UnixNano()))
+	if errorValue := os.WriteFile(inputPath, requestBody, 0o600); errorValue != nil {
+		return nil, errorValue
+	}
+	defer os.Remove(inputPath)
+	output, errorValue := reranker.run(ctx, []string{"--input", inputPath, "--probabilities"})
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	return parsePointwiseScores(output, len(contents))
+}
+
+func parsePointwiseScores(output string, count int) ([]float64, error) {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) != count {
+		return nil, fmt.Errorf("julia pointwise printed %d lines for %d questions: %q", len(lines), count, output)
+	}
+	scores := make([]float64, count)
+	for index, line := range lines {
+		leading, _, _ := strings.Cut(strings.TrimSpace(line), " ")
+		score, errorValue := strconv.ParseFloat(leading, 64)
+		if errorValue != nil {
+			return nil, fmt.Errorf("julia pointwise line %q: %w", line, errorValue)
+		}
+		scores[index] = score
+	}
+	return scores, nil
+}
+
+func newJuliaReranker(t *testing.T) (bluememo.Reranker, string) {
+	t.Helper()
+	command := os.Getenv(evalJuliaCommandVariable)
+	if command == "" {
+		return nil, ""
+	}
+	mode := evalJuliaMode(os.Getenv(evalJuliaModeVariable))
+	if !slices.Contains(evalJuliaModes, mode) {
+		t.Fatalf("%s is %q, want one of %v", evalJuliaModeVariable, mode, evalJuliaModes)
+	}
+	modelDir := os.Getenv(evalJuliaModelDirVariable)
+	if modelDir == "" {
+		t.Fatalf("%s is required when %s is set", evalJuliaModelDirVariable, evalJuliaCommandVariable)
+	}
+	return juliaReranker{command: command, modelDir: modelDir, mode: mode}, "julia " + string(mode)
+}
+
 func TestRecallQualityWithARealEmbedder(t *testing.T) {
 	endpoint := os.Getenv(evalEmbeddingURLVariable)
 	embeddingModel := os.Getenv(evalEmbeddingModelVariable)
@@ -553,6 +880,37 @@ func TestRecallQualityWithARealEmbedder(t *testing.T) {
 		t.Skipf("set %s and %s (and optionally %s) to score recall with a real embedder", evalEmbeddingURLVariable, evalEmbeddingModelVariable, evalEmbeddingKeyVariable)
 	}
 	embedder := httpEmbedder{url: endpoint, model: embeddingModel, apiKey: os.Getenv(evalEmbeddingKeyVariable), client: &http.Client{Timeout: time.Minute}}
-	outcomes := runEval(t, embedder, embeddingModel)
-	t.Log("embedder " + embeddingModel + formatScoreTable(outcomes) + formatCaseTable(outcomes))
+	components := "embedder " + embeddingModel
+	var reranker bluememo.Reranker
+	var rerankLedger *rerankCostLedger
+	rerankDepth := 0
+	rerankURL, rerankModel := os.Getenv(evalRerankURLVariable), os.Getenv(evalRerankModelVariable)
+	if rerankURL != "" && rerankModel != "" {
+		rerankMode := evalRerankModeFromEnvironment(t)
+		rerankLedger = &rerankCostLedger{}
+		reranker = decisionsReranker{url: rerankURL, model: rerankModel, apiKey: os.Getenv(evalRerankKeyVariable), mode: rerankMode, client: &http.Client{Timeout: time.Minute}, ledger: rerankLedger}
+		components += ", reranker " + rerankModel + " " + string(rerankMode)
+	}
+	if juliaReranker, name := newJuliaReranker(t); juliaReranker != nil {
+		reranker = juliaReranker
+		rerankDepth = evalJuliaRerankDepth
+		components += ", reranker " + name
+	}
+	outcomes := runEval(t, embedder, reranker, rerankDepth, embeddingModel)
+	t.Log("live components: " + components + formatScoreTable(outcomes) + formatCaseTable(outcomes))
+	if rerankLedger != nil {
+		t.Logf("rerank usage: %d calls, cost %.6f", rerankLedger.calls, rerankLedger.total)
+	}
+}
+
+func evalRerankModeFromEnvironment(t *testing.T) evalRerankMode {
+	t.Helper()
+	mode := evalRerankMode(os.Getenv(evalRerankModeVariable))
+	if mode == "" {
+		return evalRerankModePointwise
+	}
+	if !slices.Contains(evalRerankModes, mode) {
+		t.Fatalf("%s is %q, want one of %v", evalRerankModeVariable, mode, evalRerankModes)
+	}
+	return mode
 }

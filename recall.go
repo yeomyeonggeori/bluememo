@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -12,6 +13,8 @@ import (
 const (
 	SearchModeHybrid  = "hybrid"
 	SearchModeLexical = "lexical"
+
+	RerankFailureReason = "rerank failed: "
 
 	DefaultRecallLimit   = 12
 	UnsettledNoteLimit   = 3
@@ -67,6 +70,8 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if errorValue != nil {
 		return RecallResult{}, errorValue
 	}
+	ranked, rerankFailure := store.rerank(ctx, trimmed, ranked, limit)
+	result.DegradedReason = joinReasons(result.DegradedReason, rerankFailure)
 	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
 	if errorValue != nil {
 		return RecallResult{}, errorValue
@@ -109,7 +114,7 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	if errorValue != nil {
 		return nil, errorValue
 	}
-	depth := query.limit * laneDepthMultiplier
+	depth := laneDepth(query.limit)
 	byID := map[string]*RecalledMemory{}
 	record := func(memoryID string, rank int, assign func(*RecalledMemory, int)) {
 		held, isRetrievable := retrievable[memoryID]
@@ -138,6 +143,59 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 		record(memoryID, rank+1, func(entry *RecalledMemory, rank int) { entry.TriggerRank = rank })
 	}
 	return sortedByScore(byID), nil
+}
+
+func laneDepth(limit int) int {
+	return limit * laneDepthMultiplier
+}
+
+func (store *Store) rerankDepth(limit int) int {
+	if store.configuration.RerankDepth > 0 {
+		return store.configuration.RerankDepth
+	}
+	return laneDepth(limit)
+}
+
+func joinReasons(reasons ...string) string {
+	present := make([]string, 0, len(reasons))
+	for _, reason := range reasons {
+		if reason != "" {
+			present = append(present, reason)
+		}
+	}
+	return strings.Join(present, "; ")
+}
+
+func (store *Store) rerank(ctx context.Context, query string, ranked []RecalledMemory, limit int) ([]RecalledMemory, string) {
+	if store.configuration.Reranker == nil || len(ranked) == 0 {
+		return ranked, ""
+	}
+	shortlist := ranked[:min(store.rerankDepth(limit), len(ranked))]
+	contents := make([]string, len(shortlist))
+	for index, entry := range shortlist {
+		contents[index] = entry.Memory.Content
+	}
+	scores, errorValue := store.configuration.Reranker.Rerank(ctx, query, contents)
+	if errorValue != nil {
+		return ranked, RerankFailureReason + errorValue.Error()
+	}
+	if len(scores) != len(shortlist) {
+		return ranked, fmt.Sprintf("%sreturned %d scores for %d candidates", RerankFailureReason, len(scores), len(shortlist))
+	}
+	return append(reorderedByScores(shortlist, scores), ranked[len(shortlist):]...), ""
+}
+
+func reorderedByScores(shortlist []RecalledMemory, scores []float64) []RecalledMemory {
+	order := make([]int, len(shortlist))
+	for index := range order {
+		order[index] = index
+	}
+	sort.SliceStable(order, func(left int, right int) bool { return scores[order[left]] > scores[order[right]] })
+	reordered := make([]RecalledMemory, len(shortlist))
+	for position, index := range order {
+		reordered[position] = shortlist[index]
+	}
+	return reordered
 }
 
 func (store *Store) retrievable(ctx context.Context, now time.Time) (map[string]candidate, error) {

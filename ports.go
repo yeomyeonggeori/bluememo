@@ -11,6 +11,10 @@ type Embedder interface {
 	EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error)
 }
 
+type Reranker interface {
+	Rerank(ctx context.Context, query string, contents []string) ([]float64, error)
+}
+
 type StructuredRequest struct {
 	SchemaName     string
 	SchemaDocument string
