@@ -60,6 +60,7 @@ const (
 	evalEmbeddingURLVariable   = "BLUEMEMO_EVAL_EMBEDDING_URL"
 	evalEmbeddingModelVariable = "BLUEMEMO_EVAL_EMBEDDING_MODEL"
 	evalEmbeddingKeyVariable   = "BLUEMEMO_EVAL_EMBEDDING_KEY"
+	evalTimeReferenceVariable  = "BLUEMEMO_EVAL_TIME_REFERENCE"
 	evalRerankURLVariable      = "BLUEMEMO_EVAL_RERANK_URL"
 	evalRerankModelVariable    = "BLUEMEMO_EVAL_RERANK_MODEL"
 	evalRerankKeyVariable      = "BLUEMEMO_EVAL_RERANK_KEY"
@@ -273,20 +274,21 @@ func seededIdentifiers() func() string {
 	}
 }
 
-func runEvalCase(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string, testCase evalCase) []string {
+func runEvalCase(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string, embedTimeReference bool, testCase evalCase) []string {
 	t.Helper()
 	ctx := context.Background()
 	testClock := &clock{current: arrivalInstant(evalDefaultArrivalDate)}
 	model := bluememotest.NewScriptedModel()
 	store, errorValue := bluememo.Open(ctx, filepath.Join(t.TempDir(), "memory.db"), bluememo.Configuration{
-		Embedder:       embedder,
-		Reranker:       reranker,
-		RerankDepth:    rerankDepth,
-		EmbeddingModel: embeddingModel,
-		Model:          model,
-		Judge:          supersedingJudge{supersedes: supersessionsOf(testCase)},
-		Now:            testClock.now,
-		NewIdentifier:  seededIdentifiers(),
+		Embedder:           embedder,
+		Reranker:           reranker,
+		RerankDepth:        rerankDepth,
+		EmbeddingModel:     embeddingModel,
+		EmbedTimeReference: embedTimeReference,
+		Model:              model,
+		Judge:              supersedingJudge{supersedes: supersessionsOf(testCase)},
+		Now:                testClock.now,
+		NewIdentifier:      seededIdentifiers(),
 	})
 	if errorValue != nil {
 		t.Fatalf("%s: open store: %v", testCase.ID, errorValue)
@@ -328,12 +330,12 @@ func memorizeAndSettleGroup(t *testing.T, store *bluememo.Store, model *bluememo
 	}
 }
 
-func runEval(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string) []evalOutcome {
+func runEval(t *testing.T, embedder bluememo.Embedder, reranker bluememo.Reranker, rerankDepth int, embeddingModel string, embedTimeReference bool) []evalOutcome {
 	t.Helper()
 	cases := loadEvalCases(t)
 	outcomes := make([]evalOutcome, 0, len(cases))
 	for _, testCase := range cases {
-		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, reranker, rerankDepth, embeddingModel, testCase)})
+		outcomes = append(outcomes, evalOutcome{testCase: testCase, recalled: runEvalCase(t, embedder, reranker, rerankDepth, embeddingModel, embedTimeReference, testCase)})
 	}
 	return outcomes
 }
@@ -591,7 +593,8 @@ func TestEvalScoringIsComputedFromRanks(t *testing.T) {
 }
 
 func TestEvalHarnessRunsEveryCaseWithTheDeterministicStack(t *testing.T) {
-	outcomes := runEval(t, bluememotest.HashEmbedder{}, nil, 0, "hash")
+	outcomes := runEval(t, bluememotest.HashEmbedder{}, nil, 0, "hash", false)
+	t.Log("time reference on" + formatScoreTable(runEval(t, bluememotest.HashEmbedder{}, nil, 0, "hash", true)))
 	if len(outcomes) != len(loadEvalCases(t)) {
 		t.Fatalf("scored %d outcomes for %d cases", len(outcomes), len(loadEvalCases(t)))
 	}
@@ -885,7 +888,7 @@ func TestRecallQualityWithARealEmbedder(t *testing.T) {
 		t.Skipf("set %s and %s (and optionally %s) to score recall with a real embedder", evalEmbeddingURLVariable, evalEmbeddingModelVariable, evalEmbeddingKeyVariable)
 	}
 	embedder := httpEmbedder{url: endpoint, model: embeddingModel, apiKey: os.Getenv(evalEmbeddingKeyVariable), client: &http.Client{Timeout: time.Minute}}
-	components := "embedder " + embeddingModel
+	components := "embedder " + embeddingModel + ", time reference \"" + os.Getenv(evalTimeReferenceVariable) + "\""
 	var reranker bluememo.Reranker
 	var rerankLedger *rerankCostLedger
 	rerankDepth := 0
@@ -902,7 +905,7 @@ func TestRecallQualityWithARealEmbedder(t *testing.T) {
 		rerankDepth = evalJuliaRerankDepth
 		components += ", reranker " + name
 	}
-	outcomes := runEval(t, embedder, reranker, rerankDepth, embeddingModel)
+	outcomes := runEval(t, embedder, reranker, rerankDepth, embeddingModel, os.Getenv(evalTimeReferenceVariable) != "")
 	t.Log("live components: " + components + formatScoreTable(outcomes) + formatCaseTable(outcomes))
 	if rerankLedger != nil {
 		t.Logf("rerank usage: %d calls, cost %.6f", rerankLedger.calls, rerankLedger.total)

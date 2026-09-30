@@ -188,7 +188,7 @@ func (store *Store) settleProposition(ctx context.Context, group pendingGroup, p
 		return nil
 	}
 	report.Proposed++
-	embedding, errorValue := store.embedDocument(ctx, proposition.Content)
+	embedding, errorValue := store.embedDocument(ctx, store.embeddingText(proposition.Content, dates.occurredAt))
 	if errorValue != nil {
 		return errorValue
 	}
