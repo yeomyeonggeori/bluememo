@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,6 +52,96 @@ func TestAFailingEmbedderDegradesToLexicalAndSaysWhy(t *testing.T) {
 	result := testFixture.recall(t, "아무거나", 5)
 	if result.Mode != bluememo.SearchModeLexical || result.DegradedReason == "" {
 		t.Fatalf("expected a lexical answer that says why, got %+v", result)
+	}
+}
+
+type scriptedReranker struct {
+	scores  map[string]float64
+	failure error
+	calls   int
+	handed  []int
+}
+
+func (reranker *scriptedReranker) Rerank(_ context.Context, _ string, contents []string) ([]float64, error) {
+	reranker.calls++
+	reranker.handed = append(reranker.handed, len(contents))
+	if reranker.failure != nil {
+		return nil, reranker.failure
+	}
+	scores := make([]float64, len(contents))
+	for index, content := range contents {
+		scores[index] = reranker.scores[content]
+	}
+	return scores, nil
+}
+
+func TestARerankerReordersTheShortlist(t *testing.T) {
+	const coffee = "박예시는 아침에만 커피를 마신다."
+	const deploy = "최견본은 금요일에 배포하지 않는다."
+	reranker := &scriptedReranker{scores: map[string]float64{deploy: 0.9, coffee: 0.1}}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.Reranker = reranker })
+	testFixture.settle(t, "커피", statement(coffee))
+	testFixture.settle(t, "배포", statement(deploy))
+
+	result := testFixture.recall(t, coffee, 2)
+	if !slices.Equal(recalledContents(result), []string{deploy, coffee}) || result.DegradedReason != "" {
+		t.Fatalf("expected the reranker to put the deploy rule first, got %v (%q)", recalledContents(result), result.DegradedReason)
+	}
+	unranked := newFixture(t)
+	unranked.settle(t, "커피", statement(coffee))
+	unranked.settle(t, "배포", statement(deploy))
+	if got := recalledContents(unranked.recall(t, coffee, 2)); got[0] != coffee {
+		t.Fatalf("expected the fused order to lead with the coffee memory, got %v", got)
+	}
+}
+
+func settleFourMemories(t *testing.T, testFixture *fixture) {
+	t.Helper()
+	testFixture.settle(t, "커피", statement("박예시는 아침에만 커피를 마신다."))
+	testFixture.settle(t, "배포", statement("최견본은 금요일에 배포하지 않는다."))
+	testFixture.settle(t, "회의", statement("이샘플은 월요일마다 회의를 연다."))
+	testFixture.settle(t, "점심", statement("김견본은 점심에 국수를 먹는다."))
+}
+
+func TestASetRerankDepthBoundsTheContentsHandedToTheReranker(t *testing.T) {
+	reranker := &scriptedReranker{}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) {
+		configuration.Reranker = reranker
+		configuration.RerankDepth = 2
+	})
+	settleFourMemories(t, testFixture)
+
+	testFixture.recall(t, "커피", 5)
+	if !slices.Equal(reranker.handed, []int{2}) {
+		t.Fatalf("expected the reranker to receive 2 contents, got %v", reranker.handed)
+	}
+}
+
+func TestAZeroRerankDepthKeepsTheLaneDepth(t *testing.T) {
+	reranker := &scriptedReranker{}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.Reranker = reranker })
+	settleFourMemories(t, testFixture)
+
+	testFixture.recall(t, "커피", 5)
+	if !slices.Equal(reranker.handed, []int{4}) {
+		t.Fatalf("expected the reranker to receive all 4 contents, got %v", reranker.handed)
+	}
+}
+
+func TestAFailingRerankerKeepsTheFusedOrderAndSaysWhy(t *testing.T) {
+	const coffee = "박예시는 아침에만 커피를 마신다."
+	const deploy = "최견본은 금요일에 배포하지 않는다."
+	reranker := &scriptedReranker{failure: errors.New("rerank service down")}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.Reranker = reranker })
+	testFixture.settle(t, "커피", statement(coffee))
+	testFixture.settle(t, "배포", statement(deploy))
+
+	result := testFixture.recall(t, coffee, 2)
+	if reranker.calls != 1 || result.Mode != bluememo.SearchModeHybrid || !strings.Contains(result.DegradedReason, bluememo.RerankFailureReason+"rerank service down") {
+		t.Fatalf("expected a hybrid answer that says the reranker failed, got %+v", result)
+	}
+	if got := recalledContents(result); got[0] != coffee {
+		t.Fatalf("expected the fused order to survive, got %v", got)
 	}
 }
 

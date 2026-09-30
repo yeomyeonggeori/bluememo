@@ -27,6 +27,8 @@ const (
 
 type Configuration struct {
 	Embedder          Embedder
+	Reranker          Reranker
+	RerankDepth       int
 	EmbeddingModel    string
 	Model             LanguageModel
 	Judge             Judge
