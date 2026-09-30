@@ -60,6 +60,7 @@ type Memory struct {
 	Content           string     `json:"content"`
 	IsStatic          bool       `json:"isStatic"`
 	OccurredAt        time.Time  `json:"occurredAt,omitzero"`
+	OccurredUntil     time.Time  `json:"occurredUntil,omitzero"`
 	ValidUntil        time.Time  `json:"validUntil,omitzero"`
 	OriginID          string     `json:"originID"`
 	Importance        int        `json:"importance"`
@@ -98,8 +99,9 @@ var (
 )
 
 type dated struct {
-	occurredAt time.Time
-	validUntil time.Time
+	occurredAt    time.Time
+	occurredUntil time.Time
+	validUntil    time.Time
 }
 
 func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.Location) (dated, error) {
@@ -117,7 +119,21 @@ func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.L
 	if !validUntil.IsZero() && !validUntil.After(arrivedAt) {
 		return dated{}, ErrAlreadyExpired
 	}
-	return dated{occurredAt: parseDay(proposition.OccurredOn, location), validUntil: validUntil}, nil
+	occurredAt, occurredUntil := parseOccurrence(proposition.OccurredOn, location)
+	return dated{occurredAt: occurredAt, occurredUntil: occurredUntil, validUntil: validUntil}, nil
+}
+
+func parseOccurrence(occurredOn string, location *time.Location) (time.Time, time.Time) {
+	first, last, isSpan := strings.Cut(occurredOn, "/")
+	occurredAt := parseDay(first, location)
+	if !isSpan || occurredAt.IsZero() {
+		return occurredAt, time.Time{}
+	}
+	occurredUntil := parseDay(last, location)
+	if !occurredUntil.After(occurredAt) {
+		return occurredAt, time.Time{}
+	}
+	return occurredAt, occurredUntil
 }
 
 func ExpiryInstant(expiry Expiry, expiryDate string, arrivedAt time.Time, location *time.Location) (time.Time, error) {

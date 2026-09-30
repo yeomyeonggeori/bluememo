@@ -15,6 +15,7 @@ type staleText struct {
 	identifier string
 	text       string
 	occurredAt sql.NullInt64
+	occurredTo sql.NullInt64
 }
 
 func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, error) {
@@ -25,13 +26,13 @@ func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, 
 		batchSize = 64
 	}
 	memoryCount, errorValue := store.reembedTable(ctx, batchSize,
-		`select memory_id, content, occurred_at from memory where embedding_model <> ? or embedding is null limit ?`,
+		`select memory_id, content, occurred_at, occurred_to from memory where embedding_model <> ? or embedding is null limit ?`,
 		`update memory set embedding = ?, embedding_model = ? where memory_id = ?`)
 	if errorValue != nil {
 		return ReembedReport{}, errorValue
 	}
 	triggerCount, errorValue := store.reembedTable(ctx, batchSize,
-		`select trigger_id, phrase, null from memory_trigger where embedding_model <> ? limit ?`,
+		`select trigger_id, phrase, null, null from memory_trigger where embedding_model <> ? limit ?`,
 		`update memory_trigger set embedding = ?, embedding_model = ? where trigger_id = ?`)
 	return ReembedReport{Memories: memoryCount, Triggers: triggerCount}, errorValue
 }
@@ -59,7 +60,7 @@ func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSiz
 	stale := []staleText{}
 	for rows.Next() {
 		var entry staleText
-		if errorValue := rows.Scan(&entry.identifier, &entry.text, &entry.occurredAt); errorValue != nil {
+		if errorValue := rows.Scan(&entry.identifier, &entry.text, &entry.occurredAt, &entry.occurredTo); errorValue != nil {
 			return nil, errorValue
 		}
 		stale = append(stale, entry)
@@ -70,7 +71,7 @@ func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSiz
 func (store *Store) replaceEmbeddings(ctx context.Context, stale []staleText, updateEmbedding string) error {
 	texts := make([]string, len(stale))
 	for index, entry := range stale {
-		texts[index] = store.matchableText(entry.text, fromNullMilliseconds(entry.occurredAt))
+		texts[index] = store.matchableText(entry.text, fromNullMilliseconds(entry.occurredAt), fromNullMilliseconds(entry.occurredTo))
 	}
 	embeddings, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, texts)
 	if errorValue != nil {

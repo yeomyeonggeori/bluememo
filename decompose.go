@@ -14,11 +14,12 @@ A statement is self-contained when it reads correctly on its own:
 - Resolve every pronoun and omission. "I", "my", "he", "there" become the actual name or place.
 - Keep conditions, time, source and degree inside the statement.
 - Something a person was told keeps its source in the same statement. Never split the source into a statement of its own.
-- Write each statement in the language the text is written in.
+- Write each statement in English. Keep every proper noun exactly as the text spells it, in its own script: a person, a place, a company, a product, a team or a title stays as written. "홍길동이 사과를 좋아한다" becomes "홍길동 likes apples".
 
 isStatic: true for a lasting trait of the person, such as a name, a role, a team or a standing preference. An event, a one-off request or a passing situation is false. When unsure, false.
 
-occurredOn: the day an event happened (YYYY-MM-DD), counted from today in the context below. Empty when the statement is not an event.
+occurredOn: when an event happened, counted from today in the context below. One day is YYYY-MM-DD. A longer time is its first and last day joined by a slash, YYYY-MM-DD/YYYY-MM-DD. Empty when the statement is not an event, or when the text is too vague to place it.
+Give the time at the precision the text gives, and never a narrower one. "last year" is that year's first and last day, "in June" that month's, "last quarter" that quarter's. A coarse time is still a time: never leave it out because it is not a single day. "a few weeks ago" does not place the event, so it stays empty.
 
 expiry: when the text says the statement stops being true, pick that end.
   none            it has no end
@@ -38,11 +39,12 @@ Do not:
 - keep small talk, acknowledgements or a request that is done once it is answered. When nothing is worth keeping, return an empty list.
 
 Example context: speaker Alex, today 2026-09-21
-Example text: I met Jordan yesterday. I always want meeting notes in Markdown. Answer me in English this quarter.
+Example text: I met Jordan yesterday. I always want meeting notes in Markdown. Answer me in English this quarter. I moved to Busan last year.
 Example statements:
   isStatic false, occurredOn 2026-09-20: "Alex met Jordan."
   isStatic true: "Alex always wants meeting notes in Markdown."
   isStatic false, expiry end_of_quarter: "Alex wants answers in English."
+  isStatic false, occurredOn 2025-01-01/2025-12-31: "Alex moved to Busan."
 
 A wrong statement (never do this):
   Context: speaker Jordan Lee

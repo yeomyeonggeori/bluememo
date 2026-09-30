@@ -96,13 +96,14 @@ The same program is in [`examples/quickstart`](https://github.com/yeomyeonggeori
 
 One self-contained sentence the store keeps, with the dates and strength the runtime attached to it.
 
-The model supplies four things when it writes one:
+The model supplies these when it writes one:
 
 | field | meaning |
 | --- | --- |
 | `content` | the sentence, at most 240 characters, with pronouns resolved |
 | `isStatic` | a permanent trait of the person, such as a name, a role or a lasting preference |
-| `occurredOn` | the day it happened, when it describes an event |
+| `occurredOn` | the first day of the time it happened, when it describes an event |
+| `occurredUntil` | the last day of that time, empty when it happened on one day |
 | `expiry` | when it stops being true, chosen from a closed list |
 
 The runtime adds the rest: an identifier, the origin it came from, its importance rating, its storage strength, the people it names, and timestamps. A memory is live, cold, or gone.

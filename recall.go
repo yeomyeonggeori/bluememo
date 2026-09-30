@@ -176,7 +176,7 @@ func (store *Store) rerank(ctx context.Context, query string, ranked []RecalledM
 	shortlist := ranked[:min(store.rerankDepth(limit), len(ranked))]
 	contents := make([]string, len(shortlist))
 	for index, entry := range shortlist {
-		contents[index] = store.matchableText(entry.Memory.Content, entry.Memory.OccurredAt)
+		contents[index] = store.matchableText(entry.Memory.Content, entry.Memory.OccurredAt, entry.Memory.OccurredUntil)
 	}
 	scores, errorValue := store.configuration.Reranker.Rerank(ctx, query, contents)
 	if errorValue != nil {
