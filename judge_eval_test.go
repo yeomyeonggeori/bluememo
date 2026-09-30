@@ -31,9 +31,10 @@ const (
 	judgeKindClearUnrelated judgeKind = "clear_unrelated"
 	judgeKindAmbiguous      judgeKind = "ambiguous"
 	judgeKindTrapSame       judgeKind = "trap_same"
+	judgeKindRestatement    judgeKind = "restatement"
 )
 
-var judgeKinds = []judgeKind{judgeKindClearSame, judgeKindClearUpdates, judgeKindClearExtends, judgeKindClearUnrelated, judgeKindAmbiguous, judgeKindTrapSame}
+var judgeKinds = []judgeKind{judgeKindClearSame, judgeKindClearUpdates, judgeKindClearExtends, judgeKindClearUnrelated, judgeKindAmbiguous, judgeKindTrapSame, judgeKindRestatement}
 
 var judgeExpectedRelations = []bluememo.Relation{bluememo.RelationSame, bluememo.RelationUpdates, bluememo.RelationExtends, bluememo.RelationUnrelated}
 
@@ -511,7 +512,7 @@ func formatJudgeCaseTable(outcomes []judgeOutcome) string {
 	writer := tabwriter.NewWriter(&buffer, 0, 4, 2, ' ', 0)
 	fmt.Fprintln(writer, "\ncase\texpected\tjudged\ttarget\traw leader\tmargin\tgate fired\t")
 	for _, outcome := range outcomes {
-		if outcome.testCase.Kind != judgeKindTrapSame && outcome.testCase.Kind != judgeKindAmbiguous {
+		if outcome.testCase.Kind != judgeKindTrapSame && outcome.testCase.Kind != judgeKindAmbiguous && outcome.testCase.Kind != judgeKindRestatement {
 			continue
 		}
 		raw, margin, _ := outcome.rawRelation()
