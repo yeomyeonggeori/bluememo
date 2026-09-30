@@ -108,7 +108,11 @@ func TestReembedAppliesTheTimeReference(t *testing.T) {
 }
 
 func spannedStatement(content string, occurredOn string, occurredUntil string) bluememo.Proposition {
-	return bluememo.Proposition{Content: content, Expiry: bluememo.ExpiryNone, OccurredOn: occurredOn, OccurredUntil: occurredUntil}
+	occurrence := occurredOn
+	if occurredUntil != "" {
+		occurrence = occurredOn + "/" + occurredUntil
+	}
+	return bluememo.Proposition{Content: content, Expiry: bluememo.ExpiryNone, OccurredOn: occurrence}
 }
 
 func TestTimeReferenceRendersOnlyThePrecisionTheSpanHolds(t *testing.T) {

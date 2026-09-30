@@ -48,12 +48,11 @@ const (
 var Edges = []Edge{EdgeUpdates, EdgeExtends}
 
 type Proposition struct {
-	Content       string `json:"content"`
-	IsStatic      bool   `json:"isStatic"`
-	OccurredOn    string `json:"occurredOn"`
-	OccurredUntil string `json:"occurredUntil"`
-	Expiry        Expiry `json:"expiry"`
-	ExpiryDate    string `json:"expiryDate"`
+	Content    string `json:"content"`
+	IsStatic   bool   `json:"isStatic"`
+	OccurredOn string `json:"occurredOn"`
+	Expiry     Expiry `json:"expiry"`
+	ExpiryDate string `json:"expiryDate"`
 }
 
 type Memory struct {
@@ -120,16 +119,21 @@ func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.L
 	if !validUntil.IsZero() && !validUntil.After(arrivedAt) {
 		return dated{}, ErrAlreadyExpired
 	}
-	occurredAt := parseDay(proposition.OccurredOn, location)
-	return dated{occurredAt: occurredAt, occurredUntil: resolveOccurredUntil(occurredAt, proposition.OccurredUntil, location), validUntil: validUntil}, nil
+	occurredAt, occurredUntil := parseOccurrence(proposition.OccurredOn, location)
+	return dated{occurredAt: occurredAt, occurredUntil: occurredUntil, validUntil: validUntil}, nil
 }
 
-func resolveOccurredUntil(occurredAt time.Time, occurredUntil string, location *time.Location) time.Time {
-	lastDay := parseDay(occurredUntil, location)
-	if occurredAt.IsZero() || !lastDay.After(occurredAt) {
-		return time.Time{}
+func parseOccurrence(occurredOn string, location *time.Location) (time.Time, time.Time) {
+	first, last, isSpan := strings.Cut(occurredOn, "/")
+	occurredAt := parseDay(first, location)
+	if !isSpan || occurredAt.IsZero() {
+		return occurredAt, time.Time{}
 	}
-	return lastDay
+	occurredUntil := parseDay(last, location)
+	if !occurredUntil.After(occurredAt) {
+		return occurredAt, time.Time{}
+	}
+	return occurredAt, occurredUntil
 }
 
 func ExpiryInstant(expiry Expiry, expiryDate string, arrivedAt time.Time, location *time.Location) (time.Time, error) {
