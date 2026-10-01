@@ -40,6 +40,12 @@ cd <amb> && uv run memory-bench --dataset locomo --split locomo10 --memory bluem
 One LoCoMo conversation is a `--unit`, so a single one is a cheap first pass
 before a full split.
 
+Give a run of this length its own log file and read AMB's own exit code. A script
+that pipes the command into `tail` and reports `$?` reports tail's status, so a
+run that died on its first call reports success and keeps a server warm for an
+hour. The server logs every refusal with its route, which is the other half of
+seeing that.
+
 ## What a comparable number needs
 
 AMB records the models each published run used, and a run with different ones

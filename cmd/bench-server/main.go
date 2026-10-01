@@ -132,18 +132,18 @@ func (running *service) ingest(writer http.ResponseWriter, request *http.Request
 	for _, each := range parsed.Documents {
 		held, errorValue := running.bankFor(request.Context(), each.UserID)
 		if errorValue != nil {
-			http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+			refuse(writer, request.URL.Path, errorValue)
 			return
 		}
 		if instant, errorValue := time.Parse(time.RFC3339, each.Timestamp); errorValue == nil {
 			held.clock.set(instant)
 		}
 		if errorValue := held.store.Memorize(request.Context(), bluememo.Note{Body: each.Content, GroupID: each.ID}); errorValue != nil {
-			http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+			refuse(writer, request.URL.Path, errorValue)
 			return
 		}
 		if _, errorValue := held.store.Settle(request.Context()); errorValue != nil {
-			http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+			refuse(writer, request.URL.Path, errorValue)
 			return
 		}
 	}
@@ -158,7 +158,7 @@ func (running *service) retrieve(writer http.ResponseWriter, request *http.Reque
 	}
 	held, errorValue := running.bankFor(request.Context(), parsed.UserID)
 	if errorValue != nil {
-		http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+		refuse(writer, request.URL.Path, errorValue)
 		return
 	}
 	limit := parsed.K
@@ -167,7 +167,7 @@ func (running *service) retrieve(writer http.ResponseWriter, request *http.Reque
 	}
 	result, errorValue := held.store.Recall(request.Context(), parsed.Query, limit)
 	if errorValue != nil {
-		http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+		refuse(writer, request.URL.Path, errorValue)
 		return
 	}
 	bodies := map[string]string{}
@@ -226,7 +226,7 @@ func (running *service) reset(writer http.ResponseWriter, request *http.Request)
 	running.banks = map[string]*bank{}
 	entries, errorValue := os.ReadDir(running.directory)
 	if errorValue != nil {
-		http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
+		refuse(writer, request.URL.Path, errorValue)
 		return
 	}
 	for _, entry := range entries {
@@ -235,6 +235,11 @@ func (running *service) reset(writer http.ResponseWriter, request *http.Request)
 		}
 	}
 	writer.WriteHeader(http.StatusNoContent)
+}
+
+func refuse(writer http.ResponseWriter, route string, errorValue error) {
+	log.Printf("%s failed: %v", route, errorValue)
+	http.Error(writer, errorValue.Error(), http.StatusInternalServerError)
 }
 
 func main() {
