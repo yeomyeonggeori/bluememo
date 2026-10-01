@@ -796,3 +796,42 @@ decimals), siblings for every hit (0.829 → 0.796), twelve notes instead of six
 The mechanism was deleted. What survives is the name for the remaining gap and
 the measurement that a denser store pays for it: bluememo fits an answer into
 every slot, so a slot spent on interpretation is a slot taken from an answer.
+
+## Where this stands against hindsight (2026-10-02, 885 questions)
+
+One configuration throughout, measured through AMB with the answer and judge
+models every published row on this split used, and compared question by
+question against hindsight's own per-unit results rather than against the
+1,540-question average. Two of the six units were never used to choose
+anything.
+
+| unit | bluememo | hindsight | |
+| --- | --- | --- | --- |
+| conv-26 | 0.9342 (142/152) | 0.9408 (143) | −1 |
+| conv-30 | 0.9753 (79/81) | 0.9136 (74) | **+5** |
+| conv-41 | 0.9408 (143/152) | 0.9474 (144) | −1 |
+| conv-42 | 0.8794 (175/199) | 0.8945 (178) | −3 |
+| conv-43 | 0.8652 (154/178) | 0.8820 (157) | −3 |
+| conv-44 | 0.9187 (113/123) | 0.9350 (115) | −2 |
+
+| 885 questions | accuracy | tokens per query |
+| --- | --- | --- |
+| hindsight | 0.9164 | 36,235 |
+| bluememo | 0.9107 ± 0.0096 | **6,228** |
+
+Ten questions separate them, which is 0.59 SE, so the accuracies are not
+distinguishable. The unit record is 1–5, and every loss is one to three
+questions, so the direction is consistent even where the size is not
+measurable. Turning the source notes off gives 0.897 at about 1,400 tokens,
+within noise of this and at a twenty-sixth of hindsight's context.
+
+The configuration: relative times and spans resolved out of statements, a
+speaker's stated feelings and judgements kept, six source notes carried as a
+separate block with the day each was said, a memory with no occurrence
+rendered with the day it was recorded, k=50, lane depth 400, rerank depth 200
+batched.
+
+Judge noise bounds what any of this can settle. Two runs of one configuration
+differ by up to 0.046 on a single unit, and a judge call scored two
+byte-identical answers correct and incorrect. A ten-question difference on 885
+sits under that, and the full 1,540 would leave it near one standard error.
