@@ -16,7 +16,7 @@ const (
 
 	RerankFailureReason = "rerank failed: "
 
-	DefaultRecallLimit   = 12
+	DefaultRecallLimit   = 50
 	UnsettledNoteLimit   = 3
 	laneDepthMultiplier  = 3
 	reciprocalRankOffset = 60.0

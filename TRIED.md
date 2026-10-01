@@ -25,6 +25,59 @@ about the past: `exp(-400/90)` zeroes a 400-day-old episode that "채용 얘기
 oracle, and an embedding probe in its place fell back to 9/10. **Time does not
 enter ranking.**
 
+## Five changes measured on reused LoCoMo stores, one kept
+
+Recall, answering and grading run against a store that is already ingested, so these
+five share one set of stores and differ only in the change under test. The spread is two
+runs of the same arm. **The answering and grading models alone move overall accuracy by
+about 0.024 between runs**, which is four times the spread of a full re-ingest and is the
+floor every verdict below is measured against. A single run cannot see a change this size.
+
+| change | overall | verdict |
+| --- | --- | --- |
+| recall limit 20 to 50 | 0.626 to **0.669** | kept; real at 3.6x the floor |
+| every memory carries a time, `coalesce(occurred_at, created_at)` | 0.653 to 0.655 | dropped; temporal fell 0.643 to 0.603 |
+| sibling expansion seeded from the top 3 hits, 2 per origin | 0.669 to 0.658 | dropped; open-domain fell 0.474 to 0.395 |
+| sibling expansion removed entirely | 0.669 to 0.658 | dropped; single-hop fell 0.746 to 0.728, real at 4.5x |
+| the date taken out of the embedded text | 0.669 to 0.652 | dropped; single-hop fell 0.746 to 0.721, real at 6.5x |
+
+### The recall limit was starving the questions that need several facts
+
+Multi-hop went 0.443 to 0.557 when the limit went 20 to 50, the largest single move
+measured on this benchmark. Sweeping to 100 bought nothing more (0.671 against 0.669,
+inside the floor) and cost adversarial decline 0.881 to 0.858: past some point extra
+context only persuades the answerer to assert. 50 is where the curve flattens and before
+the harm starts, so `DefaultRecallLimit` is 50 rather than 12.
+
+Hindsight spends a token budget here rather than a count (`fact_budget.py`). A count is
+the simpler unit and works because a bluememo fact is capped at 240 characters, so the
+count bounds the tokens. Hindsight's facts are narrative and vary in length, which is why
+it has to count tokens.
+
+### How much of the store carries a date is a tuned quantity, and it is already tuned
+
+Three points, same stores, same limit:
+
+| memories whose embedded text carries a date | overall |
+| --- | --- |
+| none | 0.652 |
+| only those with a real occurrence, about a fifth | **0.669** |
+| all of them, falling back to when they were mentioned | 0.655, and temporal 0.603 |
+
+A sparse, genuine date is a discriminator. Put it on everything and a memory *mentioned*
+in June competes with one that *happened* in June, which is the same failure as the
+rejected entity lane: a key that every row carries says nothing. Take it off everything
+and near-duplicates collide again — the loss shows up in **single-hop**, not temporal, so
+the date is separating similar memories rather than answering questions about time.
+
+### Sibling expansion earns its place, and the limit is why seeding did not
+
+Seeding more hits was meant to fix a squeeze: expansion inserts a bundle ahead of ranked
+hits and the tail is then truncated. Raising the limit removed the squeeze, so the
+mechanism had nothing left to buy. Removing expansion altogether costs single-hop 0.018,
+real at 4.5 times the floor, so it stays exactly as it is. A number replaced a mechanism;
+the mechanism it replaced was the one proposed, not the one already there.
+
 ## Running the LoCoMo benchmark
 
 `locomo_accuracy_test.go` ingests LoCoMo conversations, answers its questions from
