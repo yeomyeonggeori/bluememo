@@ -57,7 +57,10 @@ var (
 	ErrSummaryMissing  = errors.New("a file needs a summary, which is what a search reads")
 	ErrUnknownFileKind = errors.New("a file is a document, an image, a video, audio, or other")
 	ErrFileNotFound    = errors.New("no file holds that identifier")
+	ErrCategoryTooLong = errors.New("a category is a code of at most four characters, one per level")
 )
+
+const CategoryCodeLimit = 4
 
 const fileColumns = `file_id, name, extension, kind, summary, data, category, supersedes, created_at`
 
@@ -73,6 +76,9 @@ func validateFile(file File) error {
 	}
 	if !fileKinds[file.Kind] {
 		return fmt.Errorf("%w: %q", ErrUnknownFileKind, file.Kind)
+	}
+	if len(file.Category) > CategoryCodeLimit {
+		return fmt.Errorf("%w: %q", ErrCategoryTooLong, file.Category)
 	}
 	return nil
 }
@@ -210,8 +216,8 @@ func (store *Store) currentFiles(ctx context.Context, category string) ([]fileCa
 		  and file_id not in (select supersedes from file where supersedes is not null)`
 	arguments := []any{store.configuration.EmbeddingModel}
 	if category != "" {
-		statement += ` and category = ?`
-		arguments = append(arguments, category)
+		statement += ` and substr(category, 1, ?) = ?`
+		arguments = append(arguments, len(category), category)
 	}
 	rows, errorValue := store.database.QueryContext(ctx, statement, arguments...)
 	if errorValue != nil {
