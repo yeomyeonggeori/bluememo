@@ -139,6 +139,38 @@ A memory that has left the live set but still exists.
 
 A memory goes cold for one of three reasons. `pressure`: the store was over capacity and its origin was the least useful. `superseded`: a newer memory replaced it. `expired`: its expiry passed. Superseded and expired memories never answer a recall. A memory that pressure pushed out still answers, comes back live, and gains the maximum reinforcement.
 
+## File
+
+A file is an artifact, so it has its own table and does not fade. A memory
+weakens, goes cold under pressure and is swept; a company's audit report must
+still be findable when the store is full, because its bytes are still on disk.
+That is the whole reason `file` is not a kind of memory.
+
+| column | holds |
+| --- | --- |
+| `file_id` | the identity its host assigned, stable across renames |
+| `name` | the name it carries now |
+| `extension` | the type read from its bytes |
+| `kind` | `document`, `image`, `video`, `audio` or `other` |
+| `summary` | what a search reads, and what the embedding is taken from |
+| `data` | JSON whose shape `kind` decides: a document's text, an image's description, a recording's transcript |
+| `category` | the host's classification, such as `03-finance`; empty until something classifies it |
+| `supersedes` | the file this one replaces |
+
+`kind` carries `other` and never null, because null would say the store has not
+looked, which is a different state from having looked and found none of the four.
+
+`StoreFile` embeds the summary and writes the row, replacing a row that already
+holds that identifier. `File` reads one back by identity, including one that has
+been superseded. `RecallFiles` ranks by cosine over the summaries, narrowed to a
+category when the request names one, and leaves out any file another file
+supersedes — so what comes back is current, and `supersedes` is unique, so which
+file is current always has one answer.
+
+`Reembed` moves files onto a new embedding model alongside memories. Without
+that a model change would leave every file silently unreachable, since recall
+only considers a file embedded by the model it is asking with.
+
 ## Tombstone
 
 What remains after a memory is deleted.
