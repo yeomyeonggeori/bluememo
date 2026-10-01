@@ -44,11 +44,33 @@ class BluememoMemoryProvider(MemoryProvider):
         if reset:
             self._post("/reset", {})
 
+    @staticmethod
+    def _as_text(content: str) -> str:
+        """A document whose content is a list of turns is rendered as the lines a
+        reader would see. bluememo takes a note of what was said, so a JSON array
+        reaches its decomposition as punctuation. Anything else passes through."""
+        try:
+            parsed = json.loads(content)
+        except (ValueError, TypeError):
+            return content
+        if not isinstance(parsed, list) or not parsed:
+            return content
+        lines = []
+        for turn in parsed:
+            if not isinstance(turn, dict):
+                return content
+            speaker = turn.get("speaker") or turn.get("role") or turn.get("name")
+            said = turn.get("text") or turn.get("content") or turn.get("message")
+            if said is None:
+                return content
+            lines.append(f"{speaker}: {said}" if speaker else str(said))
+        return "\n".join(lines)
+
     def ingest(self, documents: list[Document]) -> None:
         self._post("/ingest", {"documents": [
             {
                 "id": document.id,
-                "content": document.content,
+                "content": self._as_text(document.content),
                 "user_id": document.user_id or "shared",
                 "timestamp": document.timestamp or "",
             }
