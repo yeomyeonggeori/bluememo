@@ -154,6 +154,13 @@ func reusesStore() bool {
 	return os.Getenv("BLUEMEMO_LOCOMO_REUSE_STORE") != ""
 }
 
+func chosenChatModel() string {
+	if named := os.Getenv("BLUEMEMO_LOCOMO_CHAT_MODEL"); named != "" {
+		return named
+	}
+	return locomoChatModel
+}
+
 func reembedsBeforeAsking() bool {
 	return os.Getenv("BLUEMEMO_LOCOMO_REEMBED") != ""
 }
@@ -377,7 +384,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 	ledger := &locomoLedger{}
 	client := openrouter.New(credential)
 	client.EmbeddingModel = locomoEmbeddingModel
-	client.ChatModel = locomoChatModel
+	client.ChatModel = chosenChatModel()
 	client.RecordCost = ledger.record
 	clock := &locomoClock{current: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
 	decisions := openrouter.NewDecisions(client)

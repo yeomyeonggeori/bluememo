@@ -456,3 +456,33 @@ number was measured at a handicap.
 It does not say anything yet about the split. One conversation is 152 of 1540
 questions and multi-hop is 13 of them, and conv-26 need not resemble the other
 nine. The full split is the number that compares with 0.9201.
+
+## The answer prompt is worth 0.040, and twice I said more
+
+Three arms on one conversation, the same store and the same questions, with
+nothing but the answerer changed:
+
+| category | answer only | reasons first | reasons first, gemini |
+| --- | --- | --- | --- |
+| multi-hop | 0.375 | 0.312 | 0.438 |
+| temporal | 0.324 | 0.405 | 0.351 |
+| open-domain | 0.364 | 0.364 | 0.545 |
+| single-hop | 0.414 | 0.486 | 0.414 |
+| overall 1-4 | 0.380 | 0.420 | 0.413 |
+
+Requiring the reasoning ahead of the answer is worth 0.040 overall, which is
+1.7 times the floor, with single-hop 0.072 and temporal 0.081. The multi-hop
+drop of 0.063 sits inside that category's own floor of 0.066.
+
+Answering with `gemini-3.1-pro-preview` instead of `gpt-6-luna` is a wash at
+0.413 against 0.420, trading open-domain and multi-hop for temporal and
+single-hop. AMB's own curation notes say a stronger backbone inflates a score
+directly; between these two, over these questions, it did not.
+
+So neither the prompt nor the model accounts for the distance between 0.42 here
+and the 0.8026 the same library scored through AMB. The explanation was already
+written down and then ignored twice: these stores were ingested under a smaller
+session limit than the run scores, so most of the questions have no evidence in
+the store to find. The AMB run ingested all nineteen of its documents. Only the
+within-arm comparison above means anything, and the number that compares with
+0.9201 is the full split through AMB.
