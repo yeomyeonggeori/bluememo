@@ -27,3 +27,22 @@ Word overlap is the test, so it is loose in both directions. An answer whose
 words appear in an unrelated fact counts as survived, and a fact that carries
 the meaning in other words counts as lost. It is useful because the same bias
 applies to both sides of a comparison, and useless as an absolute number.
+
+## What this cannot see
+
+Survival asks whether the words of a gold answer are anywhere in the
+store. It does not ask whether the memories a question retrieves let a
+model answer it, and the two came apart badly once:
+
+| decomposition | memories | survival | accuracy |
+| --- | --- | --- | --- |
+| forbid a vaguer statement | 267 | 0.810 | 0.8750 |
+| the three losses named | 332 | 0.912 | 0.8684 |
+| said before propositions | 483 | 0.971 | 0.8289 |
+
+Splitting one statement into two scatters the same words across more
+memories. Coverage rises by arithmetic while each piece carries less,
+and a recall of fifty returns statements, not stores: the fact ranks
+and its qualifier does not. A change that raises survival by making
+more, smaller statements has not been shown to help anything until it
+is run through AMB.
