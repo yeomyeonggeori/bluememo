@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -27,10 +28,20 @@ const (
 	requestDeadline = 5 * time.Minute
 )
 
+// ErrOutputTruncated is the model stopping because it reached its output
+// limit. The answer it gave is a prefix of the one it meant, so a caller
+// parsing a schema sees malformed JSON and would otherwise blame the schema.
+// DefaultOutputLimit is generous because a decomposition enumerates a text
+// before it writes statements, so its output grows with the text twice over.
+const DefaultOutputLimit = 16000
+
+var ErrOutputTruncated = errors.New("the model reached its output limit")
+
 type Client struct {
 	Credential     string
 	EmbeddingModel string
 	ChatModel      string
+	OutputLimit    int
 	HTTPClient     *http.Client
 	RecordCost     func(component string, cost float64)
 }
@@ -40,6 +51,7 @@ func New(credential string) *Client {
 		Credential:     credential,
 		EmbeddingModel: DefaultEmbedModel,
 		ChatModel:      DefaultChatModel,
+		OutputLimit:    DefaultOutputLimit,
 		HTTPClient:     &http.Client{Timeout: requestDeadline},
 	}
 }
@@ -89,7 +101,7 @@ func (client *Client) Structured(ctx context.Context, name string, schemaDocumen
 	if errorValue := json.Unmarshal([]byte(schemaDocument), &schema); errorValue != nil {
 		return "", fmt.Errorf("schema %s is not JSON: %w", name, errorValue)
 	}
-	responseBody, errorValue := client.post(ctx, name, ChatURL, map[string]any{
+	payload := map[string]any{
 		"model": client.ChatModel,
 		"messages": []map[string]string{
 			{"role": "system", "content": instruction},
@@ -101,13 +113,18 @@ func (client *Client) Structured(ctx context.Context, name string, schemaDocumen
 				"name": strings.ReplaceAll(name, " ", "_"), "strict": true, "schema": schema,
 			},
 		},
-	})
+	}
+	if client.OutputLimit > 0 {
+		payload["max_tokens"] = client.OutputLimit
+	}
+	responseBody, errorValue := client.post(ctx, name, ChatURL, payload)
 	if errorValue != nil {
 		return "", errorValue
 	}
 	var parsed struct {
 		Choices []struct {
-			Message struct {
+			FinishReason string `json:"finish_reason"`
+			Message      struct {
 				Content string `json:"content"`
 			} `json:"message"`
 		} `json:"choices"`
@@ -115,7 +132,14 @@ func (client *Client) Structured(ctx context.Context, name string, schemaDocumen
 	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil || len(parsed.Choices) == 0 {
 		return "", fmt.Errorf("chat response for %s is not the expected shape: %s", name, responseBody)
 	}
-	return parsed.Choices[0].Message.Content, nil
+	choice := parsed.Choices[0]
+	if choice.FinishReason == "length" {
+		return "", fmt.Errorf("%s ran out of output before it finished: %w", name, ErrOutputTruncated)
+	}
+	if strings.TrimSpace(choice.Message.Content) == "" {
+		return "", fmt.Errorf("%s returned no content (finish reason %q)", name, choice.FinishReason)
+	}
+	return choice.Message.Content, nil
 }
 
 func (client *Client) post(ctx context.Context, component string, url string, payload any) ([]byte, error) {
