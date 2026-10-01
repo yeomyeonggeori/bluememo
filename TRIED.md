@@ -835,3 +835,46 @@ Judge noise bounds what any of this can settle. Two runs of one configuration
 differ by up to 0.046 on a single unit, and a judge call scored two
 byte-identical answers correct and incorrect. A ten-question difference on 885
 sits under that, and the full 1,540 would leave it near one standard error.
+
+## The paired test, which the unit record was hiding (2026-10-02)
+
+AMB publishes hindsight's answer for every question, so the two can be compared
+question by question instead of average against average. On the 885 shared
+questions:
+
+| | count |
+| --- | --- |
+| both right | 775 |
+| bluememo only | 31 |
+| hindsight only | 36 |
+| neither | 43 |
+
+McNemar gives 0.24 against a 3.84 threshold, so the five-question difference is
+noise. The 1-5 unit record read as consistent inferiority and the discordant
+pairs say otherwise: the two systems answer different questions rather than
+more of them.
+
+Where they differ is structural and splits cleanly:
+
+| category | bluememo only | hindsight only |
+| --- | --- | --- |
+| multi-hop | **6** | 2 |
+| temporal | 4 | **11** |
+| open-domain | 11 | 14 |
+| single-hop | 10 | 9 |
+
+bluememo answers three times as many multi-hop questions that hindsight
+misses, which is what atomic facts are for: a question needing several facts
+gets several facts rather than a chunk that holds some of them.
+
+The temporal column has a cause worth naming. Those golds are phrased against
+another date — "The week before 9 June 2023", "two weekends before 17 July
+2023" — and bluememo answers with the absolute range it resolved, which the
+judge scores as a different week. Hindsight carries the raw conversation, so
+"last week" survives into its answer in the gold's own wording. Resolving
+relative times out of statements won eight temporal questions today and loses
+these, and no decomposition rule reaches both: one answers the question, the
+other matches the phrasing.
+
+Hindsight spends 36,347 tokens on the 36 it alone answers. bluememo spends
+6,202 on its 31.
