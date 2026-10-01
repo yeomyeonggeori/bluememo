@@ -49,8 +49,10 @@ class BluememoMemoryProvider(MemoryProvider):
     @staticmethod
     def _as_text(content: str) -> str:
         """A document whose content is a list of turns is rendered as the lines a
-        reader would see. bluememo takes a note of what was said, so a JSON array
-        reaches its decomposition as punctuation. Anything else passes through."""
+        reader would see, a picture included: a turn that shared one carries its
+        description, and a reader of the conversation saw the picture. bluememo
+        takes a note of what was said, so a JSON array reaches its decomposition
+        as punctuation. Anything else passes through."""
         try:
             parsed = json.loads(content)
         except (ValueError, TypeError):
@@ -65,6 +67,9 @@ class BluememoMemoryProvider(MemoryProvider):
             said = turn.get("text") or turn.get("content") or turn.get("message")
             if said is None:
                 return content
+            shown = turn.get("blip_caption") or turn.get("caption") or turn.get("image_caption")
+            if shown:
+                said = f"{said} [shared a picture of {shown}]"
             lines.append(f"{speaker}: {said}" if speaker else str(said))
         return "\n".join(lines)
 
