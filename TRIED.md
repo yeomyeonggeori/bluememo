@@ -551,3 +551,30 @@ tokens of chat.
 
 So the two arms are a curve, not a ranking, and nothing here knows at read time
 which end of it a question wants.
+
+## Where the notes go matters as much as whether they are there
+
+Three arms on conv-26 through AMB, same store, same ten memories:
+
+| category | memories only | a note after each | notes after all of them |
+| --- | --- | --- | --- |
+| multi-hop | 0.923 | 1.000 | 0.923 |
+| temporal | 0.865 | 0.946 | 0.946 |
+| open-domain | 0.771 | 0.886 | 0.857 |
+| single-hop | 0.750 | 0.688 | 0.719 |
+| overall | 0.803 | 0.868 | 0.855 |
+| context tokens | 295 | 8417 | 1577 |
+
+Single-hop recovers from 0.688 to 0.719 once the memories are contiguous, which
+is what this library's own harness had already shown: it appends the notes as one
+trailing block and measured single-hop rising. Splitting ten facts with ten
+stretches of conversation is what broke a precise lookup, and the facts being
+present was never the problem.
+
+The third arm changed two things at once and the entry says so: the layout, and
+a cap of four distinct notes against one per memory. So 1577 tokens against 8417
+is not attributable to the layout, and only the single-hop recovery is.
+
+Against what AMB publishes: hindsight 0.9201 at 36235 tokens, cognee 0.8026 at
+14724, hybrid-search 0.7909 at 22157. The third arm is above both of the latter
+at a fourteenth and a ninth of their context.
