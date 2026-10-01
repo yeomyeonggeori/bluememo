@@ -125,11 +125,11 @@ func resolveDates(proposition Proposition, arrivedAt time.Time, location *time.L
 
 func parseOccurrence(occurredOn string, location *time.Location) (time.Time, time.Time) {
 	first, last, isSpan := strings.Cut(occurredOn, "/")
-	occurredAt := parseDay(first, location)
+	occurredAt := parseMoment(first, location)
 	if !isSpan || occurredAt.IsZero() {
 		return occurredAt, time.Time{}
 	}
-	occurredUntil := parseDay(last, location)
+	occurredUntil := parseMoment(last, location)
 	if !occurredUntil.After(occurredAt) {
 		return occurredAt, time.Time{}
 	}
@@ -162,6 +162,21 @@ func ExpiryInstant(expiry Expiry, expiryDate string, arrivedAt time.Time, locati
 		return lastDay.AddDate(0, 0, 1), nil
 	}
 	return time.Time{}, ErrUnknownExpiry
+}
+
+func parseMoment(value string, location *time.Location) time.Time {
+	trimmed := strings.TrimSpace(value)
+	for _, layout := range []string{time.RFC3339, momentWithOffsetLayout} {
+		if moment, errorValue := time.Parse(layout, trimmed); errorValue == nil {
+			return moment
+		}
+	}
+	for _, layout := range []string{"2006-01-02T15:04:05", momentLayout, time.DateOnly} {
+		if moment, errorValue := time.ParseInLocation(layout, trimmed, location); errorValue == nil {
+			return moment
+		}
+	}
+	return time.Time{}
 }
 
 func parseDay(value string, location *time.Location) time.Time {

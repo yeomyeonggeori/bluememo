@@ -18,7 +18,7 @@ A statement is self-contained when it reads correctly on its own:
 
 isStatic: true for a lasting trait of the person, such as a name, a role, a team or a standing preference. An event, a one-off request or a passing situation is false. When unsure, false.
 
-occurredOn: when an event happened, counted from today in the context below. One day is YYYY-MM-DD. A longer time is its first and last day joined by a slash, YYYY-MM-DD/YYYY-MM-DD. Empty when the statement is not an event, or when the text is too vague to place it.
+occurredOn: when an event happened, counted from today in the context below. A day is YYYY-MM-DD. A time of day is YYYY-MM-DDTHH:MM, read in the reader's own zone unless the text names another one, which is YYYY-MM-DDTHH:MM+HH:MM or a trailing Z. A longer time is its first and last moment joined by a slash. Empty when the statement is not an event, or when the text is too vague to place it.
 Give the time at the precision the text gives, and never a narrower one. "last year" is that year's first and last day, "in June" that month's, "last quarter" that quarter's. A coarse time is still a time: never leave it out because it is not a single day. "a few weeks ago" does not place the event, so it stays empty.
 
 expiry: when the text says the statement stops being true, pick that end.
