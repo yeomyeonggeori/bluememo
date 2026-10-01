@@ -32,6 +32,7 @@ type conversation struct {
 }
 
 type outcome struct {
+	degraded     string
 	category     int
 	rankOfGold   int
 	found        bool
@@ -100,7 +101,9 @@ func main() {
 	datasetPath := flag.String("dataset", "", "locomo10.json")
 	unit := flag.String("unit", "", "sample_id to score")
 	limit := flag.Int("limit", 50, "memories a recall returns")
+	laneDepth := flag.Int("lane-depth", 0, "candidates each lane looks at (0 leaves the library default of limit x3)")
 	rerankDepth := flag.Int("rerank-depth", 0, "candidates the reranker sees (0 leaves the library default)")
+	useReranker := flag.Bool("rerank", true, "let the reranker reorder the shortlist")
 	siblings := flag.Bool("siblings", true, "let the leading memory bring its note's other statements")
 	workers := flag.Int("workers", 8, "questions in flight")
 	showFailures := flag.Int("show-failures", 0, "print this many questions whose gold never appeared")
@@ -114,13 +117,18 @@ func main() {
 		log.Fatal("OPENROUTER_API_KEY is not set")
 	}
 	client := openrouter.New(credential)
+	var reranker bluememo.Reranker
+	if *useReranker {
+		reranker = openrouter.NewDecisions(client)
+	}
 	store, errorValue := bluememo.Open(context.Background(), *storePath, bluememo.Configuration{
 		Embedder:           client,
 		Model:              client,
-		Reranker:           openrouter.NewDecisions(client),
+		Reranker:           reranker,
 		Judge:              bluememo.DistributionJudge{Chooser: openrouter.NewDecisions(client)},
 		EmbeddingModel:     openrouter.DefaultEmbedModel,
 		RerankDepth:        *rerankDepth,
+		LaneDepth:          *laneDepth,
 		Location:           time.UTC,
 		EmbedTimeReference: true,
 	})
@@ -188,7 +196,7 @@ func main() {
 				// multi-hop answer is a union across memories by definition, so
 				// coverage accumulates down the ranking rather than being asked
 				// of one memory at a time.
-				record := outcome{category: current.category, rankOfGold: -1}
+				record := outcome{category: current.category, rankOfGold: -1, degraded: result.DegradedReason}
 				gathered, best, bestText := map[string]bool{}, 0.0, ""
 				for rank, memory := range result.Memories {
 					for word := range contentWords(memory.Memory.Content) {
@@ -225,6 +233,15 @@ func main() {
 			counts[0]++
 		}
 		byCategory[record.category] = counts
+	}
+	degradations := map[string]int{}
+	for _, record := range outcomes {
+		if record.degraded != "" {
+			degradations[truncate(record.degraded, 90)]++
+		}
+	}
+	for reason, count := range degradations {
+		fmt.Printf("degraded %d/%d: %s\n", count, len(outcomes), reason)
 	}
 	sort.Ints(ranks)
 	fmt.Printf("hit@%d = %.4f  (%d/%d)\n", *limit, float64(found)/float64(len(outcomes)), found, len(outcomes))

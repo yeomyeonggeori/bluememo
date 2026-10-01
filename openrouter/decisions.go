@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -113,27 +114,73 @@ func (decisions Decisions) Choose(ctx context.Context, request bluememo.ChoiceRe
 	return decisions.Distribute(ctx, "judge", request.Subject, request.Instruction, glosses)
 }
 
+// RerankBatch is how many candidates one decision call scores. A call that
+// spreads its belief over every candidate at once discriminates no better at
+// two hundred than at twenty, so candidates are scored in groups small enough
+// for the answer to stand out, and the groups' winners are then scored against
+// each other.
+const RerankBatch = 24
+
 func (decisions Decisions) Rerank(ctx context.Context, query string, contents []string) ([]float64, error) {
 	scores := make([]float64, len(contents))
 	if len(contents) < 2 {
 		return scores, nil
 	}
-	criteria := make(map[string]string, len(contents))
-	for index, content := range contents {
-		criteria["m"+strconv.Itoa(index)] = content
+	if len(contents) <= RerankBatch {
+		return decisions.scoreGroup(ctx, query, contents, indexRange(len(contents)), scores)
+	}
+	finalists := []int{}
+	for start := 0; start < len(contents); start += RerankBatch {
+		group := indexRange(min(start+RerankBatch, len(contents)))[start:]
+		if _, errorValue := decisions.scoreGroup(ctx, query, contents, group, scores); errorValue != nil {
+			return nil, errorValue
+		}
+		finalists = append(finalists, bestOf(group, scores, 3)...)
+	}
+	if len(finalists) < 2 {
+		return scores, nil
+	}
+	runoff := make([]float64, len(contents))
+	if _, errorValue := decisions.scoreGroup(ctx, query, contents, finalists, runoff); errorValue != nil {
+		return nil, errorValue
+	}
+	// A finalist is ordered by the runoff and still ranks above every candidate
+	// its own group beat, so the group scores stay as the tie-break below.
+	for _, index := range finalists {
+		scores[index] = 1 + runoff[index]
+	}
+	return scores, nil
+}
+
+func (decisions Decisions) scoreGroup(ctx context.Context, query string, contents []string, group []int, scores []float64) ([]float64, error) {
+	criteria := make(map[string]string, len(group))
+	for _, index := range group {
+		criteria["m"+strconv.Itoa(index)] = contents[index]
 	}
 	probabilities, errorValue := decisions.Distribute(ctx, "rerank", query, "Which memory answers this question?", criteria)
 	if errorValue != nil {
 		return nil, errorValue
 	}
-	winner, bestProbability := 0, -1.0
-	for index := range contents {
-		if probability := probabilities["m"+strconv.Itoa(index)]; probability > bestProbability {
-			winner, bestProbability = index, probability
-		}
+	for _, index := range group {
+		scores[index] = probabilities["m"+strconv.Itoa(index)]
 	}
-	scores[winner] = 1
 	return scores, nil
+}
+
+func indexRange(count int) []int {
+	indexes := make([]int, count)
+	for index := range indexes {
+		indexes[index] = index
+	}
+	return indexes
+}
+
+func bestOf(group []int, scores []float64, keep int) []int {
+	ordered := append([]int{}, group...)
+	sort.SliceStable(ordered, func(first, second int) bool {
+		return scores[ordered[first]] > scores[ordered[second]]
+	})
+	return ordered[:min(keep, len(ordered))]
 }
 
 func SubjectCandidates(subject string) []Criterion {

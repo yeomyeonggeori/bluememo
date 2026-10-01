@@ -125,7 +125,7 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	if errorValue != nil {
 		return nil, 0, errorValue
 	}
-	depth := laneDepth(query.limit)
+	depth := store.laneDepth(query.limit)
 	byID := map[string]*RecalledMemory{}
 	record := func(memoryID string, rank int, assign func(*RecalledMemory, int)) {
 		held, isRetrievable := retrievable[memoryID]
@@ -157,7 +157,14 @@ func (store *Store) search(ctx context.Context, query searchQuery) ([]RecalledMe
 	return sortedByScore(byID), closest, nil
 }
 
-func laneDepth(limit int) int {
+// laneDepth is how deep each lane looks before the lanes are fused. A gold
+// answer this benchmark cannot reach sits below it, so widening the pool is
+// what lets a reranker see a candidate at all; it costs candidates, never
+// answer context.
+func (store *Store) laneDepth(limit int) int {
+	if store.configuration.LaneDepth > 0 {
+		return store.configuration.LaneDepth
+	}
 	return limit * laneDepthMultiplier
 }
 
@@ -165,7 +172,7 @@ func (store *Store) rerankDepth(limit int) int {
 	if store.configuration.RerankDepth > 0 {
 		return store.configuration.RerankDepth
 	}
-	return laneDepth(limit)
+	return store.laneDepth(limit)
 }
 
 func joinReasons(reasons ...string) string {

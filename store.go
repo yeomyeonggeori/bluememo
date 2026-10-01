@@ -28,6 +28,7 @@ type Configuration struct {
 	Embedder           Embedder
 	Reranker           Reranker
 	RerankDepth        int
+	LaneDepth          int
 	EmbeddingModel     string
 	Model              LanguageModel
 	Judge              Judge
