@@ -756,3 +756,43 @@ anything on average is unmeasured.
 Survival is still anti-correlated with accuracy across the three, and
 that part is not a sample-size artifact: it rises by arithmetic when
 statements split.
+
+## Bridge facts: the gap has a name, and 50 slots cannot buy it (2026-10-02)
+
+A question names the fact it wants and not the fact that interprets it. Asked
+what area a flood hit, the lanes return "a nasty flood hit John's old area",
+which answers the query's words; the answer lives in "John wants to work on
+improving West County, which he describes as his old area", which shares no
+word with the question and sits in another note. `withSiblings` reaches only
+the top hit's own note, so it never arrives. Hindsight carries an entity graph
+and 36,235 context tokens per query and does not have this problem.
+
+Verified against the store, so the diagnosis is not a guess: `West County` is
+present in a memory without any extraction change, and absent from the context
+that question was answered from. Extraction is not the cause, the answerer is
+not the cause, and neither is context volume.
+
+Bridging was implemented and works: each retrieved memory queries for its own
+nearest neighbour in another note, using the embeddings already loaded, with no
+model call and no entity model. A bridge spends one of the limit's slots.
+
+| conv-44, 6 notes | accuracy | paired vs k=50 |
+| --- | --- | --- |
+| k=50 | 0.9187 | — |
+| k=58 | 0.8943 | +3, −6 |
+| k=50, 8 bridges | 0.8699 | +3, −9 |
+
+conv-43 repeats it: +3, −8, 0.8652 → 0.8371.
+
+Both units gain exactly three questions, so the mechanism does what it claims,
+and both lose eight or nine. Eight more ranked memories lose six, so the loss
+is the slots and not the bridges alone, and a bridge is worth less than rank
+51. **k=50 is an optimum, not a floor.** Ranks 43 to 50 carry answers, and
+every axis pushed past the current point this day came back flat or negative:
+finer statements (0.875 → 0.829), 2.2× rerank depth (identical to four
+decimals), siblings for every hit (0.829 → 0.796), twelve notes instead of six
+(−0.017 and −0.034), eight more slots (−0.024), bridges (−0.049).
+
+The mechanism was deleted. What survives is the name for the remaining gap and
+the measurement that a denser store pays for it: bluememo fits an answer into
+every slot, so a slot spent on interpretation is a slot taken from an answer.
