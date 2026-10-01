@@ -221,12 +221,21 @@ func TestACategoryCodeReachesEverythingBelowIt(t *testing.T) {
 	}
 }
 
-func TestACategoryLongerThanItsCodeIsRefused(t *testing.T) {
+func TestACategoryThatIsNotAnAsciiCodeIsRefused(t *testing.T) {
 	testFixture := newFixture(t)
-	file := contractFile()
-	file.Category = "03-finance"
-	errorValue := testFixture.store.StoreFile(context.Background(), file)
-	if !errors.Is(errorValue, bluememo.ErrCategoryTooLong) {
-		t.Fatalf("a category wider than four characters was stored: %v", errorValue)
+	for _, refused := range []string{"03-finance", "03-f", "재무", "a b", "aaaaa", "03."} {
+		file := contractFile()
+		file.Category = refused
+		errorValue := testFixture.store.StoreFile(context.Background(), file)
+		if !errors.Is(errorValue, bluememo.ErrCategoryCode) {
+			t.Fatalf("category %q was stored: %v", refused, errorValue)
+		}
+	}
+	for _, accepted := range []string{"", "0", "a", "03", "a3Z", "0a1B"} {
+		file := contractFile()
+		file.Category = accepted
+		if errorValue := testFixture.store.StoreFile(context.Background(), file); errorValue != nil {
+			t.Fatalf("category %q was refused: %v", accepted, errorValue)
+		}
 	}
 }
