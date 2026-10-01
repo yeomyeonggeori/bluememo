@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -504,54 +503,10 @@ func locomoIdentifiers(seed int64) func() string {
 	}
 }
 
-func occurredUntilOf(memory bluememo.Memory) time.Time {
-	field := reflect.ValueOf(memory).FieldByName("OccurredUntil")
-	if !field.IsValid() {
-		return time.Time{}
-	}
-	until, isTime := field.Interface().(time.Time)
-	if !isTime {
-		return time.Time{}
-	}
-	return until
-}
-
-func occurrenceGranularity(first time.Time, last time.Time) string {
-	switch {
-	case last.IsZero():
-		return "day"
-	case first.Day() == 1 && first.Month() == time.January && isMonthsLater(first, last, 12):
-		return "year"
-	case first.Day() == 1 && (int(first.Month())-1)%3 == 0 && isMonthsLater(first, last, 3):
-		return "quarter"
-	case first.Day() == 1 && isMonthsLater(first, last, 1):
-		return "month"
-	}
-	return "other"
-}
-
 func isMonthsLater(first time.Time, last time.Time, monthCount int) bool {
 	dayAfterLast := last.AddDate(0, 0, 1)
 	boundary := time.Date(first.Year(), first.Month()+time.Month(monthCount), 1, 0, 0, 0, 0, first.Location())
 	return dayAfterLast.Year() == boundary.Year() && dayAfterLast.YearDay() == boundary.YearDay()
-}
-
-func describeOccurrence(memory bluememo.Memory) string {
-	if memory.OccurredAt.IsZero() {
-		return ""
-	}
-	first, last := memory.OccurredAt.UTC(), occurredUntilOf(memory).UTC()
-	switch occurrenceGranularity(first, last) {
-	case "day":
-		return first.Format("2 January 2006")
-	case "year":
-		return first.Format("2006")
-	case "quarter":
-		return fmt.Sprintf("Q%d %d", (int(first.Month())-1)/3+1, first.Year())
-	case "month":
-		return first.Format("January 2006")
-	}
-	return first.Format("2 January 2006") + " to " + last.Format("2 January 2006")
 }
 
 func sourcesWanted() bool {
@@ -585,7 +540,7 @@ func spokenContext(result bluememo.RecallResult) string {
 func numberedContext(memories []bluememo.RecalledMemory) string {
 	var listing strings.Builder
 	for index, recalled := range memories {
-		occurrence := describeOccurrence(recalled.Memory)
+		occurrence := recalled.Memory.TimeReference(time.UTC)
 		if occurrence == "" {
 			fmt.Fprintf(&listing, "%d. %s\n", index+1, recalled.Memory.Content)
 			continue
@@ -625,10 +580,9 @@ type locomoOutcome struct {
 	Failure       string   `json:"failure,omitempty"`
 }
 
-type locomoGranularity struct {
-	Live        int            `json:"live"`
-	Dated       int            `json:"dated"`
-	Granularity map[string]int `json:"granularity"`
+type locomoMemoryCounts struct {
+	Live  int `json:"live"`
+	Dated int `json:"dated"`
 }
 
 type locomoResult struct {
@@ -636,7 +590,7 @@ type locomoResult struct {
 	SampleID         string                     `json:"sampleID"`
 	IngestedSessions int                        `json:"ingestedSessions"`
 	Outcomes         []locomoOutcome            `json:"outcomes"`
-	Memories         locomoGranularity          `json:"memories"`
+	Memories         locomoMemoryCounts         `json:"memories"`
 	Cost             map[string]locomoCostEntry `json:"cost"`
 	SettleFailures   int                        `json:"settleFailures"`
 	IngestSeconds    float64                    `json:"ingestSeconds"`
@@ -797,19 +751,18 @@ func (rig *locomoRig) askAll(ctx context.Context, questions []locomoQuestion) []
 	return outcomes
 }
 
-func (rig *locomoRig) describeMemories(ctx context.Context, t *testing.T) locomoGranularity {
+func (rig *locomoRig) describeMemories(ctx context.Context, t *testing.T) locomoMemoryCounts {
 	t.Helper()
 	memories, errorValue := rig.store.Memories(ctx)
 	if errorValue != nil {
 		t.Fatal(errorValue)
 	}
-	description := locomoGranularity{Live: len(memories), Granularity: map[string]int{}}
+	description := locomoMemoryCounts{Live: len(memories)}
 	for _, memory := range memories {
 		if memory.OccurredAt.IsZero() {
 			continue
 		}
 		description.Dated++
-		description.Granularity[occurrenceGranularity(memory.OccurredAt.UTC(), occurredUntilOf(memory).UTC())]++
 	}
 	return description
 }
@@ -867,7 +820,7 @@ func TestLoCoMoAccuracy(t *testing.T) {
 		IngestSeconds: ingestSeconds, QuestionSeconds: time.Since(questionStarted).Seconds(),
 	}
 	writeLocomoResult(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.json", arm, conversationIndex)), result)
-	t.Logf("done: %d questions, %d live memories, %d dated, granularity %v", len(outcomes), result.Memories.Live, result.Memories.Dated, result.Memories.Granularity)
+	t.Logf("done: %d questions, %d live memories, %d dated", len(outcomes), result.Memories.Live, result.Memories.Dated)
 }
 
 func writeLocomoResult(t *testing.T, path string, result locomoResult) {

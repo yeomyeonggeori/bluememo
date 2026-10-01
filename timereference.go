@@ -9,6 +9,13 @@ func (store *Store) matchableText(content string, occurredAt time.Time, occurred
 	return timeReference(occurredAt, occurredUntil, store.configuration.Location) + ": " + content
 }
 
+func (memory Memory) TimeReference(location *time.Location) string {
+	if memory.OccurredAt.IsZero() {
+		return ""
+	}
+	return timeReference(memory.OccurredAt, memory.OccurredUntil, location)
+}
+
 func timeReference(occurredAt time.Time, occurredUntil time.Time, location *time.Location) string {
 	first := formatMoment(occurredAt.In(location))
 	if occurredUntil.IsZero() {
