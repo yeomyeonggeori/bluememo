@@ -71,11 +71,12 @@ type bank struct {
 }
 
 type service struct {
-	mutex     sync.Mutex
-	banks     map[string]*bank
-	directory string
-	client    *openrouter.Client
-	recall    int
+	mutex       sync.Mutex
+	banks       map[string]*bank
+	directory   string
+	client      *openrouter.Client
+	recall      int
+	sourceLimit int
 }
 
 var unsafeInName = regexp.MustCompile(`[^a-zA-Z0-9_-]+`)
@@ -179,21 +180,41 @@ func (running *service) retrieve(writer http.ResponseWriter, request *http.Reque
 		if occurrence := recalled.Memory.TimeReference(time.UTC); occurrence != "" {
 			content = "[" + occurrence + "] " + content
 		}
-		if parsed.Sources {
-			if body, isKnown := bodies[recalled.Memory.OriginID]; isKnown {
-				content += "\n\nWhat was said:\n" + body
-			}
-		}
 		answer.Memories = append(answer.Memories, retrievedMemory{
 			ID:        recalled.Memory.MemoryID,
 			Content:   content,
 			SourceIDs: []string{recalled.Memory.OriginID},
 		})
 	}
+	if parsed.Sources {
+		answer.Memories = append(answer.Memories, spokenEntries(result.Memories, bodies, running.sourceLimit)...)
+	}
 	writer.Header().Set("Content-Type", "application/json")
 	if errorValue := json.NewEncoder(writer).Encode(answer); errorValue != nil {
 		log.Println("encode retrieve response:", errorValue)
 	}
+}
+
+func spokenEntries(memories []bluememo.RecalledMemory, bodies map[string]string, limit int) []retrievedMemory {
+	var spoken []retrievedMemory
+	taken := map[string]bool{}
+	for _, recalled := range memories {
+		origin := recalled.Memory.OriginID
+		body, isKnown := bodies[origin]
+		if !isKnown || taken[origin] {
+			continue
+		}
+		taken[origin] = true
+		spoken = append(spoken, retrievedMemory{
+			ID:        "said-" + origin,
+			Content:   "What was said:\n" + body,
+			SourceIDs: []string{origin},
+		})
+		if len(spoken) == limit {
+			break
+		}
+	}
+	return spoken
 }
 
 func (running *service) reset(writer http.ResponseWriter, request *http.Request) {
@@ -220,6 +241,7 @@ func main() {
 	address := flag.String("address", ":8713", "address to listen on")
 	directory := flag.String("directory", "", "directory holding one store per user")
 	recall := flag.Int("recall", 50, "memories returned when a request names no limit")
+	sourceLimit := flag.Int("sources", 4, "distinct notes appended after the memories when a request asks for them")
 	flag.Parse()
 
 	credential := os.Getenv("OPENROUTER_API_KEY")
@@ -233,10 +255,11 @@ func main() {
 		log.Fatal(errorValue)
 	}
 	running := &service{
-		banks:     map[string]*bank{},
-		directory: *directory,
-		client:    openrouter.New(credential),
-		recall:    *recall,
+		banks:       map[string]*bank{},
+		directory:   *directory,
+		client:      openrouter.New(credential),
+		recall:      *recall,
+		sourceLimit: *sourceLimit,
 	}
 	handler := http.NewServeMux()
 	handler.HandleFunc("POST /ingest", running.ingest)
