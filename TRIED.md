@@ -420,3 +420,39 @@ What it rules out is feeding more of the same material. The remaining tokens
 hindsight spends hold something atomic facts do not carry, and the one thing
 measured to recover it is the retained note body, which raised single-hop by
 0.088. The lever is the source text, not more facts.
+
+## The first number measured on the same footing
+
+bluememo ran through AMB on one LoCoMo conversation, answered by
+`gemini-3.1-pro-preview` and judged by `gemini-2.5-flash-lite`, the two models
+every row AMB publishes for this split was produced with. Both reached through
+OpenRouter, so the route differs from AMB's own runs while the models do not.
+
+| provider | questions | accuracy | context tokens per query |
+| --- | --- | --- | --- |
+| hindsight | 1540 | 0.9201 | 36235 |
+| cognee | 152 | 0.8026 | 14724 |
+| hybrid-search | 1540 | 0.7909 | 22157 |
+| bluememo, conv-26 | 152 | 0.8026 | 295 |
+
+Per category: multi-hop 0.923 over 13 questions, temporal 0.865 over 37,
+open-domain 0.771 over 70, single-hop 0.750 over 32.
+
+Three things this says and one it does not.
+
+It says the harness was the larger part of the gap. The same stores and the same
+retrieval scored 0.541 on multi-hop under this repository's answer prompt and
+0.923 under AMB's. The diagnostic had already found that 17 of 28 wrong
+multi-hop answers held the gold answer in the context they were given, so the
+fault was in the answering, and this is how large that fault was.
+
+It says the context cost is the differentiator, by a wide margin. The same
+accuracy as cognee on the same 152 questions costs 295 tokens against 14724, and
+beating hybrid-search costs 295 against 22157.
+
+It says AMB used k=10, which is a fifth of this library's own default, so the
+number was measured at a handicap.
+
+It does not say anything yet about the split. One conversation is 152 of 1540
+questions and multi-hop is 13 of them, and conv-26 need not resemble the other
+nine. The full split is the number that compares with 0.9201.
