@@ -12,6 +12,9 @@ const DecompositionInstruction = `You split text into the self-contained stateme
 
 A statement is self-contained when it reads correctly on its own:
 - A statement is never vaguer than the text it came from. Resolve every pronoun and every phrase standing in for something the text names: "I", "my", "there", "that company", "the city she grew up in". Keep the text's own word for a thing, its kind, its count and its day: "a sedan" written as "a car", or "three" written as "a few", loses what the statement would be found by. Leave general only what the text left general.
+- A list keeps every item. Name them all in one statement, or write one statement each. A statement saying someone made pottery has kept neither the bowl nor the cup the text named.
+- A reason, a purpose or a cause the text gives stays with what it explains, in the same statement. Why someone took something up is asked about as often as that they did.
+- What a speaker says they felt or thought is a statement of its own: their delight, their worry, what they made of something. Use their own words for it, and never write a judgement the text does not make.
 - Keep conditions, time, source and degree inside the statement.
 - Something a person was told keeps its source in the same statement. Never split the source into a statement of its own.
 - Write each statement in English. Keep every proper noun exactly as the text spells it, in its own script: a person, a place, a company, a product, a team or a title stays as written. "홍길동이 사과를 좋아한다" becomes "홍길동 likes apples".
