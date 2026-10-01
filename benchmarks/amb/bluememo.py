@@ -1,0 +1,75 @@
+import os
+import urllib.error
+import urllib.request
+import json
+from pathlib import Path
+
+from ..models import Document
+from .base import MemoryProvider
+
+
+class BluememoMemoryProvider(MemoryProvider):
+    name = "bluememo"
+    description = "Atomic facts in one SQLite file per person, recalled by three fused lanes with no model call."
+    kind = "local"
+    variant = "http"
+    link = "https://github.com/yeomyeonggeori/bluememo"
+    concurrency = 4
+
+    def __init__(self):
+        self._base = os.environ.get("BLUEMEMO_SERVER", "http://127.0.0.1:8713")
+        self._sources = os.environ.get("BLUEMEMO_SOURCES", "") != ""
+
+    def _post(self, route: str, payload: dict) -> dict | None:
+        request = urllib.request.Request(
+            f"{self._base}{route}",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=1800) as response:
+            body = response.read()
+        return json.loads(body) if body else None
+
+    def initialize(self) -> None:
+        try:
+            with urllib.request.urlopen(f"{self._base}/health", timeout=10) as response:
+                response.read()
+        except urllib.error.URLError as failure:
+            raise RuntimeError(
+                f"no bluememo server at {self._base}: start cmd/bench-server with -directory"
+            ) from failure
+
+    def prepare(self, store_dir: Path, unit_ids: set[str] | None = None, reset: bool = True) -> None:
+        if reset:
+            self._post("/reset", {})
+
+    def ingest(self, documents: list[Document]) -> None:
+        self._post("/ingest", {"documents": [
+            {
+                "id": document.id,
+                "content": document.content,
+                "user_id": document.user_id or "shared",
+                "timestamp": document.timestamp or "",
+            }
+            for document in documents
+        ]})
+
+    def retrieve(self, query: str, k: int = 10, user_id: str | None = None, query_timestamp: str | None = None) -> tuple[list[Document], dict | None]:
+        answer = self._post("/retrieve", {
+            "query": query,
+            "k": k,
+            "user_id": user_id or "shared",
+            "sources": self._sources,
+        }) or {}
+        memories = answer.get("memories", [])
+        documents = [
+            Document(
+                id=memory["id"],
+                content=memory["content"],
+                user_id=user_id,
+                source_ids=memory.get("source_ids"),
+            )
+            for memory in memories
+        ]
+        return documents, answer
