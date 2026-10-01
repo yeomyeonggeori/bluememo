@@ -352,3 +352,39 @@ A store upgraded from before the note-origin column keeps no link from its
 memories to the notes they came from, so `RecallSources` returns nothing for
 them. There is no backfill: the origin identifiers were drawn at settle time and
 are not recoverable.
+
+## The two numbers were never comparable
+
+Hindsight's 0.8961 on LoCoMo does not come from Hindsight's repository. Its
+eval package says so plainly: LoCoMo "lives in AMB, which owns their datasets,
+**prompts, judge and scoring**", and the package only points AMB's
+`hindsight-http` provider at a target. So that number was produced by AMB's
+answer prompt and AMB's judge.
+
+The 0.713 in the table above was produced by `locomoAnswerInstruction` and
+`locomoCorrectnessInstruction` in this repository, both written here. Comparing
+them measures two answer prompts and two judges as much as it measures two
+memories, and the difference between the prompts is not small: ours never tells
+the model to combine several memories into one answer.
+
+What settles it is running bluememo through AMB as a provider, so both numbers
+come from one prompt, one judge and one scoring. Until that exists, the gap is
+not a measured gap between two libraries.
+
+## Where the remaining failures actually are
+
+Counted over the ten `src2` stores, at the default recall limit, with no model
+call: of 61 multi-hop questions, 28 were wrong, and of those 28 the gold answer's
+terms were already in what the answerer was shown in 17 cases, partly in 7, and
+absent in 4.
+
+So a new retrieval granularity — per-subject observations, which is what
+Hindsight's most-used memory type is — would address four of twenty-eight. That
+plan is dropped on this evidence. The answer step is where the loss is, which
+also matches the earlier finding that 43% of all wrong answers had the gold fact
+inside the top twenty.
+
+One thing this measurement cannot be used for: a ceiling. The same term-overlap
+count says single-hop could reach 0.785 while single-hop actually scored 0.832,
+because a correct answer often shares few words with the gold one. It is valid
+only for comparing within the wrong answers, which is what the counts above do.
