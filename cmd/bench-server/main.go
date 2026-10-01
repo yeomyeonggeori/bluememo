@@ -99,7 +99,7 @@ func (running *service) bankFor(ctx context.Context, userID string) (*bank, erro
 		Model:              running.client,
 		Judge:              bluememo.DistributionJudge{Chooser: openrouter.NewDecisions(running.client)},
 		Reranker:           openrouter.NewDecisions(running.client),
-		RerankDepth:        20,
+		RerankDepth:        0,
 		EmbedTimeReference: true,
 		RecallSources:      true,
 		ClaimDuration:      time.Minute,

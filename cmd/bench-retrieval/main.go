@@ -51,13 +51,30 @@ func init() {
 	}
 }
 
+// monthNumbers lets a gold answer written "7 May 2023" share words with a
+// memory that carries the same day as 2023-05-07. Without it every temporal
+// question scores as a miss on a store that answers it correctly.
+var monthNumbers = map[string]string{
+	"january": "1", "february": "2", "march": "3", "april": "4",
+	"may": "5", "june": "6", "july": "7", "august": "8",
+	"september": "9", "october": "10", "november": "11", "december": "12",
+	"jan": "1", "feb": "2", "mar": "3", "apr": "4", "jun": "6",
+	"jul": "7", "aug": "8", "sep": "9", "sept": "9", "oct": "10", "nov": "11", "dec": "12",
+}
+
 func contentWords(text string) map[string]bool {
 	words := map[string]bool{}
 	for _, word := range wordPattern.FindAllString(strings.ToLower(text), -1) {
-		if !stopWords[word] {
-			words[word] = true
+		if stopWords[word] {
+			continue
 		}
+		if number, isMonth := monthNumbers[word]; isMonth {
+			words[number] = true
+			continue
+		}
+		words[strings.TrimLeft(word, "0")] = true
 	}
+	delete(words, "")
 	return words
 }
 
