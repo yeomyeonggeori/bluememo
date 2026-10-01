@@ -24,6 +24,7 @@ type document struct {
 	ID        string `json:"id"`
 	Content   string `json:"content"`
 	UserID    string `json:"user_id"`
+	Speaker   string `json:"speaker"`
 	Timestamp string `json:"timestamp"`
 }
 
@@ -138,7 +139,7 @@ func (running *service) ingest(writer http.ResponseWriter, request *http.Request
 		if instant, errorValue := time.Parse(time.RFC3339, each.Timestamp); errorValue == nil {
 			held.clock.set(instant)
 		}
-		if errorValue := held.store.Memorize(request.Context(), bluememo.Note{Body: each.Content, GroupID: each.ID}); errorValue != nil {
+		if errorValue := held.store.Memorize(request.Context(), bluememo.Note{Body: each.Content, GroupID: each.ID, SpeakerName: each.Speaker}); errorValue != nil {
 			refuse(writer, request.URL.Path, errorValue)
 			return
 		}
