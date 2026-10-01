@@ -8,13 +8,24 @@ import (
 	"time"
 )
 
-const DecompositionInstruction = `You split text into the self-contained statements a memory store keeps.
+const DecompositionInstruction = `You split text into the self-contained statements a memory store keeps. You do it in two passes.
+
+First fill said. Read the text and list what it holds, in its own words, under each heading. This pass is reading, not writing: list every one you find, repeat nothing, and leave a heading empty when the text fills it with nothing.
+  who    every person, group or organization the text names
+  what   every thing, action or item named. A text naming a bowl and a cup lists both, never "pottery"
+  when   every time the text gives, in its own wording, including how often: a date, a part of a day, a season, or a recurrence such as every morning
+  where  every place
+  why    every reason, purpose or cause given for something
+  how    every manner, and everything a speaker says they felt or thought
+  also   anything the text says that no heading above holds: a condition it depends on, who it was heard from, how much or how strongly. Empty when the headings hold everything
+
+Then write propositions, the statements the store keeps. Nothing you listed in said may be missing from them, and nothing may appear that you did not list.
 
 A statement is self-contained when it reads correctly on its own:
 - A statement is never vaguer than the text it came from. Resolve every pronoun and every phrase standing in for something the text names: "I", "my", "there", "that company", "the city she grew up in". Keep the text's own word for a thing, its kind, its count and its day: "a sedan" written as "a car", or "three" written as "a few", loses what the statement would be found by. Leave general only what the text left general.
-- A list keeps every item. Name them all in one statement, or write one statement each. A statement saying someone made pottery has kept neither the bowl nor the cup the text named.
-- A reason, a purpose or a cause the text gives stays with what it explains, in the same statement. Why someone took something up is asked about as often as that they did.
-- What a speaker says they felt or thought is a statement of its own: their delight, their worry, what they made of something. Use their own words for it, and never write a judgement the text does not make.
+- A list keeps every item. Name them all in one statement, or write one statement each.
+- A reason, a purpose or a cause stays with what it explains, in the same statement. Why someone took something up is asked about as often as that they did.
+- What a speaker says they felt or thought is a statement of its own, in their own words. Never write a judgement the text does not make.
 - Keep conditions, time, source and degree inside the statement.
 - Something a person was told keeps its source in the same statement. Never split the source into a statement of its own.
 - Write each statement in English. Keep every proper noun exactly as the text spells it, in its own script: a person, a place, a company, a product, a team or a title stays as written. "홍길동이 사과를 좋아한다" becomes "홍길동 likes apples".
@@ -56,11 +67,27 @@ A wrong statement (never do this):
   Right: "Jordan Lee leads the payments team."
 The speaker's name is exactly the string the context gives. Never cut it shorter.`
 
+var stringList = map[string]any{"type": "array", "items": map[string]any{"type": "string"}}
+
 var DecompositionSchemaDocument = mustMarshalSchema(map[string]any{
 	"type":                 "object",
 	"additionalProperties": false,
-	"required":             []string{"propositions"},
+	"required":             []string{"said", "propositions"},
 	"properties": map[string]any{
+		"said": map[string]any{
+			"type":                 "object",
+			"additionalProperties": false,
+			"required":             []string{"who", "what", "when", "where", "why", "how", "also"},
+			"properties": map[string]any{
+				"who":   stringList,
+				"what":  stringList,
+				"when":  stringList,
+				"where": stringList,
+				"why":   stringList,
+				"how":   stringList,
+				"also":  stringList,
+			},
+		},
 		"propositions": map[string]any{
 			"type": "array",
 			"items": map[string]any{
