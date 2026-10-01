@@ -676,3 +676,50 @@ has an error near 0.025 from sampling and another 0.046 of run-to-run spread, so
 one conversation cannot separate two configurations closer than about 0.07, and
 it cannot be compared with a full-split number at all. Replicate, or run the
 split.
+
+## A statement that is vaguer than its text cannot be found
+
+The conversation says one speaker called the thing a cup; the statement settled
+from it says the children made a pot. The place a speaker named is stored as the
+phrase that referred to it. Neither fact can answer a question about what the
+text said, and no retrieval recovers what was never written down.
+
+So the two rules about pronouns and about phrases standing in for names became
+one: a statement is never vaguer than the text it came from, which covers the
+word for a thing, its kind, its count and its day alike.
+
+Measured by re-ingesting one conversation and asking, for every question whose
+answer appears in the conversation, whether the answer also appears in the facts
+it settled into. No answering and no judge, so an instruction can be tried for
+the cost of one ingestion:
+
+| instruction | answers that survived |
+| --- | --- |
+| before | 0.810, 111 of 137 |
+| after | 0.861, 118 of 137 |
+
+Seven of the twenty-six that were being lost came back, and a fact costs what it
+cost before. `benchmarks/decomposition/survival.py` is the measurement, and its
+README says why word overlap makes it useless as an absolute number and fine as
+a comparison.
+
+## Many cheap facts beat few expensive ones
+
+On conv-26 through AMB, the four points of the same curve:
+
+| what the answerer was given | accuracy | context tokens |
+| --- | --- | --- |
+| ten memories | 0.803 | 295 |
+| ten memories and their notes | 0.862 | 1515 |
+| fifty memories | 0.875 | 1440 |
+| fifty memories and their notes | 0.895 and 0.941 | 9481 |
+
+Fifty memories beat ten memories with their notes, on fewer tokens. What the
+notes bought at ten was room the memories were not being given: the questions
+that needed several facts had only ten to choose from, and the conversation was
+standing in for the missing ones. Given fifty, the raw text earns 0.043 more for
+6.6 times the context.
+
+A memory is 29 tokens and a hindsight document is about 3600, so fifty memories
+are less than half of one of them. The compression is what makes the breadth
+affordable, which is the argument this library was built on.

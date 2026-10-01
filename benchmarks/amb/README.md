@@ -12,6 +12,13 @@ put the provider where its registry can see it, and register it:
 cp benchmarks/amb/bluememo.py <amb>/src/memory_bench/memory/bluememo.py
 ```
 
+Its OpenAI adapter needs two changes to reach OpenRouter and to survive it. It
+constructs its client without a base URL, so add one from `OPENAI_BASE_URL`. And
+it passes the completion straight to `json.loads`, which raises `TypeError: the
+JSON object must be str, bytes or bytearray, not NoneType` when the model
+returns an empty completion; a full split hit that after 233 questions. Treat an
+empty completion as retryable, which it already does for a rate limit.
+
 Then add two lines to `src/memory_bench/memory/__init__.py`:
 
 ```python
