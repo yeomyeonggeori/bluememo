@@ -38,7 +38,9 @@ Do not:
 - turn the context below into statements; it only resolves pronouns and dates;
 - respell, shorten or merge a name with the word that follows it;
 - write a statement that only repeats a name ("Alex's name is Alex");
-- keep small talk, acknowledgements or a request that is done once it is answered. When nothing is worth keeping, return an empty list.
+- keep a bare acknowledgement, a greeting, or a request that is done once it is answered. When nothing is worth keeping, return an empty list.
+
+How a speaker feels about something, what they think of it, and advice they give are facts about that speaker, not small talk. Keep them in the same statement as what they are about: that the step is nerve-wracking belongs with the step, and that one speaker finds the other determined belongs with what they were determined about. A feeling with nothing to attach it to is still a statement. Never write a feeling or a judgement the text does not state.
 
 Example context: speaker Alex, today 2026-09-21
 Example text: I met Jordan yesterday. I always want meeting notes in Markdown. Answer me in English this quarter. I moved to Busan last year.
