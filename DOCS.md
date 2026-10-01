@@ -176,6 +176,17 @@ stored text a prefix of its code. The store does not own
 the list of codes; a host that has one passes it in, and an empty code means
 nothing has classified the file yet.
 
+A request carries several codes and reaches the union of their subtrees, because
+a reader is usually allowed a set of them rather than one. A code that another
+code already covers is dropped before the query runs, so passing both `F` and
+`FS` asks once.
+
+**This narrows a search. It is not an access boundary.** A host that decides who
+may read what owns that decision: it knows about grants, expiry, revocation and
+who is asking, and this store knows none of those. Passing no codes searches
+every file, so a host enforcing access passes its reader's codes on every call
+and never reads the absence of codes as the absence of access.
+
 `StoreFile` embeds the summary and writes the row, replacing a row that already
 holds that identifier. `File` reads one back by identity, including one that has
 been superseded. `RecallFiles` ranks by cosine over the summaries, narrowed to the subtree of a

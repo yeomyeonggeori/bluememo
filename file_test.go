@@ -77,7 +77,7 @@ func TestACategoryNarrowsWhichFilesAreSearched(t *testing.T) {
 		t.Fatalf("store file: %v", errorValue)
 	}
 	recalled, errorValue := testFixture.store.RecallFiles(context.Background(),
-		bluememo.FileRequest{Text: file.Summary, Category: "13"})
+		bluememo.FileRequest{Text: file.Summary, Categories: []string{"13"}})
 	if errorValue != nil {
 		t.Fatalf("recall files: %v", errorValue)
 	}
@@ -208,16 +208,24 @@ func TestACategoryCodeReachesEverythingBelowIt(t *testing.T) {
 		}
 	}
 	for _, each := range []struct {
-		asked string
+		asked []string
 		want  int
-	}{{"03", 3}, {"031", 2}, {"0312", 1}, {"04", 1}, {"", 4}} {
+	}{
+		{[]string{"03"}, 3},
+		{[]string{"031"}, 2},
+		{[]string{"0312"}, 1},
+		{[]string{"04"}, 1},
+		{nil, 4},
+		{[]string{"031", "04"}, 3},
+		{[]string{"03", "031"}, 3},
+	} {
 		recalled, errorValue := testFixture.store.RecallFiles(context.Background(),
-			bluememo.FileRequest{Text: "audit", Category: each.asked})
+			bluememo.FileRequest{Text: "audit", Categories: each.asked})
 		if errorValue != nil {
-			t.Fatalf("recall %q: %v", each.asked, errorValue)
+			t.Fatalf("recall %v: %v", each.asked, errorValue)
 		}
 		if len(recalled) != each.want {
-			t.Fatalf("category %q reached %d files, wanted %d", each.asked, len(recalled), each.want)
+			t.Fatalf("categories %v reached %d files, wanted %d", each.asked, len(recalled), each.want)
 		}
 	}
 }
