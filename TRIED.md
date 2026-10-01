@@ -388,3 +388,35 @@ One thing this measurement cannot be used for: a ceiling. The same term-overlap
 count says single-hop could reach 0.785 while single-hop actually scored 0.832,
 because a correct answer often shares few words with the gold one. It is valid
 only for comparing within the wrong answers, which is what the counts above do.
+
+## More of the same facts is not the answer
+
+AMB publishes what it measured itself, which is the only LoCoMo table where
+every row came from one prompt and one judge:
+
+| provider | questions | accuracy | context tokens per query |
+| --- | --- | --- | --- |
+| hindsight | 1540 | 0.9201 | 36235 |
+| cognee | 152 | 0.8026 | 14724 |
+| hybrid-search | 1540 | 0.7909 | 22157 |
+
+A bluememo store for one LoCoMo conversation holds around 150 memories, which
+at roughly 25 tokens each is about 4000 tokens. The whole store is an eighth of
+what hindsight spends on a single query, and `hybrid-search` is chunk retrieval
+over raw text with no memory system at all.
+
+So the obvious hypothesis was that the gap is a context budget. It is not. On
+one conversation, with one store and one question set and only the recall limit
+changed, fifty memories scored 0.387 at about 1300 tokens and the entire store
+scored 0.380 at about 4200 tokens. Three times the context, no gain.
+
+Those absolute numbers are depressed and cannot be compared with the table
+above: the stores were ingested under a smaller session limit than the run
+scored, so most questions had no evidence in the store at all. The comparison
+between the two arms is still sound, because both saw the same store and the
+same questions.
+
+What it rules out is feeding more of the same material. The remaining tokens
+hindsight spends hold something atomic facts do not carry, and the one thing
+measured to recover it is the retained note body, which raised single-hop by
+0.088. The lever is the source text, not more facts.
