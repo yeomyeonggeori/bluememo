@@ -643,3 +643,36 @@ matching the budget, and the budget is the axis a reader should compare. And the
 flat curve measured earlier was an artifact of a crippled store, which is the
 fourth time in this file a measurement has flattered or maligned itself through
 its fixture.
+
+## One AMB conversation moves 0.046 between two runs of one configuration
+
+The same conversation, the same configuration, the whole pipeline twice:
+
+| category | first | second | questions |
+| --- | --- | --- | --- |
+| multi-hop | 1.000 | 0.923 | 13 |
+| open-domain | 0.929 | 0.900 | 70 |
+| single-hop | 0.938 | 0.875 | 32 |
+| temporal | 0.946 | 0.892 | 37 |
+| overall | 0.941 | 0.895 | 152 |
+| context tokens | 9481 | 9537 | |
+
+0.046 apart, which is 2.1 standard errors. The questions are identical, so this
+is not sampling: each run re-ingests, the decomposition answers differently, and
+a different store answers the questions. That variance sits on top of the
+answerer's own.
+
+So the entry above reporting 0.941 against hindsight's 0.9201 reported one draw
+from a distribution whose mean over these two runs is 0.918. bluememo straddles
+that number on this conversation rather than beating it, and the projection built
+on 0.941 is withdrawn with it.
+
+What the two runs agree on is the cost: 9481 and 9537 context tokens, against
+36235. A quarter of the context for the same band of accuracy is not a sampling
+artifact.
+
+The instrument rule that follows: a configuration measured on one conversation
+has an error near 0.025 from sampling and another 0.046 of run-to-run spread, so
+one conversation cannot separate two configurations closer than about 0.07, and
+it cannot be compared with a full-split number at all. Replicate, or run the
+split.
