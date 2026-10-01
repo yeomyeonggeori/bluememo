@@ -196,7 +196,7 @@ func (client *Client) postOnce(ctx context.Context, url string, requestBody []by
 	if errorValue != nil {
 		return nil, true, errorValue
 	}
-	if response.StatusCode == http.StatusTooManyRequests || response.StatusCode >= http.StatusInternalServerError {
+	if response.StatusCode == http.StatusTooManyRequests || response.StatusCode == http.StatusBadRequest || response.StatusCode >= http.StatusInternalServerError {
 		return nil, true, fmt.Errorf("endpoint returned %d: %s", response.StatusCode, responseBody)
 	}
 	if response.StatusCode != http.StatusOK {
