@@ -378,10 +378,3 @@ func candidateContents(candidates []candidate) []string {
 	}
 	return contents
 }
-
-func nonNil(values []string) []string {
-	if values == nil {
-		return []string{}
-	}
-	return values
-}

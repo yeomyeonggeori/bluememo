@@ -503,12 +503,6 @@ func locomoIdentifiers(seed int64) func() string {
 	}
 }
 
-func isMonthsLater(first time.Time, last time.Time, monthCount int) bool {
-	dayAfterLast := last.AddDate(0, 0, 1)
-	boundary := time.Date(first.Year(), first.Month()+time.Month(monthCount), 1, 0, 0, 0, 0, first.Location())
-	return dayAfterLast.Year() == boundary.Year() && dayAfterLast.YearDay() == boundary.YearDay()
-}
-
 func sourcesWanted() bool {
 	return os.Getenv("BLUEMEMO_LOCOMO_SOURCES") != ""
 }
@@ -552,7 +546,8 @@ func numberedContext(memories []bluememo.RecalledMemory) string {
 
 const locomoAnswerInstruction = `You answer a question about two people's conversations using only the numbered memories you are given.
 A memory may begin with the time it happened in square brackets. Use that time to answer questions about when something happened; give the time at the precision the memory gives it.
-A section headed "What was said" may follow, holding the conversation the memories were drawn from; read it for detail a memory left out.\nIf the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
+A section headed "What was said" may follow, holding the conversation the memories were drawn from; read it for detail a memory left out.
+If the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
 
 const locomoCorrectnessInstruction = `You grade an answer against a gold answer for a question.
 Mark it correct when the answer contains the same facts as the gold answer, however it is worded or how much extra it says. For a question about time, it is correct when it names the same date or period as the gold answer, even in another format.

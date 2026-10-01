@@ -97,6 +97,8 @@ The dataset is not in the repository. Fetch `locomo10.json` (2.7 MB, 10 conversa
 | `BLUEMEMO_LOCOMO_RECALL_LIMIT` | memories passed to the answerer; unset means 20 |
 | `BLUEMEMO_LOCOMO_REUSE_STORE` | skip ingestion and ask against the store already in the output directory |
 | `BLUEMEMO_LOCOMO_REEMBED` | re-embed every memory before asking, for testing what the embedded text holds |
+| `BLUEMEMO_LOCOMO_STORE_ARM` | read another arm's stores, so two answer paths can be compared on one ingestion |
+| `BLUEMEMO_LOCOMO_SOURCES` | hand the answerer what was said, alongside the facts |
 
 It also needs the embedder, reranker and answerer variables the other live evals use.
 Ten conversations at a session limit of 10 take about 25 minutes when the ten run at
@@ -319,3 +321,34 @@ Ranking ties break on the memory identifier, which `NewIdentifier` draws from
 `crypto/rand`, so a fresh store per case orders tied memories differently on
 every run. The harnesses inject a fixed-seed source. Five `-count=1` runs
 agreeing exactly is the check that this has not come back.
+
+## What the second round measured
+
+All of these ran on LoCoMo with one note per eight turns, fifty memories to the
+answerer, and the same ten stores, so only the read path differs. The floors are
+the spread between two runs of one arm: 0.024 overall, 0.018 single-hop, 0.013
+declined, 0.066 multi-hop.
+
+| change | overall 1-4 | verdict |
+| --- | --- | --- |
+| the retained note reaches the answerer | 0.665 to 0.713 | single-hop +0.088, five times its floor; declined −0.065, five times its floor |
+| the trigger lane removed | 0.665 to 0.665 | nothing moved on either benchmark |
+| occurrence as an instant, rendered as the range it holds | 0.669 to 0.693 | one floor; shipped for what it can express |
+| every memory carries a time, falling back to when it was mentioned | 0.653 to 0.655 | temporal −0.040; a key on everything carries nothing |
+
+The first and the third line are the same curve seen twice: more context raises
+answerable accuracy and lowers abstention, and with no relevance signal a caller
+has to pick a point on it. Fifty memories is where that curve flattens and
+abstention starts to fall; a hundred buys 0.002 and costs 0.023.
+
+The trigger lane is a table, a model call for every memory settled, and the
+phrases' embeddings. Removing it moved nothing on LoCoMo and nothing on the
+Korean set, where it was meant to earn its keep because Korean has no tokenizer.
+Its unit tests still show it reaching a memory that shares no word with the
+question, so what is unmeasured is whether that path matters at a recall limit
+small enough for a third lane to have room.
+
+A store upgraded from before the note-origin column keeps no link from its
+memories to the notes they came from, so `RecallSources` returns nothing for
+them. There is no backfill: the origin identifiers were drawn at settle time and
+are not recoverable.

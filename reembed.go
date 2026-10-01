@@ -12,10 +12,10 @@ type ReembedReport struct {
 }
 
 type staleText struct {
-	identifier string
-	text       string
-	occurredAt sql.NullInt64
-	occurredTo sql.NullInt64
+	identifier    string
+	text          string
+	occurredAt    sql.NullInt64
+	occurredUntil sql.NullInt64
 }
 
 func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, error) {
@@ -60,7 +60,7 @@ func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSiz
 	stale := []staleText{}
 	for rows.Next() {
 		var entry staleText
-		if errorValue := rows.Scan(&entry.identifier, &entry.text, &entry.occurredAt, &entry.occurredTo); errorValue != nil {
+		if errorValue := rows.Scan(&entry.identifier, &entry.text, &entry.occurredAt, &entry.occurredUntil); errorValue != nil {
 			return nil, errorValue
 		}
 		stale = append(stale, entry)
@@ -71,7 +71,7 @@ func (store *Store) staleTexts(ctx context.Context, selectStale string, batchSiz
 func (store *Store) replaceEmbeddings(ctx context.Context, stale []staleText, updateEmbedding string) error {
 	texts := make([]string, len(stale))
 	for index, entry := range stale {
-		texts[index] = store.matchableText(entry.text, fromNullMilliseconds(entry.occurredAt), fromNullMilliseconds(entry.occurredTo))
+		texts[index] = store.matchableText(entry.text, fromNullMilliseconds(entry.occurredAt), fromNullMilliseconds(entry.occurredUntil))
 	}
 	embeddings, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, texts)
 	if errorValue != nil {

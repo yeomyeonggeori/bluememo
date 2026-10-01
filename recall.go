@@ -411,19 +411,31 @@ func (store *Store) sourcesOf(ctx context.Context, recalled []RecalledMemory) ([
 	if len(origins) == 0 {
 		return nil, nil
 	}
-	statement := `select origin_id, body from pending_note where origin_id in (?` + strings.Repeat(", ?", len(origins)-1) + `)`
+	statement := `select origin_id, group_concat(body, char(10)) from
+		(select origin_id, body from pending_note where origin_id in (?` + strings.Repeat(", ?", len(origins)-1) + `) order by arrived_at, note_id)
+		group by origin_id`
 	rows, errorValue := store.database.QueryContext(ctx, statement, origins...)
 	if errorValue != nil {
 		return nil, errorValue
 	}
 	defer rows.Close()
-	sources := make([]RecalledSource, 0, len(origins))
+	bodies := make(map[string]string, len(origins))
 	for rows.Next() {
-		var source RecalledSource
-		if errorValue := rows.Scan(&source.OriginID, &source.Body); errorValue != nil {
+		var originID, body string
+		if errorValue := rows.Scan(&originID, &body); errorValue != nil {
 			return nil, errorValue
 		}
-		sources = append(sources, source)
+		bodies[originID] = body
 	}
-	return sources, rows.Err()
+	if errorValue := rows.Err(); errorValue != nil {
+		return nil, errorValue
+	}
+	sources := make([]RecalledSource, 0, len(origins))
+	for _, origin := range origins {
+		originID := origin.(string)
+		if body, isKnown := bodies[originID]; isKnown {
+			sources = append(sources, RecalledSource{OriginID: originID, Body: body})
+		}
+	}
+	return sources, nil
 }
