@@ -20,6 +20,7 @@ class BluememoMemoryProvider(MemoryProvider):
         self._base = os.environ.get("BLUEMEMO_SERVER", "http://127.0.0.1:8713")
         self._sources = os.environ.get("BLUEMEMO_SOURCES", "") != ""
         self._recall = int(os.environ.get("BLUEMEMO_RECALL", "0"))
+        self._reuse = os.environ.get("BLUEMEMO_REUSE", "") != ""
 
     def _post(self, route: str, payload: dict) -> dict | None:
         request = urllib.request.Request(
@@ -42,7 +43,7 @@ class BluememoMemoryProvider(MemoryProvider):
             ) from failure
 
     def prepare(self, store_dir: Path, unit_ids: set[str] | None = None, reset: bool = True) -> None:
-        if reset:
+        if reset and not self._reuse:
             self._post("/reset", {})
 
     @staticmethod
@@ -68,6 +69,11 @@ class BluememoMemoryProvider(MemoryProvider):
         return "\n".join(lines)
 
     def ingest(self, documents: list[Document]) -> None:
+        """BLUEMEMO_REUSE answers from the stores already on disk. Settling a
+        split costs hours and a read-path change does not touch it, so a
+        measurement of retrieval alone reuses what the last run settled."""
+        if self._reuse:
+            return
         self._post("/ingest", {"documents": [
             {
                 "id": document.id,
