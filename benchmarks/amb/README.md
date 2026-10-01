@@ -20,7 +20,10 @@ REGISTRY["bluememo"] = BluememoMemoryProvider
 ```
 
 Start the server, which holds one store per `user_id` under the directory it is
-given and needs `OPENROUTER_API_KEY`:
+given and needs `OPENROUTER_API_KEY`. `POST /reset` closes every store and
+deletes the files, so it has to be the only thing in flight: AMB calls it from
+`prepare`, before any ingest or retrieve, which is the order the server counts
+on.
 
 ```bash
 go run ./cmd/bench-server -directory /tmp/bluememo-banks
