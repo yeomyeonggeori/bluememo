@@ -252,7 +252,7 @@ func TestACategoryThatIsNotAnAsciiCodeIsRefused(t *testing.T) {
 func TestAFileCarriesItsOccurrenceIntoWhatIsEmbedded(t *testing.T) {
 	file := contractFile()
 	file.OccurredAt = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
-	dated := "[2026-03-15] " + file.Summary
+	dated := "2026-03-15: " + file.Summary
 	embedder := bluememotest.TableEmbedder{Vectors: map[string][]float32{
 		dated:        bluememotest.Axes(map[int]float32{1: 1}),
 		file.Summary: bluememotest.Axes(map[int]float32{2: 1}),
@@ -284,5 +284,40 @@ func TestAFileThatEndsWithoutBeginningIsRefused(t *testing.T) {
 	errorValue := testFixture.store.StoreFile(context.Background(), file)
 	if !errors.Is(errorValue, bluememo.ErrOccurrenceEndsWithoutStart) {
 		t.Fatalf("a file ending at a time it never began: %v", errorValue)
+	}
+}
+
+func TestReembeddingAFileKeepsItsOccurrenceInTheVector(t *testing.T) {
+	file := contractFile()
+	file.OccurredAt = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
+	dated := "2026-03-15: " + file.Summary
+	embedder := bluememotest.TableEmbedder{Vectors: map[string][]float32{
+		dated:        bluememotest.Axes(map[int]float32{1: 1}),
+		file.Summary: bluememotest.Axes(map[int]float32{2: 1}),
+	}}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) {
+		configuration.Embedder = embedder
+		configuration.EmbedTimeReference = true
+	})
+	if errorValue := testFixture.store.StoreFile(context.Background(), file); errorValue != nil {
+		t.Fatalf("store file: %v", errorValue)
+	}
+	testFixture.store.Close()
+
+	moved, errorValue := bluememo.Open(context.Background(), testFixture.path, bluememo.Configuration{
+		Embedder: embedder, EmbeddingModel: "table-v2", EmbedTimeReference: true})
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	defer moved.Close()
+	if _, errorValue := moved.Reembed(context.Background(), 8); errorValue != nil {
+		t.Fatalf("reembed: %v", errorValue)
+	}
+	recalled, errorValue := moved.RecallFiles(context.Background(), bluememo.FileRequest{Text: dated})
+	if errorValue != nil {
+		t.Fatalf("recall files: %v", errorValue)
+	}
+	if len(recalled) != 1 || recalled[0].Relevance < 0.99 {
+		t.Fatalf("reembedding dropped the occurrence from the vector: %+v", recalled)
 	}
 }
