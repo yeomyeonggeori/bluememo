@@ -156,7 +156,7 @@ func TestUnsettledNotesAnswerLexicallyUntilTheySettle(t *testing.T) {
 }
 
 func TestRehearsalKeepsOnlyPhrasesThatPickOutTheirOwnMemory(t *testing.T) {
-	testFixture := newFixture(t)
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.RehearseTriggers = true })
 	testFixture.settle(t, "배경", statement("사무실 생활 규칙은 팀마다 다르다."))
 
 	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 4})

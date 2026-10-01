@@ -40,6 +40,7 @@ type Configuration struct {
 	Location           *time.Location
 	EmbedTimeReference bool
 	RecallSources      bool
+	RehearseTriggers   bool
 	Logger             *slog.Logger
 	Now                func() time.Time
 	NewIdentifier      func() string

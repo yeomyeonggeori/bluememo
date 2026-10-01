@@ -302,7 +302,7 @@ func (store *Store) insertAndRehearse(ctx context.Context, fresh Memory, embeddi
 	if errorValue := transaction.Commit(); errorValue != nil {
 		return errorValue
 	}
-	if fresh.Importance < RehearsalImportanceFloor {
+	if !store.configuration.RehearseTriggers || fresh.Importance < RehearsalImportanceFloor {
 		return nil
 	}
 	droppedCount, errorValue := store.rehearse(ctx, fresh, embedding)
