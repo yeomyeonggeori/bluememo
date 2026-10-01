@@ -57,10 +57,25 @@ var (
 	ErrSummaryMissing  = errors.New("a file needs a summary, which is what a search reads")
 	ErrUnknownFileKind = errors.New("a file is a document, an image, a video, audio, or other")
 	ErrFileNotFound    = errors.New("no file holds that identifier")
-	ErrCategoryTooLong = errors.New("a category is a code of at most four characters, one per level")
+	ErrCategoryCode    = errors.New("a category is one to four ASCII letters or digits, one per level")
 )
 
 const CategoryCodeLimit = 4
+
+func isCategoryCode(category string) bool {
+	if len(category) > CategoryCodeLimit {
+		return false
+	}
+	for _, character := range []byte(category) {
+		isDigit := character >= '0' && character <= '9'
+		isLower := character >= 'a' && character <= 'z'
+		isUpper := character >= 'A' && character <= 'Z'
+		if !isDigit && !isLower && !isUpper {
+			return false
+		}
+	}
+	return true
+}
 
 const fileColumns = `file_id, name, extension, kind, summary, data, category, supersedes, created_at`
 
@@ -77,8 +92,8 @@ func validateFile(file File) error {
 	if !fileKinds[file.Kind] {
 		return fmt.Errorf("%w: %q", ErrUnknownFileKind, file.Kind)
 	}
-	if len(file.Category) > CategoryCodeLimit {
-		return fmt.Errorf("%w: %q", ErrCategoryTooLong, file.Category)
+	if !isCategoryCode(file.Category) {
+		return fmt.Errorf("%w: %q", ErrCategoryCode, file.Category)
 	}
 	return nil
 }

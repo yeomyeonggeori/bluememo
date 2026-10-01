@@ -154,15 +154,16 @@ That is the whole reason `file` is not a kind of memory.
 | `kind` | `document`, `image`, `video`, `audio` or `other` |
 | `summary` | what a search reads, and what the embedding is taken from |
 | `data` | JSON whose shape `kind` decides: a document's text, an image's description, a recording's transcript |
-| `category` | the host's classification code, at most four characters, one per level; empty until something classifies it |
+| `category` | the host's classification code, one to four ASCII letters or digits, one per level; empty until something classifies it |
 | `supersedes` | the file this one replaces |
 
 `kind` carries `other` and never null, because null would say the store has not
 looked, which is a different state from having looked and found none of the four.
 
 A category is a code and not a name, so each character is a level and a prefix
-is a subtree: a file in `0312` answers a search of `031` and of `03`. Four
-characters is the width, which is what bounds the depth. The store does not own
+is a subtree: a file in `0312` answers a search of `031` and of `03`. Four ASCII letters or
+digits is the width, which is what bounds the depth and keeps a prefix of the
+stored text a prefix of its code. The store does not own
 the list of codes; a host that has one passes it in, and an empty code means
 nothing has classified the file yet.
 
