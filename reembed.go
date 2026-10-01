@@ -9,6 +9,7 @@ import (
 type ReembedReport struct {
 	Memories int `json:"memories"`
 	Triggers int `json:"triggers"`
+	Files    int `json:"files"`
 }
 
 type staleText struct {
@@ -34,7 +35,13 @@ func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, 
 	triggerCount, errorValue := store.reembedTable(ctx, batchSize,
 		`select trigger_id, phrase, null, null from memory_trigger where embedding_model <> ? limit ?`,
 		`update memory_trigger set embedding = ?, embedding_model = ? where trigger_id = ?`)
-	return ReembedReport{Memories: memoryCount, Triggers: triggerCount}, errorValue
+	if errorValue != nil {
+		return ReembedReport{}, errorValue
+	}
+	fileCount, errorValue := store.reembedTable(ctx, batchSize,
+		`select file_id, summary, null, null from file where embedding_model <> ? or embedding is null limit ?`,
+		`update file set embedding = ?, embedding_model = ? where file_id = ?`)
+	return ReembedReport{Memories: memoryCount, Triggers: triggerCount, Files: fileCount}, errorValue
 }
 
 func (store *Store) reembedTable(ctx context.Context, batchSize int, selectStale string, updateEmbedding string) (int, error) {
