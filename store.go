@@ -3,7 +3,6 @@ package bluememo
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -32,7 +31,6 @@ type Configuration struct {
 	EmbeddingModel     string
 	Model              LanguageModel
 	Judge              Judge
-	People             EntityResolver
 	Capacity           int
 	StaticShare        float64
 	TombstoneCapacity  int
@@ -41,6 +39,7 @@ type Configuration struct {
 	ClaimDuration      time.Duration
 	Location           *time.Location
 	EmbedTimeReference bool
+	RecallSources      bool
 	Logger             *slog.Logger
 	Now                func() time.Time
 	NewIdentifier      func() string
@@ -106,7 +105,7 @@ func (store *Store) Memories(ctx context.Context) ([]Memory, error) {
 
 func (store *Store) Tombstones(ctx context.Context) ([]Tombstone, error) {
 	rows, errorValue := store.database.QueryContext(ctx, `
-		select memory_id, content, is_static, occurred_at, origin_id, reason, request_phrase, created_at, died_at
+		select memory_id, content, is_static, occurred_at, occurred_until, origin_id, reason, request_phrase, created_at, died_at
 		from tombstone order by died_at desc`)
 	if errorValue != nil {
 		return nil, errorValue
@@ -115,13 +114,14 @@ func (store *Store) Tombstones(ctx context.Context) ([]Tombstone, error) {
 	tombstones := []Tombstone{}
 	for rows.Next() {
 		var tombstone Tombstone
-		var occurredAt sql.NullInt64
+		var occurredAt, occurredUntil sql.NullInt64
 		var createdAt, diedAt int64
-		if errorValue := rows.Scan(&tombstone.MemoryID, &tombstone.Content, &tombstone.IsStatic, &occurredAt, &tombstone.OriginID,
+		if errorValue := rows.Scan(&tombstone.MemoryID, &tombstone.Content, &tombstone.IsStatic, &occurredAt, &occurredUntil, &tombstone.OriginID,
 			&tombstone.Reason, &tombstone.RequestPhrase, &createdAt, &diedAt); errorValue != nil {
 			return nil, errorValue
 		}
 		tombstone.OccurredAt = fromNullMilliseconds(occurredAt)
+		tombstone.OccurredUntil = fromNullMilliseconds(occurredUntil)
 		tombstone.CreatedAt = fromMilliseconds(createdAt)
 		tombstone.DiedAt = fromMilliseconds(diedAt)
 		tombstones = append(tombstones, tombstone)
@@ -216,8 +216,8 @@ func (store *Store) newIdentifier() string {
 	return NewIdentifier()
 }
 
-const memoryColumns = `memory_id, content, is_static, occurred_at, occurred_to, valid_until, origin_id, importance, storage_strength,
-	resolved_entity_ids, unresolved_names, created_at, last_recalled_at, cold_since, cold_reason, superseded_by`
+const memoryColumns = `memory_id, content, is_static, occurred_at, occurred_until, valid_until, origin_id, importance, storage_strength,
+	created_at, last_recalled_at, cold_since, cold_reason, superseded_by`
 
 type rowScanner interface {
 	Scan(destinations ...any) error
@@ -225,24 +225,17 @@ type rowScanner interface {
 
 func scanMemory(row rowScanner, extra ...any) (Memory, error) {
 	var memory Memory
-	var occurredAt, occurredTo, validUntil, lastRecalledAt, coldSince sql.NullInt64
+	var occurredAt, occurredUntil, validUntil, lastRecalledAt, coldSince sql.NullInt64
 	var coldReason, supersededBy sql.NullString
-	var resolvedJSON, unresolvedJSON string
 	var createdAt int64
-	destinations := append([]any{&memory.MemoryID, &memory.Content, &memory.IsStatic, &occurredAt, &occurredTo, &validUntil, &memory.OriginID,
-		&memory.Importance, &memory.StorageStrength, &resolvedJSON, &unresolvedJSON, &createdAt, &lastRecalledAt, &coldSince,
+	destinations := append([]any{&memory.MemoryID, &memory.Content, &memory.IsStatic, &occurredAt, &occurredUntil, &validUntil, &memory.OriginID,
+		&memory.Importance, &memory.StorageStrength, &createdAt, &lastRecalledAt, &coldSince,
 		&coldReason, &supersededBy}, extra...)
 	if errorValue := row.Scan(destinations...); errorValue != nil {
 		return Memory{}, errorValue
 	}
-	if errorValue := json.Unmarshal([]byte(resolvedJSON), &memory.ResolvedEntityIDs); errorValue != nil {
-		return Memory{}, fmt.Errorf("memory %s resolved_entity_ids: %w", memory.MemoryID, errorValue)
-	}
-	if errorValue := json.Unmarshal([]byte(unresolvedJSON), &memory.UnresolvedNames); errorValue != nil {
-		return Memory{}, fmt.Errorf("memory %s unresolved_names: %w", memory.MemoryID, errorValue)
-	}
 	memory.OccurredAt = fromNullMilliseconds(occurredAt)
-	memory.OccurredUntil = fromNullMilliseconds(occurredTo)
+	memory.OccurredUntil = fromNullMilliseconds(occurredUntil)
 	memory.ValidUntil = fromNullMilliseconds(validUntil)
 	memory.CreatedAt = fromMilliseconds(createdAt)
 	memory.LastRecalledAt = fromNullMilliseconds(lastRecalledAt)

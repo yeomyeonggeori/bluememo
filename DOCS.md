@@ -102,17 +102,18 @@ The model supplies these when it writes one:
 | --- | --- |
 | `content` | the sentence, at most 240 characters, with pronouns resolved |
 | `isStatic` | a permanent trait of the person, such as a name, a role or a lasting preference |
-| `occurredOn` | the first day of the time it happened, when it describes an event |
-| `occurredUntil` | the last day of that time, empty when it happened on one day |
+| `occurredOn` | when it happened, when it describes an event: a day, a time of day, or two of those joined by a slash |
 | `expiry` | when it stops being true, chosen from a closed list |
 
-The runtime adds the rest: an identifier, the origin it came from, its importance rating, its storage strength, the people it names, and timestamps. A memory is live, cold, or gone.
+The runtime adds the rest: an identifier, the origin it came from, its importance rating, its storage strength, and timestamps. A memory is live, cold, or gone.
+
+`TimeReference` renders an occurrence in the store's location, as the range it holds and no narrower: a day, a time of day, an instant with its own offset, or two of those joined by a slash. It is what a dated memory carries into its vector, so a host showing a memory to a model shows the same text the store embedded.
 
 ## Note
 
-The raw text a host hands to `Memorize`, kept until settling turns it into memories.
+The raw text a host hands to `Memorize`. Settling turns it into memories and the note stays, because a sentence the decomposer compressed is still readable in what was said.
 
-A note carries a group identifier, the speaker's name and whether the person asked for it to be remembered. Notes that share a group are decomposed together, so the model reads a conversation as one unit. Until a note settles, `Recall` returns it under `Unsettled` when it shares words with the question.
+A note carries a group identifier, the speaker's name and whether the person asked for it to be remembered. Notes that share a group are decomposed together, so the model reads a conversation as one unit. Until a note settles, `Recall` returns it under `Unsettled` when it shares words with the question. Afterwards, `RecallSources` makes `Recall` return the text behind the memories it ranked, under `Sources`, one entry per origin in rank order. A group settles as one origin, so its entry holds every note of the group, joined in arrival order.
 
 ## Origin
 
@@ -281,17 +282,6 @@ type Chooser interface {
 
 A host that already has a decision model returning answer probabilities adapts it to `Chooser` in a few lines. `ollama.Client` implements it with the log probabilities Ollama returns.
 
-## EntityResolver
-
-Links a sentence to the people it names, only when the name is unambiguous.
-
-```go
-type EntityResolver interface {
-	Resolve(content string) (resolvedEntityIDs []string, unresolvedNames []string)
-}
-```
-
-`PeopleRegistry` resolves a name only when exactly one person answers to it, and reports the rest as unresolved so an ambiguous name remains visible. When the directory changes, `ResolveEntitiesAgain` recomputes every memory. A memory whose name stayed unresolved is still found by its words.
 
 # Configuration
 
@@ -303,7 +293,7 @@ Every field of `Configuration`, and what happens when it is left empty.
 | `EmbeddingModel` | `""` | the name stamped on every vector; vectors with another name do not rank |
 | `Model` | none | required for settling (`ErrNoLanguageModel`) |
 | `Judge` | none | required for settling (`ErrNoJudge`) |
-| `People` | none | without it, no names are resolved |
+| `RecallSources` | false | when set, `Recall` also returns the note bodies behind the memories it ranked |
 | `Capacity` | 10,000 | live memories kept before eviction starts |
 | `StaticShare` | 0.2 | share of `Capacity` static memories may take |
 | `TombstoneCapacity` | `Capacity` | tombstones kept |

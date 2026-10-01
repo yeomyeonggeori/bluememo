@@ -92,9 +92,9 @@ func (store *Store) forgetResolved(ctx context.Context, memories []Memory, reque
 
 func bury(ctx context.Context, transaction *sql.Tx, memory Memory, reason TombstoneReason, requestPhrase string, now time.Time) error {
 	if _, errorValue := transaction.ExecContext(ctx, `
-		insert or replace into tombstone (memory_id, content, is_static, occurred_at, origin_id, reason, request_phrase, created_at, died_at)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), memory.OriginID, reason,
+		insert or replace into tombstone (memory_id, content, is_static, occurred_at, occurred_until, origin_id, reason, request_phrase, created_at, died_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), nullMilliseconds(memory.OccurredUntil), memory.OriginID, reason,
 		requestPhrase, toMilliseconds(memory.CreatedAt), toMilliseconds(now)); errorValue != nil {
 		return errorValue
 	}

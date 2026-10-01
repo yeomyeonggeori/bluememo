@@ -41,9 +41,15 @@ type UnsettledNote struct {
 type RecallResult struct {
 	Memories       []RecalledMemory `json:"memories"`
 	Relevance      float64          `json:"relevance"`
+	Sources        []RecalledSource `json:"sources,omitempty"`
 	Unsettled      []UnsettledNote  `json:"unsettled"`
 	Mode           string           `json:"mode"`
 	DegradedReason string           `json:"degradedReason,omitempty"`
+}
+
+type RecalledSource struct {
+	OriginID string `json:"originID"`
+	Body     string `json:"body"`
 }
 
 type searchQuery struct {
@@ -76,6 +82,9 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	result.DegradedReason = joinReasons(result.DegradedReason, rerankFailure)
 	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
 	if errorValue != nil {
+		return RecallResult{}, errorValue
+	}
+	if result.Sources, errorValue = store.sourcesOf(ctx, result.Memories); errorValue != nil {
 		return RecallResult{}, errorValue
 	}
 	if result.Unsettled, errorValue = store.unsettledNotes(ctx, trimmed); errorValue != nil {
@@ -384,4 +393,49 @@ func sortedByScore(byID map[string]*RecalledMemory) []RecalledMemory {
 		return ranked[left].Memory.MemoryID < ranked[right].Memory.MemoryID
 	})
 	return ranked
+}
+
+func (store *Store) sourcesOf(ctx context.Context, recalled []RecalledMemory) ([]RecalledSource, error) {
+	if !store.configuration.RecallSources || len(recalled) == 0 {
+		return nil, nil
+	}
+	seen := make(map[string]bool, len(recalled))
+	origins := make([]any, 0, len(recalled))
+	for _, entry := range recalled {
+		if entry.Memory.OriginID == "" || seen[entry.Memory.OriginID] {
+			continue
+		}
+		seen[entry.Memory.OriginID] = true
+		origins = append(origins, entry.Memory.OriginID)
+	}
+	if len(origins) == 0 {
+		return nil, nil
+	}
+	statement := `select origin_id, group_concat(body, char(10)) from
+		(select origin_id, body from pending_note where origin_id in (?` + strings.Repeat(", ?", len(origins)-1) + `) order by arrived_at, note_id)
+		group by origin_id`
+	rows, errorValue := store.database.QueryContext(ctx, statement, origins...)
+	if errorValue != nil {
+		return nil, errorValue
+	}
+	defer rows.Close()
+	bodies := make(map[string]string, len(origins))
+	for rows.Next() {
+		var originID, body string
+		if errorValue := rows.Scan(&originID, &body); errorValue != nil {
+			return nil, errorValue
+		}
+		bodies[originID] = body
+	}
+	if errorValue := rows.Err(); errorValue != nil {
+		return nil, errorValue
+	}
+	sources := make([]RecalledSource, 0, len(origins))
+	for _, origin := range origins {
+		originID := origin.(string)
+		if body, isKnown := bodies[originID]; isKnown {
+			sources = append(sources, RecalledSource{OriginID: originID, Body: body})
+		}
+	}
+	return sources, nil
 }

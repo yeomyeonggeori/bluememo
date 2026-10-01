@@ -54,3 +54,24 @@ func TestForgetNeverDeletesWhatItCouldNotPinDown(t *testing.T) {
 		t.Fatalf("confirmed identifiers should all be forgotten, got %v (%v)", contents(forgotten), errorValue)
 	}
 }
+
+func TestATombstoneKeepsTheWholeOccurrenceNotHalfOfIt(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 2})
+	testFixture.settle(t, "출장", spannedStatement("박예시는 부산 지사에서 일했다.", "2026-06-01", "2026-06-30"))
+
+	if _, errorValue := testFixture.store.Forget(context.Background(), "부산 지사"); errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	tombstones, errorValue := testFixture.store.Tombstones(context.Background())
+	if errorValue != nil || len(tombstones) != 1 {
+		t.Fatalf("tombstones %+v (%v)", tombstones, errorValue)
+	}
+	if tombstones[0].OccurredAt.IsZero() || tombstones[0].OccurredUntil.IsZero() {
+		t.Fatalf("a buried memory must keep both ends of when it happened, got %v to %v",
+			tombstones[0].OccurredAt, tombstones[0].OccurredUntil)
+	}
+	if want := tombstones[0].OccurredAt.AddDate(0, 0, 29); !tombstones[0].OccurredUntil.Equal(want) {
+		t.Fatalf("occurrence end %v, want %v", tombstones[0].OccurredUntil, want)
+	}
+}

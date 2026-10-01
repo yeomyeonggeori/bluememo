@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -38,6 +37,7 @@ const (
 
 	locomoDefaultRecallLimit = 20
 	locomoRerankDepth        = 30
+	locomoSourceLimit        = 10
 	locomoQuestionWorkers    = 6
 	locomoAttemptLimit       = 8
 	locomoBackoffBase        = time.Second
@@ -503,60 +503,38 @@ func locomoIdentifiers(seed int64) func() string {
 	}
 }
 
-func occurredUntilOf(memory bluememo.Memory) time.Time {
-	field := reflect.ValueOf(memory).FieldByName("OccurredUntil")
-	if !field.IsValid() {
-		return time.Time{}
-	}
-	until, isTime := field.Interface().(time.Time)
-	if !isTime {
-		return time.Time{}
-	}
-	return until
+func sourcesWanted() bool {
+	return os.Getenv("BLUEMEMO_LOCOMO_SOURCES") != ""
 }
 
-func occurrenceGranularity(first time.Time, last time.Time) string {
-	switch {
-	case last.IsZero():
-		return "day"
-	case first.Day() == 1 && first.Month() == time.January && isMonthsLater(first, last, 12):
-		return "year"
-	case first.Day() == 1 && (int(first.Month())-1)%3 == 0 && isMonthsLater(first, last, 3):
-		return "quarter"
-	case first.Day() == 1 && isMonthsLater(first, last, 1):
-		return "month"
-	}
-	return "other"
-}
-
-func isMonthsLater(first time.Time, last time.Time, monthCount int) bool {
-	dayAfterLast := last.AddDate(0, 0, 1)
-	boundary := time.Date(first.Year(), first.Month()+time.Month(monthCount), 1, 0, 0, 0, 0, first.Location())
-	return dayAfterLast.Year() == boundary.Year() && dayAfterLast.YearDay() == boundary.YearDay()
-}
-
-func describeOccurrence(memory bluememo.Memory) string {
-	if memory.OccurredAt.IsZero() {
+func spokenContext(result bluememo.RecallResult) string {
+	if len(result.Sources) == 0 {
 		return ""
 	}
-	first, last := memory.OccurredAt.UTC(), occurredUntilOf(memory).UTC()
-	switch occurrenceGranularity(first, last) {
-	case "day":
-		return first.Format("2 January 2006")
-	case "year":
-		return first.Format("2006")
-	case "quarter":
-		return fmt.Sprintf("Q%d %d", (int(first.Month())-1)/3+1, first.Year())
-	case "month":
-		return first.Format("January 2006")
+	bodies := make(map[string]string, len(result.Sources))
+	for _, source := range result.Sources {
+		bodies[source.OriginID] = source.Body
 	}
-	return first.Format("2 January 2006") + " to " + last.Format("2 January 2006")
+	var listing strings.Builder
+	taken := map[string]bool{}
+	for _, recalled := range result.Memories {
+		body, isKnown := bodies[recalled.Memory.OriginID]
+		if !isKnown || taken[recalled.Memory.OriginID] {
+			continue
+		}
+		taken[recalled.Memory.OriginID] = true
+		fmt.Fprintf(&listing, "%s\n\n", body)
+		if len(taken) == locomoSourceLimit {
+			break
+		}
+	}
+	return "\nWhat was said:\n" + listing.String()
 }
 
 func numberedContext(memories []bluememo.RecalledMemory) string {
 	var listing strings.Builder
 	for index, recalled := range memories {
-		occurrence := describeOccurrence(recalled.Memory)
+		occurrence := recalled.Memory.TimeReference(time.UTC)
 		if occurrence == "" {
 			fmt.Fprintf(&listing, "%d. %s\n", index+1, recalled.Memory.Content)
 			continue
@@ -568,6 +546,7 @@ func numberedContext(memories []bluememo.RecalledMemory) string {
 
 const locomoAnswerInstruction = `You answer a question about two people's conversations using only the numbered memories you are given.
 A memory may begin with the time it happened in square brackets. Use that time to answer questions about when something happened; give the time at the precision the memory gives it.
+A section headed "What was said" may follow, holding the conversation the memories were drawn from; read it for detail a memory left out.
 If the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
 
 const locomoCorrectnessInstruction = `You grade an answer against a gold answer for a question.
@@ -596,10 +575,9 @@ type locomoOutcome struct {
 	Failure       string   `json:"failure,omitempty"`
 }
 
-type locomoGranularity struct {
-	Live        int            `json:"live"`
-	Dated       int            `json:"dated"`
-	Granularity map[string]int `json:"granularity"`
+type locomoMemoryCounts struct {
+	Live  int `json:"live"`
+	Dated int `json:"dated"`
 }
 
 type locomoResult struct {
@@ -607,7 +585,7 @@ type locomoResult struct {
 	SampleID         string                     `json:"sampleID"`
 	IngestedSessions int                        `json:"ingestedSessions"`
 	Outcomes         []locomoOutcome            `json:"outcomes"`
-	Memories         locomoGranularity          `json:"memories"`
+	Memories         locomoMemoryCounts         `json:"memories"`
 	Cost             map[string]locomoCostEntry `json:"cost"`
 	SettleFailures   int                        `json:"settleFailures"`
 	IngestSeconds    float64                    `json:"ingestSeconds"`
@@ -615,6 +593,7 @@ type locomoResult struct {
 }
 
 type locomoRig struct {
+	path      string
 	store     *bluememo.Store
 	clock     *locomoClock
 	model     locomoModel
@@ -636,6 +615,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 		Reranker:           decisions,
 		RerankDepth:        locomoRerankDepth,
 		EmbedTimeReference: true,
+		RecallSources:      sourcesWanted(),
 		ClaimDuration:      time.Minute,
 		Now:                clock.now,
 		NewIdentifier:      locomoIdentifiers(locomoIdentifierSeed + int64(conversationIndex)),
@@ -644,7 +624,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 		t.Fatal(errorValue)
 	}
 	t.Cleanup(func() { store.Close() })
-	return &locomoRig{store: store, clock: clock, model: model, transport: transport}
+	return &locomoRig{path: path, store: store, clock: clock, model: model, transport: transport}
 }
 
 func (rig *locomoRig) ingest(ctx context.Context, t *testing.T, sessions []locomoSession) int {
@@ -680,8 +660,8 @@ func (rig *locomoRig) settleWithRetry(ctx context.Context, t *testing.T, session
 	return failures
 }
 
-func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, memories []bluememo.RecalledMemory) (string, error) {
-	subject := "Memories:\n" + numberedContext(memories) + "\nQuestion: " + question.Question
+func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, result bluememo.RecallResult) (string, error) {
+	subject := "Memories:\n" + numberedContext(result.Memories) + spokenContext(result) + "\nQuestion: " + question.Question
 	response, errorValue := rig.model.structured(ctx, "answer", locomoAnswerSchema, locomoAnswerInstruction, subject)
 	if errorValue != nil {
 		return "", errorValue
@@ -729,7 +709,7 @@ func (rig *locomoRig) ask(ctx context.Context, question locomoQuestion) locomoOu
 	}
 	outcome.Degraded = result.DegradedReason
 	outcome.RecalledLines = strings.Split(strings.TrimSpace(numberedContext(result.Memories)), "\n")
-	outcome.Answer, errorValue = rig.answer(ctx, question, result.Memories)
+	outcome.Answer, errorValue = rig.answer(ctx, question, result)
 	if errorValue != nil {
 		outcome.Failure = "answer: " + errorValue.Error()
 		return outcome
@@ -767,19 +747,18 @@ func (rig *locomoRig) askAll(ctx context.Context, questions []locomoQuestion) []
 	return outcomes
 }
 
-func (rig *locomoRig) describeMemories(ctx context.Context, t *testing.T) locomoGranularity {
+func (rig *locomoRig) describeMemories(ctx context.Context, t *testing.T) locomoMemoryCounts {
 	t.Helper()
 	memories, errorValue := rig.store.Memories(ctx)
 	if errorValue != nil {
 		t.Fatal(errorValue)
 	}
-	description := locomoGranularity{Live: len(memories), Granularity: map[string]int{}}
+	description := locomoMemoryCounts{Live: len(memories)}
 	for _, memory := range memories {
 		if memory.OccurredAt.IsZero() {
 			continue
 		}
 		description.Dated++
-		description.Granularity[occurrenceGranularity(memory.OccurredAt.UTC(), occurredUntilOf(memory).UTC())]++
 	}
 	return description
 }
@@ -815,11 +794,22 @@ func TestLoCoMoAccuracy(t *testing.T) {
 	ingested := record.Sessions[:min(sessionLimit, len(record.Sessions))]
 	ctx := context.Background()
 	arm := os.Getenv(locomoArmVariable)
-	rig := openLocomoRig(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.db", arm, conversationIndex)), conversationIndex, credential)
+	storeArm := arm
+	if named := os.Getenv("BLUEMEMO_LOCOMO_STORE_ARM"); named != "" {
+		storeArm = named
+	}
+	rig := openLocomoRig(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.db", storeArm, conversationIndex)), conversationIndex, credential)
 	ingestStarted := time.Now()
 	settleFailures := 0
 	if !reusesStore() {
 		settleFailures = rig.ingest(ctx, t, ingested)
+	}
+	living, errorValue := rig.store.Memories(ctx)
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if len(living) == 0 {
+		t.Fatalf("the store at %s holds no memory, so every answer would be a refusal", rig.path)
 	}
 	ingestSeconds := time.Since(ingestStarted).Seconds()
 	if reembedsBeforeAsking() {
@@ -837,7 +827,7 @@ func TestLoCoMoAccuracy(t *testing.T) {
 		IngestSeconds: ingestSeconds, QuestionSeconds: time.Since(questionStarted).Seconds(),
 	}
 	writeLocomoResult(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.json", arm, conversationIndex)), result)
-	t.Logf("done: %d questions, %d live memories, %d dated, granularity %v", len(outcomes), result.Memories.Live, result.Memories.Dated, result.Memories.Granularity)
+	t.Logf("done: %d questions, %d live memories, %d dated", len(outcomes), result.Memories.Live, result.Memories.Dated)
 }
 
 func writeLocomoResult(t *testing.T, path string, result locomoResult) {

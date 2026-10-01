@@ -42,7 +42,7 @@ func TestTimeReferencePrefixesOnlyTheEmbeddedTextOfADatedMemory(t *testing.T) {
 	testFixture.settle(t, "출장", datedStatement("이샘플은 부산 출장을 다녀왔다.", "2026-08-10"))
 	testFixture.settle(t, "커피", statement("박예시는 아침에만 커피를 마신다."))
 
-	want := []string{"10 August 2026: 이샘플은 부산 출장을 다녀왔다.", "박예시는 아침에만 커피를 마신다."}
+	want := []string{"2026-08-10: 이샘플은 부산 출장을 다녀왔다.", "박예시는 아침에만 커피를 마신다."}
 	if len(embedder.documents) != 2 || embedder.documents[0] != want[0] || embedder.documents[1] != want[1] {
 		t.Fatalf("embedded %q, want %q", embedder.documents, want)
 	}
@@ -75,9 +75,14 @@ func TestTimeReferenceReadsTheStoreLocation(t *testing.T) {
 		configuration.Location = seoul
 	})
 	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 2})
+	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 2})
 	testFixture.settle(t, "출장", datedStatement("이샘플은 부산 출장을 다녀왔다.", "2025-12-31"))
-	if want := "31 December 2025: 이샘플은 부산 출장을 다녀왔다."; embedder.documents[0] != want {
-		t.Fatalf("embedded %q, want %q", embedder.documents[0], want)
+	testFixture.settle(t, "통화", datedStatement("이샘플이 거래처와 통화했다.", "2026-03-05T06:30Z"))
+	wanted := []string{"2025-12-31: 이샘플은 부산 출장을 다녀왔다.", "2026-03-05T15:30: 이샘플이 거래처와 통화했다."}
+	for index, want := range wanted {
+		if embedder.documents[index] != want {
+			t.Fatalf("embedded %q, want %q", embedder.documents[index], want)
+		}
 	}
 }
 
@@ -98,7 +103,7 @@ func TestReembedAppliesTheTimeReference(t *testing.T) {
 	if _, errorValue := moved.Reembed(context.Background(), 0); errorValue != nil {
 		t.Fatal(errorValue)
 	}
-	if want := "10 August 2026: 이샘플은 부산 출장을 다녀왔다."; len(embedder.documents) != 1 || embedder.documents[0] != want {
+	if want := "2026-08-10: 이샘플은 부산 출장을 다녀왔다."; len(embedder.documents) != 1 || embedder.documents[0] != want {
 		t.Fatalf("reembedded %q, want %q", embedder.documents, want)
 	}
 	memories, errorValue := moved.Memories(context.Background())
@@ -115,22 +120,21 @@ func spannedStatement(content string, occurredOn string, occurredUntil string) b
 	return bluememo.Proposition{Content: content, Expiry: bluememo.ExpiryNone, OccurredOn: occurrence}
 }
 
-func TestTimeReferenceRendersOnlyThePrecisionTheSpanHolds(t *testing.T) {
+func TestTimeReferenceRendersTheStoredRangeExactly(t *testing.T) {
 	cases := []struct {
 		name          string
 		occurredOn    string
 		occurredUntil string
 		want          string
 	}{
-		{"one day", "2026-03-05", "", "5 March 2026: 이샘플은 부산에 갔다."},
-		{"a span ending where it starts", "2026-03-05", "2026-03-05", "5 March 2026: 이샘플은 부산에 갔다."},
-		{"a whole month", "2026-06-01", "2026-06-30", "June 2026: 이샘플은 부산에 갔다."},
-		{"a leap february", "2024-02-01", "2024-02-29", "February 2024: 이샘플은 부산에 갔다."},
-		{"a whole quarter", "2026-04-01", "2026-06-30", "Q2 2026: 이샘플은 부산에 갔다."},
-		{"a whole year", "2022-01-01", "2022-12-31", "2022: 이샘플은 부산에 갔다."},
-		{"a span that is no calendar unit", "2026-03-05", "2026-03-09", "5 March 2026 to 9 March 2026: 이샘플은 부산에 갔다."},
-		{"a month short of its last day", "2026-06-01", "2026-06-29", "1 June 2026 to 29 June 2026: 이샘플은 부산에 갔다."},
-		{"a span ending before it starts", "2026-03-05", "2026-03-01", "5 March 2026: 이샘플은 부산에 갔다."},
+		{"one day", "2026-03-05", "", "2026-03-05: 이샘플은 부산에 갔다."},
+		{"a span ending where it starts", "2026-03-05", "2026-03-05", "2026-03-05: 이샘플은 부산에 갔다."},
+		{"a whole month stays a range", "2026-06-01", "2026-06-30", "2026-06-01/2026-06-30: 이샘플은 부산에 갔다."},
+		{"a whole year stays a range", "2022-01-01", "2022-12-31", "2022-01-01/2022-12-31: 이샘플은 부산에 갔다."},
+		{"a time of day", "2026-03-05T15:00", "", "2026-03-05T15:00: 이샘플은 부산에 갔다."},
+		{"an offset is accepted", "2026-03-05T06:30Z", "", "2026-03-05T06:30: 이샘플은 부산에 갔다."},
+		{"a span of two instants", "2026-03-05T09:00", "2026-03-05T11:30", "2026-03-05T09:00/2026-03-05T11:30: 이샘플은 부산에 갔다."},
+		{"a span ending before it starts", "2026-03-05", "2026-03-01", "2026-03-05: 이샘플은 부산에 갔다."},
 		{"an end without a start", "", "2026-03-09", "이샘플은 부산에 갔다."},
 		{"no time at all", "", "", "이샘플은 부산에 갔다."},
 	}
@@ -183,7 +187,7 @@ func TestReembedRendersTheStoredSpan(t *testing.T) {
 	if _, errorValue := moved.Reembed(context.Background(), 0); errorValue != nil {
 		t.Fatal(errorValue)
 	}
-	if want := "2022: 이샘플은 호수 일출을 그렸다."; len(embedder.documents) != 1 || embedder.documents[0] != want {
+	if want := "2022-01-01/2022-12-31: 이샘플은 호수 일출을 그렸다."; len(embedder.documents) != 1 || embedder.documents[0] != want {
 		t.Fatalf("reembedded %q, want %q", embedder.documents, want)
 	}
 }
