@@ -20,6 +20,7 @@ import (
 
 	"github.com/yeomyeonggeori/bluememo"
 	"github.com/yeomyeonggeori/bluememo/bluememotest"
+	"github.com/yeomyeonggeori/bluememo/openrouter"
 )
 
 type judgeKind string
@@ -125,62 +126,18 @@ func validateJudgeTarget(testCase judgeCase) error {
 	return nil
 }
 
-type choiceCriterion struct {
-	Key   string
-	Gloss string
-}
-
 type distributionSource interface {
-	distribute(ctx context.Context, state string, instruction string, criteria []choiceCriterion) (map[string]float64, error)
+	distribute(ctx context.Context, state string, instruction string, criteria []openrouter.Criterion) (map[string]float64, error)
 }
 
-var (
-	instructionAnswerLinePattern = regexp.MustCompile(`(?m)^(\d) (\S.*)$`)
-	instructionColumnPattern     = regexp.MustCompile(`\s{2,}`)
-	subjectCandidateLinePattern  = regexp.MustCompile(`(?m)^(\d+)\. (.+)$`)
-)
-
-func instructionGlosses(instruction string) map[string]string {
-	glosses := map[string]string{}
-	for _, match := range instructionAnswerLinePattern.FindAllStringSubmatch(instruction, -1) {
-		columns := instructionColumnPattern.Split(strings.TrimSpace(match[2]), 2)
-		glosses[match[1]] = strings.Join(columns, ": ")
-	}
-	return glosses
-}
-
-func subjectGlosses(subject string) map[string]string {
-	glosses := map[string]string{noTargetAnswer: "none of the candidates"}
-	for _, match := range subjectCandidateLinePattern.FindAllStringSubmatch(subject, -1) {
-		glosses[match[1]] = "candidate " + match[1] + ": " + match[2]
-	}
-	return glosses
-}
-
-const noTargetAnswer = "9"
-
-func criteriaFor(request bluememo.ChoiceRequest) ([]choiceCriterion, error) {
-	glosses := instructionGlosses(request.Instruction)
-	if request.Instruction == bluememo.TargetInstruction {
-		glosses = subjectGlosses(request.Subject)
-	}
-	criteria := make([]choiceCriterion, 0, len(request.Answers))
-	for _, answer := range request.Answers {
-		gloss, isPresent := glosses[answer]
-		if !isPresent {
-			return nil, fmt.Errorf("no gloss for answer %q", answer)
-		}
-		criteria = append(criteria, choiceCriterion{Key: answer, Gloss: gloss})
-	}
-	return criteria, nil
-}
+var ()
 
 type instrumentChooser struct {
 	source distributionSource
 }
 
 func (chooser instrumentChooser) Choose(ctx context.Context, request bluememo.ChoiceRequest) (map[string]float64, error) {
-	criteria, errorValue := criteriaFor(request)
+	criteria, errorValue := openrouter.CriteriaFor(request)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -203,7 +160,7 @@ type jevSource struct {
 	client *http.Client
 }
 
-func (source jevSource) distribute(ctx context.Context, state string, instruction string, criteria []choiceCriterion) (map[string]float64, error) {
+func (source jevSource) distribute(ctx context.Context, state string, instruction string, criteria []openrouter.Criterion) (map[string]float64, error) {
 	criteriaByKey := make(map[string]string, len(criteria))
 	for _, criterion := range criteria {
 		criteriaByKey[criterion.Key] = criterion.Gloss
@@ -237,7 +194,7 @@ type juliaSource struct {
 
 var juliaProbabilityPattern = regexp.MustCompile(`([^\s:,()]+): ([0-9.eE+-]+)`)
 
-func (source juliaSource) distribute(ctx context.Context, state string, instruction string, criteria []choiceCriterion) (map[string]float64, error) {
+func (source juliaSource) distribute(ctx context.Context, state string, instruction string, criteria []openrouter.Criterion) (map[string]float64, error) {
 	arguments := []string{"--state", state, "--question", juliaQuestion(instruction), "--type", "choice"}
 	for _, criterion := range criteria {
 		arguments = append(arguments, "--option", criterion.Key+"="+criterion.Gloss)
@@ -252,7 +209,7 @@ func (source juliaSource) distribute(ctx context.Context, state string, instruct
 func juliaQuestion(instruction string) string {
 	var kept []string
 	for _, line := range strings.Split(instruction, "\n") {
-		if instructionAnswerLinePattern.MatchString(line) || strings.HasPrefix(line, "Answer with") {
+		if openrouter.IsInstructionAnswerLine(line) || strings.HasPrefix(line, "Answer with") {
 			continue
 		}
 		kept = append(kept, line)
@@ -326,7 +283,7 @@ func leadingMargin(distribution map[string]float64) (string, float64) {
 }
 
 func relationOfAnswer(answer string) (bluememo.Relation, bool) {
-	gloss, isPresent := instructionGlosses(bluememo.RelationInstruction)[answer]
+	gloss, isPresent := openrouter.InstructionGlosses(bluememo.RelationInstruction)[answer]
 	if !isPresent {
 		return "", false
 	}
@@ -564,15 +521,15 @@ func TestJudgeEvalRefusesAnUnknownKindOrAnInconsistentTarget(t *testing.T) {
 }
 
 func TestJudgeEvalGlossesComeFromTheLibraryInstructions(t *testing.T) {
-	glosses := instructionGlosses(bluememo.RelationInstruction)
+	glosses := openrouter.InstructionGlosses(bluememo.RelationInstruction)
 	for answer, relation := range map[string]bluememo.Relation{"1": bluememo.RelationSame, "2": bluememo.RelationUpdates, "3": bluememo.RelationExtends, "4": bluememo.RelationUnrelated} {
 		derived, isKnown := relationOfAnswer(answer)
 		if !isKnown || derived != relation {
 			t.Errorf("answer %s derives %q from %q, want %q", answer, derived, glosses[answer], relation)
 		}
 	}
-	if len(instructionGlosses(bluememo.ImportanceInstruction)) != 5 {
-		t.Errorf("importance glosses: %v", instructionGlosses(bluememo.ImportanceInstruction))
+	if len(openrouter.InstructionGlosses(bluememo.ImportanceInstruction)) != 5 {
+		t.Errorf("importance glosses: %v", openrouter.InstructionGlosses(bluememo.ImportanceInstruction))
 	}
 }
 

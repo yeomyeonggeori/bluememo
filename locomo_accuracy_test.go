@@ -1,13 +1,10 @@
 package bluememo_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,6 +15,7 @@ import (
 	"time"
 
 	"github.com/yeomyeonggeori/bluememo"
+	"github.com/yeomyeonggeori/bluememo/openrouter"
 )
 
 const (
@@ -249,233 +247,6 @@ func (ledger *locomoLedger) snapshot() map[string]locomoCostEntry {
 	return snapshot
 }
 
-type locomoTransport struct {
-	credential string
-	client     *http.Client
-	ledger     *locomoLedger
-}
-
-func (transport locomoTransport) post(ctx context.Context, component string, url string, payload any) ([]byte, error) {
-	requestBody, errorValue := json.Marshal(payload)
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	var lastError error
-	for attempt := range locomoAttemptLimit {
-		if attempt > 0 {
-			if errorValue := sleepWithJitter(ctx, attempt); errorValue != nil {
-				return nil, errorValue
-			}
-		}
-		responseBody, isRetryable, errorValue := transport.postOnce(ctx, url, requestBody)
-		if errorValue == nil {
-			transport.ledger.record(component, costOf(responseBody))
-			return responseBody, nil
-		}
-		lastError = errorValue
-		if !isRetryable {
-			return nil, errorValue
-		}
-	}
-	return nil, fmt.Errorf("%s gave up after %d attempts: %w", component, locomoAttemptLimit, lastError)
-}
-
-func sleepWithJitter(ctx context.Context, attempt int) error {
-	delay := min(locomoBackoffBase<<(attempt-1), locomoBackoffCeiling)
-	delay += time.Duration(rand.Int63n(int64(delay)/2 + 1))
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(delay):
-		return nil
-	}
-}
-
-func (transport locomoTransport) postOnce(ctx context.Context, url string, requestBody []byte) ([]byte, bool, error) {
-	request, errorValue := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestBody))
-	if errorValue != nil {
-		return nil, false, errorValue
-	}
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", "Bearer "+transport.credential)
-	response, errorValue := transport.client.Do(request)
-	if errorValue != nil {
-		return nil, true, errorValue
-	}
-	defer response.Body.Close()
-	responseBody, errorValue := io.ReadAll(response.Body)
-	if errorValue != nil {
-		return nil, true, errorValue
-	}
-	if response.StatusCode == http.StatusTooManyRequests || response.StatusCode >= http.StatusInternalServerError {
-		return nil, true, fmt.Errorf("endpoint returned %d: %s", response.StatusCode, responseBody)
-	}
-	if response.StatusCode != http.StatusOK {
-		return nil, false, fmt.Errorf("endpoint returned %d: %s", response.StatusCode, responseBody)
-	}
-	return responseBody, false, nil
-}
-
-func costOf(responseBody []byte) float64 {
-	var parsed struct {
-		Usage struct {
-			Cost float64 `json:"cost"`
-		} `json:"usage"`
-	}
-	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil {
-		return 0
-	}
-	return parsed.Usage.Cost
-}
-
-type locomoEmbedder struct {
-	transport locomoTransport
-}
-
-func (embedder locomoEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, error) {
-	embeddings, errorValue := embedder.embed(ctx, "embed query", []string{text})
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	return embeddings[0], nil
-}
-
-func (embedder locomoEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
-	return embedder.embed(ctx, "embed document", texts)
-}
-
-func (embedder locomoEmbedder) embed(ctx context.Context, component string, texts []string) ([][]float32, error) {
-	responseBody, errorValue := embedder.transport.post(ctx, component, locomoEmbeddingURL, map[string]any{"model": locomoEmbeddingModel, "input": texts})
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	var parsed struct {
-		Data []struct {
-			Embedding []float32 `json:"embedding"`
-		} `json:"data"`
-	}
-	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil {
-		return nil, fmt.Errorf("embedding response is not the expected shape: %w", errorValue)
-	}
-	if len(parsed.Data) != len(texts) {
-		return nil, fmt.Errorf("embedding response holds %d vectors for %d texts", len(parsed.Data), len(texts))
-	}
-	embeddings := make([][]float32, len(parsed.Data))
-	for index, entry := range parsed.Data {
-		embeddings[index] = entry.Embedding
-	}
-	return embeddings, nil
-}
-
-type locomoModel struct {
-	transport locomoTransport
-}
-
-func (model locomoModel) GenerateStructured(ctx context.Context, request bluememo.StructuredRequest) (string, error) {
-	return model.structured(ctx, request.SchemaName, request.SchemaDocument, request.Instruction, request.Subject)
-}
-
-func (model locomoModel) structured(ctx context.Context, name string, schemaDocument string, instruction string, subject string) (string, error) {
-	var schema any
-	if errorValue := json.Unmarshal([]byte(schemaDocument), &schema); errorValue != nil {
-		return "", fmt.Errorf("schema %s is not JSON: %w", name, errorValue)
-	}
-	responseBody, errorValue := model.transport.post(ctx, name, locomoChatURL, map[string]any{
-		"model": locomoChatModel,
-		"messages": []map[string]string{
-			{"role": "system", "content": instruction},
-			{"role": "user", "content": subject},
-		},
-		"response_format": map[string]any{
-			"type":        "json_schema",
-			"json_schema": map[string]any{"name": strings.ReplaceAll(name, " ", "_"), "strict": true, "schema": schema},
-		},
-	})
-	if errorValue != nil {
-		return "", errorValue
-	}
-	var parsed struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil || len(parsed.Choices) == 0 {
-		return "", fmt.Errorf("chat response for %s is not the expected shape: %s", name, responseBody)
-	}
-	return parsed.Choices[0].Message.Content, nil
-}
-
-type locomoDecisions struct {
-	transport locomoTransport
-}
-
-type locomoDecisionsResponse struct {
-	Answers map[string]struct {
-		Probabilities map[string]float64 `json:"probabilities"`
-	} `json:"answers"`
-}
-
-func (decisions locomoDecisions) choose(ctx context.Context, component string, state string, instruction string, criteria map[string]string) (map[string]float64, error) {
-	responseBody, errorValue := decisions.transport.post(ctx, component, locomoDecisionsURL, map[string]any{
-		"model": locomoDecisionsModel,
-		"state": state,
-		"questions": map[string]any{"answer": map[string]any{
-			"type":         "choice",
-			"instructions": instruction,
-			"criteria":     criteria,
-		}},
-	})
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	var parsed locomoDecisionsResponse
-	if errorValue := json.Unmarshal(responseBody, &parsed); errorValue != nil {
-		return nil, fmt.Errorf("decisions response is not the expected shape: %w", errorValue)
-	}
-	answer, isPresent := parsed.Answers["answer"]
-	if !isPresent || len(answer.Probabilities) == 0 {
-		return nil, fmt.Errorf("decisions response carries no probabilities: %s", responseBody)
-	}
-	return answer.Probabilities, nil
-}
-
-func (decisions locomoDecisions) Choose(ctx context.Context, request bluememo.ChoiceRequest) (map[string]float64, error) {
-	criteria, errorValue := criteriaFor(request)
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	glosses := make(map[string]string, len(criteria))
-	for _, criterion := range criteria {
-		glosses[criterion.Key] = criterion.Gloss
-	}
-	return decisions.choose(ctx, "judge", request.Subject, request.Instruction, glosses)
-}
-
-func (decisions locomoDecisions) Rerank(ctx context.Context, query string, contents []string) ([]float64, error) {
-	scores := make([]float64, len(contents))
-	if len(contents) < 2 {
-		return scores, nil
-	}
-	criteria := make(map[string]string, len(contents))
-	for index, content := range contents {
-		criteria["m"+strconv.Itoa(index)] = content
-	}
-	probabilities, errorValue := decisions.choose(ctx, "rerank", query, "Which memory answers this question?", criteria)
-	if errorValue != nil {
-		return nil, errorValue
-	}
-	winner, bestProbability := 0, -1.0
-	for index := range contents {
-		if probability := probabilities["m"+strconv.Itoa(index)]; probability > bestProbability {
-			winner, bestProbability = index, probability
-		}
-	}
-	scores[winner] = 1
-	return scores, nil
-}
-
 type locomoClock struct {
 	mutex   sync.Mutex
 	current time.Time
@@ -593,22 +364,25 @@ type locomoResult struct {
 }
 
 type locomoRig struct {
-	path      string
-	store     *bluememo.Store
-	clock     *locomoClock
-	model     locomoModel
-	transport locomoTransport
+	path   string
+	store  *bluememo.Store
+	clock  *locomoClock
+	model  *openrouter.Client
+	ledger *locomoLedger
 }
 
 func openLocomoRig(t *testing.T, path string, conversationIndex int, credential string) *locomoRig {
 	t.Helper()
 	ledger := &locomoLedger{}
-	transport := locomoTransport{credential: credential, client: &http.Client{Timeout: 3 * time.Minute}, ledger: ledger}
+	client := openrouter.New(credential)
+	client.EmbeddingModel = locomoEmbeddingModel
+	client.ChatModel = locomoChatModel
+	client.RecordCost = ledger.record
 	clock := &locomoClock{current: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)}
-	decisions := locomoDecisions{transport: transport}
-	model := locomoModel{transport: transport}
+	decisions := openrouter.NewDecisions(client)
+	model := client
 	store, errorValue := bluememo.Open(context.Background(), path, bluememo.Configuration{
-		Embedder:           locomoEmbedder{transport: transport},
+		Embedder:           client,
 		EmbeddingModel:     locomoEmbeddingModel,
 		Model:              model,
 		Judge:              bluememo.DistributionJudge{Chooser: decisions},
@@ -624,7 +398,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 		t.Fatal(errorValue)
 	}
 	t.Cleanup(func() { store.Close() })
-	return &locomoRig{path: path, store: store, clock: clock, model: model, transport: transport}
+	return &locomoRig{path: path, store: store, clock: clock, model: model, ledger: ledger}
 }
 
 func (rig *locomoRig) ingest(ctx context.Context, t *testing.T, sessions []locomoSession) int {
@@ -662,7 +436,7 @@ func (rig *locomoRig) settleWithRetry(ctx context.Context, t *testing.T, session
 
 func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, result bluememo.RecallResult) (string, error) {
 	subject := "Memories:\n" + numberedContext(result.Memories) + spokenContext(result) + "\nQuestion: " + question.Question
-	response, errorValue := rig.model.structured(ctx, "answer", locomoAnswerSchema, locomoAnswerInstruction, subject)
+	response, errorValue := rig.model.Structured(ctx, "answer", locomoAnswerSchema, locomoAnswerInstruction, subject)
 	if errorValue != nil {
 		return "", errorValue
 	}
@@ -676,7 +450,7 @@ func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, resul
 }
 
 func (rig *locomoRig) judgeDecline(ctx context.Context, question locomoQuestion, answer string) (bool, error) {
-	response, errorValue := rig.model.structured(ctx, "judge decline", locomoDeclineSchema, locomoDeclineInstruction, "Question: "+question.Question+"\nAnswer: "+answer)
+	response, errorValue := rig.model.Structured(ctx, "judge decline", locomoDeclineSchema, locomoDeclineInstruction, "Question: "+question.Question+"\nAnswer: "+answer)
 	if errorValue != nil {
 		return false, errorValue
 	}
@@ -689,7 +463,7 @@ func (rig *locomoRig) judgeDecline(ctx context.Context, question locomoQuestion,
 
 func (rig *locomoRig) judgeCorrectness(ctx context.Context, question locomoQuestion, answer string) (bool, error) {
 	subject := "Question: " + question.Question + "\nGold answer: " + question.goldText() + "\nAnswer: " + answer
-	response, errorValue := rig.model.structured(ctx, "judge correctness", locomoCorrectnessSchema, locomoCorrectnessInstruction, subject)
+	response, errorValue := rig.model.Structured(ctx, "judge correctness", locomoCorrectnessSchema, locomoCorrectnessInstruction, subject)
 	if errorValue != nil {
 		return false, errorValue
 	}
@@ -823,7 +597,7 @@ func TestLoCoMoAccuracy(t *testing.T) {
 	outcomes := rig.askAll(ctx, questionsInside(record, len(ingested)))
 	result := locomoResult{
 		Arm: arm, SampleID: record.SampleID, IngestedSessions: len(ingested), Outcomes: outcomes,
-		Memories: rig.describeMemories(ctx, t), Cost: rig.transport.ledger.snapshot(), SettleFailures: settleFailures,
+		Memories: rig.describeMemories(ctx, t), Cost: rig.ledger.snapshot(), SettleFailures: settleFailures,
 		IngestSeconds: ingestSeconds, QuestionSeconds: time.Since(questionStarted).Seconds(),
 	}
 	writeLocomoResult(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.json", arm, conversationIndex)), result)

@@ -17,6 +17,7 @@ import (
 
 	"github.com/yeomyeonggeori/bluememo"
 	"github.com/yeomyeonggeori/bluememo/bluememotest"
+	"github.com/yeomyeonggeori/bluememo/openrouter"
 )
 
 const (
@@ -358,10 +359,10 @@ type factAwareChooser struct {
 }
 
 func (chooser factAwareChooser) Choose(_ context.Context, request bluememo.ChoiceRequest) (map[string]float64, error) {
-	heldIndex := "9"
-	for _, match := range subjectCandidateLinePattern.FindAllStringSubmatch(request.Subject, -1) {
-		if slices.Contains(chooser.fact.Statements, match[2]) {
-			heldIndex = match[1]
+	heldIndex := openrouter.NoCandidateAnswer
+	for _, candidate := range openrouter.SubjectCandidates(request.Subject) {
+		if slices.Contains(chooser.fact.Statements, candidate.Gloss) {
+			heldIndex = candidate.Key
 			break
 		}
 	}
