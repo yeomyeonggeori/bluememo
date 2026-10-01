@@ -578,3 +578,35 @@ is not attributable to the layout, and only the single-hop recovery is.
 Against what AMB publishes: hindsight 0.9201 at 36235 tokens, cognee 0.8026 at
 14724, hybrid-search 0.7909 at 22157. The third arm is above both of the latter
 at a fourteenth and a ninth of their context.
+
+## One conversation cannot carry a per-category claim
+
+A fourth arm settled this by accident. Raising the cap on notes from four to ten
+*lowered* the context from 1577 tokens to 1515, which can only mean the cap
+almost never bound: the top ten memories of a question come from a handful of
+origins. So two arms that were meant to differ are the same configuration, and
+they scored single-hop 0.719 and 0.812.
+
+That is a 0.093 swing between two runs of one setup, which puts a number on the
+noise that the earlier entries should have carried:
+
+| arm | overall | one standard error | context tokens |
+| --- | --- | --- | --- |
+| memories only | 0.803 | 0.032 | 295 |
+| a note after each | 0.868 | 0.027 | 8417 |
+| notes after all, four | 0.855 | 0.029 | 1577 |
+| notes after all, ten | 0.862 | 0.028 | 1515 |
+
+Per category at this sample size: multi-hop 0.074 over 13 questions, single-hop
+0.077 over 32, temporal 0.056 over 37, open-domain 0.050 over 70.
+
+What survives: the notes are worth about 0.06 overall, roughly two standard
+errors, and every arm carrying them lands between 0.855 and 0.868 where they
+cannot be told apart. What does not survive is the entry above claiming the
+layout recovered single-hop. That comparison is 1.2 standard errors, which is
+not a finding, and the entry was written as though it were.
+
+The lesson is about the instrument. 152 questions give a per-category error
+between 0.05 and 0.08, so any per-category difference smaller than about 0.15
+means nothing here. The full split is 1540 questions and is where a category
+claim can be made.
