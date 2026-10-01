@@ -598,6 +598,7 @@ type locomoResult struct {
 }
 
 type locomoRig struct {
+	path      string
 	store     *bluememo.Store
 	clock     *locomoClock
 	model     locomoModel
@@ -628,7 +629,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 		t.Fatal(errorValue)
 	}
 	t.Cleanup(func() { store.Close() })
-	return &locomoRig{store: store, clock: clock, model: model, transport: transport}
+	return &locomoRig{path: path, store: store, clock: clock, model: model, transport: transport}
 }
 
 func (rig *locomoRig) ingest(ctx context.Context, t *testing.T, sessions []locomoSession) int {
@@ -798,11 +799,22 @@ func TestLoCoMoAccuracy(t *testing.T) {
 	ingested := record.Sessions[:min(sessionLimit, len(record.Sessions))]
 	ctx := context.Background()
 	arm := os.Getenv(locomoArmVariable)
-	rig := openLocomoRig(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.db", arm, conversationIndex)), conversationIndex, credential)
+	storeArm := arm
+	if named := os.Getenv("BLUEMEMO_LOCOMO_STORE_ARM"); named != "" {
+		storeArm = named
+	}
+	rig := openLocomoRig(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.db", storeArm, conversationIndex)), conversationIndex, credential)
 	ingestStarted := time.Now()
 	settleFailures := 0
 	if !reusesStore() {
 		settleFailures = rig.ingest(ctx, t, ingested)
+	}
+	living, errorValue := rig.store.Memories(ctx)
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if len(living) == 0 {
+		t.Fatalf("the store at %s holds no memory, so every answer would be a refusal", rig.path)
 	}
 	ingestSeconds := time.Since(ingestStarted).Seconds()
 	if reembedsBeforeAsking() {
