@@ -9,7 +9,7 @@ import (
 )
 
 func TestReembedMovesEveryVectorOntoTheCurrentModel(t *testing.T) {
-	testFixture := newFixture(t)
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.RehearseTriggers = true })
 	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 4})
 	testFixture.model.QueueTriggers("아침에만 커피를")
 	testFixture.settle(t, "커피", statement("박예시는 아침에만 커피를 마신다."))

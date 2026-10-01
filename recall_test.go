@@ -156,7 +156,10 @@ func TestATriggerPhraseReachesAMemoryThatSharesNoWordWithTheQuestion(t *testing.
 		phrase:   bluememotest.Axes(map[int]float32{1: 1, 3: 1}),
 		question: bluememotest.Axes(map[int]float32{3: 1}),
 	}}
-	testFixture := newFixture(t, func(configuration *bluememo.Configuration) { configuration.Embedder = embedder })
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) {
+		configuration.Embedder = embedder
+		configuration.RehearseTriggers = true
+	})
 	testFixture.settle(t, "배경", statement(office))
 	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 4})
 	testFixture.model.QueueTriggers(phrase)
