@@ -151,14 +151,23 @@ That is the whole reason `file` is not a kind of memory.
 | `file_id` | the identity its host assigned, stable across renames |
 | `name` | the name it carries now |
 | `extension` | the type read from its bytes |
-| `kind` | `document`, `image`, `video`, `audio` or `other` |
+| `medium` | `document`, `image`, `video`, `audio` or `other` |
 | `summary` | what a search reads, and what the embedding is taken from |
-| `data` | JSON whose shape `kind` decides: a document's text, an image's description, a recording's transcript |
+| `data` | JSON whose shape `medium` decides: a document's text, an image's description, a recording's transcript |
 | `category` | the host's classification code, one to four ASCII letters or digits, one per level; empty until something classifies it |
+| `occurred_at`, `occurred_until` | the time the file speaks from, as one instant or a span |
 | `supersedes` | the file this one replaces |
 
-`kind` carries `other` and never null, because null would say the store has not
+`medium` carries `other` and never null, because null would say the store has not
 looked, which is a different state from having looked and found none of the four.
+It is called `medium` because a host has its own `kind`: internkim's documents
+are issued, received or internal, which is a different question from whether a
+file is a picture.
+
+A file speaks from a time the way a memory does, and `TimeReference` renders it
+the same way. Under `EmbedTimeReference` that rendering goes in front of the
+summary before the summary is embedded, so one setting governs both tables and a
+file dated in its summary is reachable by its date.
 
 A category is a code and not a name, so each character is a level and a prefix
 is a subtree: a file in `0312` answers a search of `031` and of `03`. Four ASCII letters or

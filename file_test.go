@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/yeomyeonggeori/bluememo"
 	"github.com/yeomyeonggeori/bluememo/bluememotest"
@@ -15,7 +16,7 @@ func contractFile() bluememo.File {
 		FileID:    "k7m2qx9fjh4t8",
 		Name:      "2026-03-15-audit-report-fy2025",
 		Extension: "pdf",
-		Kind:      bluememo.FileKindDocument,
+		Medium:    bluememo.MediumDocument,
 		Summary:   "The FY2025 audit report for 여명거리, signed 2026-03-15.",
 		Data:      json.RawMessage(`{"text":"# Audit report\n\nNo material weaknesses."}`),
 		Category:  "03",
@@ -31,8 +32,8 @@ func TestAFileComesBackWithTheTextItCarried(t *testing.T) {
 	if errorValue != nil {
 		t.Fatalf("read file: %v", errorValue)
 	}
-	if stored.Kind != bluememo.FileKindDocument || stored.Category != "03" {
-		t.Fatalf("kind %q category %q", stored.Kind, stored.Category)
+	if stored.Medium != bluememo.MediumDocument || stored.Category != "03" {
+		t.Fatalf("medium %q category %q", stored.Medium, stored.Category)
 	}
 	var carried struct{ Text string }
 	if errorValue := json.Unmarshal(stored.Data, &carried); errorValue != nil {
@@ -48,7 +49,7 @@ func TestAFileIsFoundByWhatItsSummarySays(t *testing.T) {
 	file := contractFile()
 	other := bluememo.File{
 		FileID: "3n8b4tjhf9xq2", Name: "team-photo", Extension: "jpg",
-		Kind: bluememo.FileKindImage, Summary: "Six people at a desk in the Seoul office.",
+		Medium: bluememo.MediumImage, Summary: "Six people at a desk in the Seoul office.",
 		Data: json.RawMessage(`{"text":"Six people at a desk."}`), Category: "13",
 	}
 	for _, each := range []bluememo.File{file, other} {
@@ -143,13 +144,13 @@ func TestAFileWithoutASummaryIsRefused(t *testing.T) {
 	}
 }
 
-func TestAFileOfAnUnknownKindIsRefused(t *testing.T) {
+func TestAFileOfAnUnknownMediumIsRefused(t *testing.T) {
 	testFixture := newFixture(t)
 	file := contractFile()
-	file.Kind = ""
+	file.Medium = ""
 	errorValue := testFixture.store.StoreFile(context.Background(), file)
-	if !errors.Is(errorValue, bluememo.ErrUnknownFileKind) {
-		t.Fatalf("an empty kind passed as a kind: %v", errorValue)
+	if !errors.Is(errorValue, bluememo.ErrUnknownMedium) {
+		t.Fatalf("an empty medium passed as a medium: %v", errorValue)
 	}
 }
 
@@ -237,5 +238,43 @@ func TestACategoryThatIsNotAnAsciiCodeIsRefused(t *testing.T) {
 		if errorValue := testFixture.store.StoreFile(context.Background(), file); errorValue != nil {
 			t.Fatalf("category %q was refused: %v", accepted, errorValue)
 		}
+	}
+}
+
+func TestAFileCarriesItsOccurrenceIntoWhatIsEmbedded(t *testing.T) {
+	file := contractFile()
+	file.OccurredAt = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
+	dated := "[2026-03-15] " + file.Summary
+	embedder := bluememotest.TableEmbedder{Vectors: map[string][]float32{
+		dated:        bluememotest.Axes(map[int]float32{1: 1}),
+		file.Summary: bluememotest.Axes(map[int]float32{2: 1}),
+	}}
+	testFixture := newFixture(t, func(configuration *bluememo.Configuration) {
+		configuration.Embedder = embedder
+		configuration.EmbedTimeReference = true
+	})
+	if errorValue := testFixture.store.StoreFile(context.Background(), file); errorValue != nil {
+		t.Fatalf("store file: %v", errorValue)
+	}
+	recalled, errorValue := testFixture.store.RecallFiles(context.Background(),
+		bluememo.FileRequest{Text: dated})
+	if errorValue != nil {
+		t.Fatalf("recall files: %v", errorValue)
+	}
+	if len(recalled) != 1 || recalled[0].Relevance < 0.99 {
+		t.Fatalf("the occurrence did not reach the vector: %+v", recalled)
+	}
+	if reference := recalled[0].File.TimeReference(time.UTC); reference != "2026-03-15" {
+		t.Fatalf("time reference is %q", reference)
+	}
+}
+
+func TestAFileThatEndsWithoutBeginningIsRefused(t *testing.T) {
+	testFixture := newFixture(t)
+	file := contractFile()
+	file.OccurredUntil = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
+	errorValue := testFixture.store.StoreFile(context.Background(), file)
+	if !errors.Is(errorValue, bluememo.ErrOccurrenceEndsWithoutStart) {
+		t.Fatalf("a file ending at a time it never began: %v", errorValue)
 	}
 }

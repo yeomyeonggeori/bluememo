@@ -10,34 +10,43 @@ import (
 	"time"
 )
 
-type FileKind string
+type Medium string
 
 const (
-	FileKindDocument FileKind = "document"
-	FileKindImage    FileKind = "image"
-	FileKindVideo    FileKind = "video"
-	FileKindAudio    FileKind = "audio"
-	FileKindOther    FileKind = "other"
+	MediumDocument Medium = "document"
+	MediumImage    Medium = "image"
+	MediumVideo    Medium = "video"
+	MediumAudio    Medium = "audio"
+	MediumOther    Medium = "other"
 )
 
-var fileKinds = map[FileKind]bool{
-	FileKindDocument: true,
-	FileKindImage:    true,
-	FileKindVideo:    true,
-	FileKindAudio:    true,
-	FileKindOther:    true,
+var media = map[Medium]bool{
+	MediumDocument: true,
+	MediumImage:    true,
+	MediumVideo:    true,
+	MediumAudio:    true,
+	MediumOther:    true,
 }
 
 type File struct {
-	FileID     string
-	Name       string
-	Extension  string
-	Kind       FileKind
-	Summary    string
-	Data       json.RawMessage
-	Category   string
-	Supersedes string
-	CreatedAt  time.Time
+	FileID        string
+	Name          string
+	Extension     string
+	Medium        Medium
+	Summary       string
+	Data          json.RawMessage
+	Category      string
+	OccurredAt    time.Time
+	OccurredUntil time.Time
+	Supersedes    string
+	CreatedAt     time.Time
+}
+
+func (file File) TimeReference(location *time.Location) string {
+	if file.OccurredAt.IsZero() {
+		return ""
+	}
+	return timeReference(file.OccurredAt, file.OccurredUntil, location)
 }
 
 type FileRequest struct {
@@ -52,12 +61,13 @@ type RecalledFile struct {
 }
 
 var (
-	ErrFileIDMissing   = errors.New("a file needs an identifier its host assigned")
-	ErrFileNameMissing = errors.New("a file needs the name it currently carries")
-	ErrSummaryMissing  = errors.New("a file needs a summary, which is what a search reads")
-	ErrUnknownFileKind = errors.New("a file is a document, an image, a video, audio, or other")
-	ErrFileNotFound    = errors.New("no file holds that identifier")
-	ErrCategoryCode    = errors.New("a category is one to four ASCII letters or digits, one per level")
+	ErrFileIDMissing              = errors.New("a file needs an identifier its host assigned")
+	ErrFileNameMissing            = errors.New("a file needs the name it currently carries")
+	ErrSummaryMissing             = errors.New("a file needs a summary, which is what a search reads")
+	ErrUnknownMedium              = errors.New("a file is a document, an image, a video, audio, or other")
+	ErrFileNotFound               = errors.New("no file holds that identifier")
+	ErrOccurrenceEndsWithoutStart = errors.New("a file that ends at a time must begin at one")
+	ErrCategoryCode               = errors.New("a category is one to four ASCII letters or digits, one per level")
 )
 
 const CategoryCodeLimit = 4
@@ -77,7 +87,7 @@ func isCategoryCode(category string) bool {
 	return true
 }
 
-const fileColumns = `file_id, name, extension, kind, summary, data, category, supersedes, created_at`
+const fileColumns = `file_id, name, extension, medium, summary, data, category, occurred_at, occurred_until, supersedes, created_at`
 
 func validateFile(file File) error {
 	if file.FileID == "" {
@@ -89,8 +99,11 @@ func validateFile(file File) error {
 	if file.Summary == "" {
 		return ErrSummaryMissing
 	}
-	if !fileKinds[file.Kind] {
-		return fmt.Errorf("%w: %q", ErrUnknownFileKind, file.Kind)
+	if !media[file.Medium] {
+		return fmt.Errorf("%w: %q", ErrUnknownMedium, file.Medium)
+	}
+	if !file.OccurredUntil.IsZero() && file.OccurredAt.IsZero() {
+		return ErrOccurrenceEndsWithoutStart
 	}
 	if !isCategoryCode(file.Category) {
 		return fmt.Errorf("%w: %q", ErrCategoryCode, file.Category)
@@ -108,6 +121,17 @@ func fileData(data json.RawMessage) (string, error) {
 	return string(data), nil
 }
 
+func (store *Store) embeddedSummary(file File) string {
+	if !store.configuration.EmbedTimeReference {
+		return file.Summary
+	}
+	occurrence := file.TimeReference(store.configuration.Location)
+	if occurrence == "" {
+		return file.Summary
+	}
+	return "[" + occurrence + "] " + file.Summary
+}
+
 func (store *Store) StoreFile(ctx context.Context, file File) error {
 	if errorValue := validateFile(file); errorValue != nil {
 		return errorValue
@@ -116,7 +140,7 @@ func (store *Store) StoreFile(ctx context.Context, file File) error {
 	if errorValue != nil {
 		return errorValue
 	}
-	embedding, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, []string{file.Summary})
+	embedding, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, []string{store.embeddedSummary(file)})
 	if errorValue != nil {
 		return fmt.Errorf("file summary embedding failed: %w", errorValue)
 	}
@@ -128,17 +152,27 @@ func (store *Store) StoreFile(ctx context.Context, file File) error {
 		created = store.now()
 	}
 	_, errorValue = store.database.ExecContext(ctx, `
-		insert into file (file_id, name, extension, kind, summary, data, category, supersedes, embedding_model, embedding, created_at)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		insert into file (file_id, name, extension, medium, summary, data, category,
+			occurred_at, occurred_until, supersedes, embedding_model, embedding, created_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		on conflict (file_id) do update set
-			name = excluded.name, extension = excluded.extension, kind = excluded.kind,
+			name = excluded.name, extension = excluded.extension, medium = excluded.medium,
 			summary = excluded.summary, data = excluded.data, category = excluded.category,
+			occurred_at = excluded.occurred_at, occurred_until = excluded.occurred_until,
 			supersedes = excluded.supersedes, embedding_model = excluded.embedding_model,
 			embedding = excluded.embedding`,
-		file.FileID, file.Name, file.Extension, string(file.Kind), file.Summary, data,
-		file.Category, nullableText(file.Supersedes), store.configuration.EmbeddingModel,
+		file.FileID, file.Name, file.Extension, string(file.Medium), file.Summary, data,
+		file.Category, nullableInstant(file.OccurredAt), nullableInstant(file.OccurredUntil),
+		nullableText(file.Supersedes), store.configuration.EmbeddingModel,
 		encodeEmbedding(embedding[0]), toMilliseconds(created))
 	return errorValue
+}
+
+func nullableInstant(instant time.Time) any {
+	if instant.IsZero() {
+		return nil
+	}
+	return toMilliseconds(instant)
 }
 
 func nullableText(value string) any {
@@ -150,20 +184,28 @@ func nullableText(value string) any {
 
 func scanFile(rows *sql.Rows, encoded *[]byte) (File, error) {
 	var file File
-	var kind string
+	var medium string
 	var data string
+	var occurredAt sql.NullInt64
+	var occurredUntil sql.NullInt64
 	var supersedes sql.NullString
 	var created int64
-	targets := []any{&file.FileID, &file.Name, &file.Extension, &kind, &file.Summary,
-		&data, &file.Category, &supersedes, &created}
+	targets := []any{&file.FileID, &file.Name, &file.Extension, &medium, &file.Summary,
+		&data, &file.Category, &occurredAt, &occurredUntil, &supersedes, &created}
 	if encoded != nil {
 		targets = append(targets, encoded)
 	}
 	if errorValue := rows.Scan(targets...); errorValue != nil {
 		return File{}, errorValue
 	}
-	file.Kind = FileKind(kind)
+	file.Medium = Medium(medium)
 	file.Data = json.RawMessage(data)
+	if occurredAt.Valid {
+		file.OccurredAt = fromMilliseconds(occurredAt.Int64)
+	}
+	if occurredUntil.Valid {
+		file.OccurredUntil = fromMilliseconds(occurredUntil.Int64)
+	}
 	file.Supersedes = supersedes.String
 	file.CreatedAt = fromMilliseconds(created)
 	return file, nil
