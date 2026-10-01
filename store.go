@@ -41,6 +41,7 @@ type Configuration struct {
 	ClaimDuration      time.Duration
 	Location           *time.Location
 	EmbedTimeReference bool
+	RecallSources      bool
 	Logger             *slog.Logger
 	Now                func() time.Time
 	NewIdentifier      func() string

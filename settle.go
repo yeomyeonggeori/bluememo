@@ -169,13 +169,13 @@ func (store *Store) settleGroup(ctx context.Context, group pendingGroup, report 
 			return errorValue
 		}
 	}
-	return store.finishGroup(ctx, group)
+	return store.finishGroup(ctx, group, originID)
 }
 
-func (store *Store) finishGroup(ctx context.Context, group pendingGroup) error {
+func (store *Store) finishGroup(ctx context.Context, group pendingGroup, originID string) error {
 	_, errorValue := store.database.ExecContext(ctx,
-		`update pending_note set settled_at = ? where group_id = ? and claim_token = ?`,
-		toMilliseconds(store.now()), group.groupID, group.claimToken)
+		`update pending_note set settled_at = ?, origin_id = ? where group_id = ? and claim_token = ?`,
+		toMilliseconds(store.now()), originID, group.groupID, group.claimToken)
 	return errorValue
 }
 
