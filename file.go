@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -50,9 +52,9 @@ func (file File) TimeReference(location *time.Location) string {
 }
 
 type FileRequest struct {
-	Text     string
-	Category string
-	Limit    int
+	Text       string
+	Categories []string
+	Limit      int
 }
 
 type RecalledFile struct {
@@ -235,7 +237,7 @@ func (store *Store) RecallFiles(ctx context.Context, request FileRequest) ([]Rec
 	if errorValue != nil {
 		return nil, fmt.Errorf("file query embedding failed: %w", errorValue)
 	}
-	candidates, errorValue := store.currentFiles(ctx, request.Category)
+	candidates, errorValue := store.currentFiles(ctx, request.Categories)
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -267,14 +269,38 @@ type fileCandidate struct {
 	embedding []float32
 }
 
-func (store *Store) currentFiles(ctx context.Context, category string) ([]fileCandidate, error) {
+func widestCategories(categories []string) []string {
+	widest := make([]string, 0, len(categories))
+	for _, category := range categories {
+		if category == "" {
+			continue
+		}
+		isCovered := false
+		for _, other := range categories {
+			if other != "" && other != category && strings.HasPrefix(category, other) {
+				isCovered = true
+				break
+			}
+		}
+		if !isCovered && !slices.Contains(widest, category) {
+			widest = append(widest, category)
+		}
+	}
+	return widest
+}
+
+func (store *Store) currentFiles(ctx context.Context, categories []string) ([]fileCandidate, error) {
 	statement := `select ` + fileColumns + `, embedding from file
 		where embedding_model = ?
 		  and file_id not in (select supersedes from file where supersedes is not null)`
 	arguments := []any{store.configuration.EmbeddingModel}
-	if category != "" {
-		statement += ` and substr(category, 1, ?) = ?`
-		arguments = append(arguments, len(category), category)
+	if scopes := widestCategories(categories); len(scopes) > 0 {
+		clauses := make([]string, 0, len(scopes))
+		for _, scope := range scopes {
+			clauses = append(clauses, `substr(category, 1, ?) = ?`)
+			arguments = append(arguments, len(scope), scope)
+		}
+		statement += ` and (` + strings.Join(clauses, " or ") + `)`
 	}
 	rows, errorValue := store.database.QueryContext(ctx, statement, arguments...)
 	if errorValue != nil {
