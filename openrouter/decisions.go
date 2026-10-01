@@ -129,14 +129,19 @@ func (decisions Decisions) Rerank(ctx context.Context, query string, contents []
 	if len(contents) <= RerankBatch {
 		return decisions.scoreGroup(ctx, query, contents, indexRange(len(contents)), scores)
 	}
-	finalists := []int{}
+	scored := []int{}
 	for start := 0; start < len(contents); start += RerankBatch {
 		group := indexRange(min(start+RerankBatch, len(contents)))[start:]
 		if _, errorValue := decisions.scoreGroup(ctx, query, contents, group, scores); errorValue != nil {
 			return nil, errorValue
 		}
-		finalists = append(finalists, bestOf(group, scores, 3)...)
+		scored = append(scored, group...)
 	}
+	// One batch of finalists, however deep the pool. Taking a fixed few from
+	// every group instead let a deep pool send fifty candidates above the
+	// ranking it was meant to refine, and the deeper the pool the worse that
+	// got: 0.6480 at two hundred candidates against 0.6173 at four hundred.
+	finalists := bestOf(scored, scores, RerankBatch)
 	if len(finalists) < 2 {
 		return scores, nil
 	}
