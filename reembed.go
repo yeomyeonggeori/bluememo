@@ -39,7 +39,7 @@ func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, 
 		return ReembedReport{}, errorValue
 	}
 	fileCount, errorValue := store.reembedTable(ctx, batchSize,
-		`select file_id, summary, null, null from file where embedding_model <> ? or embedding is null limit ?`,
+		`select file_id, summary, occurred_at, occurred_until from file where embedding_model <> ? or embedding is null limit ?`,
 		`update file set embedding = ?, embedding_model = ? where file_id = ?`)
 	return ReembedReport{Memories: memoryCount, Triggers: triggerCount, Files: fileCount}, errorValue
 }

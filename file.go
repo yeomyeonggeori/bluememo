@@ -123,17 +123,6 @@ func fileData(data json.RawMessage) (string, error) {
 	return string(data), nil
 }
 
-func (store *Store) embeddedSummary(file File) string {
-	if !store.configuration.EmbedTimeReference {
-		return file.Summary
-	}
-	occurrence := file.TimeReference(store.configuration.Location)
-	if occurrence == "" {
-		return file.Summary
-	}
-	return "[" + occurrence + "] " + file.Summary
-}
-
 func (store *Store) StoreFile(ctx context.Context, file File) error {
 	if errorValue := validateFile(file); errorValue != nil {
 		return errorValue
@@ -142,7 +131,7 @@ func (store *Store) StoreFile(ctx context.Context, file File) error {
 	if errorValue != nil {
 		return errorValue
 	}
-	embedding, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, []string{store.embeddedSummary(file)})
+	embedding, errorValue := store.configuration.Embedder.EmbedDocuments(ctx, []string{store.matchableText(file.Summary, file.OccurredAt, file.OccurredUntil)})
 	if errorValue != nil {
 		return fmt.Errorf("file summary embedding failed: %w", errorValue)
 	}

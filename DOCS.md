@@ -166,8 +166,9 @@ file is a picture.
 
 A file speaks from a time the way a memory does, and `TimeReference` renders it
 the same way. Under `EmbedTimeReference` that rendering goes in front of the
-summary before the summary is embedded, so one setting governs both tables and a
-file dated in its summary is reachable by its date.
+summary before the summary is embedded, by the same `matchableText` a memory
+goes through, so the two tables embed a date the same way and `Reembed` puts
+back exactly what was there.
 
 A category is a code and not a name, so each character is a level and a prefix
 is a subtree: a file in `0312` answers a search of `031` and of `03`. Four ASCII letters or
