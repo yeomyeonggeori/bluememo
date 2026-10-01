@@ -12,7 +12,8 @@ const DecompositionInstruction = `You split text into the self-contained stateme
 
 A statement is self-contained when it reads correctly on its own:
 - A statement is never vaguer than the text it came from. Resolve every pronoun and every phrase standing in for something the text names: "I", "my", "there", "that company", "the city she grew up in". Keep the text's own word for a thing, its kind, its count and its day: "a sedan" written as "a car", or "three" written as "a few", loses what the statement would be found by. Leave general only what the text left general.
-- Keep conditions, time, source and degree inside the statement.
+- A statement never keeps a word that counts from when it was said. "yesterday", "last week", "two days ago", "next Tuesday" all name a different day once the statement is read on another day. Write the day itself, or leave the statement silent about when and let occurredOn carry it. A reader who sees "yesterday" beside a date will count back from that date and arrive a day early.
+- Keep conditions, source and degree inside the statement.
 - Something a person was told keeps its source in the same statement. Never split the source into a statement of its own.
 - Write each statement in English. Keep every proper noun exactly as the text spells it, in its own script: a person, a place, a company, a product, a team or a title stays as written. "홍길동이 사과를 좋아한다" becomes "홍길동 likes apples".
 

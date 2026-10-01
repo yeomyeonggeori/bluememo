@@ -77,6 +77,8 @@ type service struct {
 	directory   string
 	client      *openrouter.Client
 	recall      int
+	laneDepth   int
+	rerankDepth int
 	sourceLimit int
 }
 
@@ -99,7 +101,8 @@ func (running *service) bankFor(ctx context.Context, userID string) (*bank, erro
 		Model:              running.client,
 		Judge:              bluememo.DistributionJudge{Chooser: openrouter.NewDecisions(running.client)},
 		Reranker:           openrouter.NewDecisions(running.client),
-		RerankDepth:        0,
+		RerankDepth:        running.rerankDepth,
+		LaneDepth:          running.laneDepth,
 		EmbedTimeReference: true,
 		RecallSources:      true,
 		ClaimDuration:      time.Minute,
@@ -247,6 +250,8 @@ func main() {
 	address := flag.String("address", ":8713", "address to listen on")
 	directory := flag.String("directory", "", "directory holding one store per user")
 	recall := flag.Int("recall", 50, "memories returned when a request names no limit")
+	laneDepth := flag.Int("lane-depth", 0, "candidates each lane looks at (0 leaves the library default)")
+	rerankDepth := flag.Int("rerank-depth", 0, "candidates the reranker scores (0 leaves the library default)")
 	sourceLimit := flag.Int("sources", 4, "distinct notes appended after the memories when a request asks for them")
 	flag.Parse()
 
@@ -265,6 +270,8 @@ func main() {
 		directory:   *directory,
 		client:      openrouter.New(credential),
 		recall:      *recall,
+		laneDepth:   *laneDepth,
+		rerankDepth: *rerankDepth,
 		sourceLimit: *sourceLimit,
 	}
 	handler := http.NewServeMux()
