@@ -723,3 +723,36 @@ standing in for the missing ones. Given fifty, the raw text earns 0.043 more for
 A memory is 29 tokens and a hindsight document is about 3600, so fifty memories
 are less than half of one of them. The compression is what makes the breadth
 affordable, which is the argument this library was built on.
+
+## Deciding a decomposition on one conversation (retracted)
+
+Three decompositions were measured on conv-26 at k=50 and reported as a
+verdict. The verdict does not hold.
+
+| decomposition | memories | survival | accuracy | SE |
+| --- | --- | --- | --- | --- |
+| forbid a vaguer statement | 267 | 0.810 | 0.8750 | 0.027 |
+| the three losses named | 332 | 0.912 | 0.8684 | 0.027 |
+| said before propositions | 483 | 0.971 | 0.8289 | 0.031 |
+
+The gap that sent the last one back is 0.046, which is 1.69 SE, and it
+is the same size as the spread between two runs of one configuration
+measured earlier the same day (0.941 and 0.895). The three-rule difference is
+0.24 SE. Paired over the same questions, seventeen answers broke and
+ten were fixed: McNemar puts that at p around 0.4.
+
+So the three sit inside each other's error. The revert commit states
+them as a finding and it should not have. A decomposition is chosen on
+a split, where n is 1540 and the standard error is 0.0085, not on one
+conversation where it is 0.027 and a rerun moves the number by more
+than the effect.
+
+What remains true is the mechanism, not its size: splitting a statement
+puts a fact and its qualifier in different memories, and a recall of
+fifty returns statements. The birthday that came back as a celebration
+one day earlier is a real regression. Whether the mechanism costs
+anything on average is unmeasured.
+
+Survival is still anti-correlated with accuracy across the three, and
+that part is not a sample-size artifact: it rises by arithmetic when
+statements split.
