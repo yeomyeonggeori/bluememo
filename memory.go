@@ -56,22 +56,20 @@ type Proposition struct {
 }
 
 type Memory struct {
-	MemoryID          string     `json:"memoryID"`
-	Content           string     `json:"content"`
-	IsStatic          bool       `json:"isStatic"`
-	OccurredAt        time.Time  `json:"occurredAt,omitzero"`
-	OccurredUntil     time.Time  `json:"occurredUntil,omitzero"`
-	ValidUntil        time.Time  `json:"validUntil,omitzero"`
-	OriginID          string     `json:"originID"`
-	Importance        int        `json:"importance"`
-	StorageStrength   float64    `json:"storageStrength"`
-	ResolvedEntityIDs []string   `json:"resolvedEntityIDs"`
-	UnresolvedNames   []string   `json:"unresolvedNames"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	LastRecalledAt    time.Time  `json:"lastRecalledAt,omitzero"`
-	ColdSince         time.Time  `json:"coldSince,omitzero"`
-	ColdReason        ColdReason `json:"coldReason,omitempty"`
-	SupersededBy      string     `json:"supersededBy,omitempty"`
+	MemoryID        string     `json:"memoryID"`
+	Content         string     `json:"content"`
+	IsStatic        bool       `json:"isStatic"`
+	OccurredAt      time.Time  `json:"occurredAt,omitzero"`
+	OccurredUntil   time.Time  `json:"occurredUntil,omitzero"`
+	ValidUntil      time.Time  `json:"validUntil,omitzero"`
+	OriginID        string     `json:"originID"`
+	Importance      int        `json:"importance"`
+	StorageStrength float64    `json:"storageStrength"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	LastRecalledAt  time.Time  `json:"lastRecalledAt,omitzero"`
+	ColdSince       time.Time  `json:"coldSince,omitzero"`
+	ColdReason      ColdReason `json:"coldReason,omitempty"`
+	SupersededBy    string     `json:"supersededBy,omitempty"`
 }
 
 func (memory Memory) IsCold() bool {

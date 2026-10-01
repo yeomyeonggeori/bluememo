@@ -26,10 +26,6 @@ type LanguageModel interface {
 	GenerateStructured(ctx context.Context, request StructuredRequest) (string, error)
 }
 
-type EntityResolver interface {
-	Resolve(content string) (resolvedEntityIDs []string, unresolvedNames []string)
-}
-
 func NewIdentifier() string {
 	identifierBytes := make([]byte, 16)
 	if _, errorValue := rand.Read(identifierBytes); errorValue != nil {

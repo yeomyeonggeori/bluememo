@@ -3,7 +3,6 @@ package bluememo
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -224,7 +223,6 @@ func (store *Store) newMemory(proposition Proposition, dates dated, originID str
 		StorageStrength: storageStrength,
 		CreatedAt:       store.now(),
 	}
-	memory.ResolvedEntityIDs, memory.UnresolvedNames = store.resolveEntities(memory.Content)
 	return memory
 }
 
@@ -317,20 +315,12 @@ func (store *Store) insertAndRehearse(ctx context.Context, fresh Memory, embeddi
 }
 
 func insertMemory(ctx context.Context, transaction *sql.Tx, memory Memory, embeddingModel string, embedding []float32) error {
-	resolvedJSON, errorValue := json.Marshal(nonNil(memory.ResolvedEntityIDs))
-	if errorValue != nil {
-		return errorValue
-	}
-	unresolvedJSON, errorValue := json.Marshal(nonNil(memory.UnresolvedNames))
-	if errorValue != nil {
-		return errorValue
-	}
-	_, errorValue = transaction.ExecContext(ctx, `
+	_, errorValue := transaction.ExecContext(ctx, `
 		insert into memory (memory_id, content, is_static, occurred_at, occurred_until, valid_until, origin_id, importance, storage_strength,
-		                    resolved_entity_ids, unresolved_names, embedding_model, embedding, created_at)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		                    embedding_model, embedding, created_at)
+		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), nullMilliseconds(memory.OccurredUntil), nullMilliseconds(memory.ValidUntil),
-		memory.OriginID, memory.Importance, memory.StorageStrength, string(resolvedJSON), string(unresolvedJSON),
+		memory.OriginID, memory.Importance, memory.StorageStrength,
 		embeddingModel, encodeEmbedding(embedding), toMilliseconds(memory.CreatedAt))
 	return errorValue
 }
@@ -379,14 +369,6 @@ func (store *Store) embedDocument(ctx context.Context, text string) ([]float32, 
 		return nil, errorValue
 	}
 	return embeddings[0], nil
-}
-
-func (store *Store) resolveEntities(content string) ([]string, []string) {
-	if store.configuration.People == nil {
-		return []string{}, []string{}
-	}
-	resolved, unresolved := store.configuration.People.Resolve(content)
-	return nonNil(resolved), nonNil(unresolved)
 }
 
 func candidateContents(candidates []candidate) []string {
