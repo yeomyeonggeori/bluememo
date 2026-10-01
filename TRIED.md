@@ -94,6 +94,9 @@ The dataset is not in the repository. Fetch `locomo10.json` (2.7 MB, 10 conversa
 | `BLUEMEMO_LOCOMO_SESSION_LIMIT` | sessions to ingest; a question whose evidence lies beyond it is not scored |
 | `BLUEMEMO_LOCOMO_ARM` | a name for the run, used in the result filename |
 | `BLUEMEMO_LOCOMO_TURN_WINDOW` | turns per note; unset means one note per session |
+| `BLUEMEMO_LOCOMO_RECALL_LIMIT` | memories passed to the answerer; unset means 20 |
+| `BLUEMEMO_LOCOMO_REUSE_STORE` | skip ingestion and ask against the store already in the output directory |
+| `BLUEMEMO_LOCOMO_REEMBED` | re-embed every memory before asking, for testing what the embedded text holds |
 
 It also needs the embedder, reranker and answerer variables the other live evals use.
 Ten conversations at a session limit of 10 take about 25 minutes when the ten run at
@@ -103,6 +106,11 @@ minutes each.
 
 Score categories 1 to 4 on correctness and category 5 on whether the answer declines,
 and report them separately. Published baselines grade categories 1 to 4.
+
+Reuse the stores when the change under test only affects recall, answering or the
+embedded text: an arm then takes about two minutes instead of twenty-five, and ingestion
+variance disappears from the comparison. `BLUEMEMO_LOCOMO_REEMBED` needs the stored
+`embedding_model` cleared first, since `Reembed` only touches rows whose model differs.
 
 Run each arm twice. The within-arm spread on this benchmark is 0.026 overall and up to
 0.079 on open-domain, so a single run cannot separate a small gain from noise.

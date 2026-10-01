@@ -36,15 +36,15 @@ const (
 	locomoDecisionsURL   = "https://openrouter.ai/api/alpha/decisions"
 	locomoDecisionsModel = "~typesafe/jev-latest"
 
-	locomoRecallLimit      = 20
-	locomoRerankDepth      = 30
-	locomoQuestionWorkers  = 6
-	locomoAttemptLimit     = 8
-	locomoBackoffBase      = time.Second
-	locomoBackoffCeiling   = 30 * time.Second
-	locomoSettleAttempts   = 3
-	locomoAdversarialLabel = 5
-	locomoIdentifierSeed   = 20260921
+	locomoDefaultRecallLimit = 20
+	locomoRerankDepth        = 30
+	locomoQuestionWorkers    = 6
+	locomoAttemptLimit       = 8
+	locomoBackoffBase        = time.Second
+	locomoBackoffCeiling     = 30 * time.Second
+	locomoSettleAttempts     = 3
+	locomoAdversarialLabel   = 5
+	locomoIdentifierSeed     = 20260921
 )
 
 type locomoTurn struct {
@@ -142,6 +142,22 @@ func turnsBody(turns []locomoTurn) string {
 
 func (session locomoSession) body() string {
 	return turnsBody(session.turns)
+}
+
+func recallLimit() int {
+	limit, errorValue := strconv.Atoi(os.Getenv("BLUEMEMO_LOCOMO_RECALL_LIMIT"))
+	if errorValue != nil || limit < 1 {
+		return locomoDefaultRecallLimit
+	}
+	return limit
+}
+
+func reusesStore() bool {
+	return os.Getenv("BLUEMEMO_LOCOMO_REUSE_STORE") != ""
+}
+
+func reembedsBeforeAsking() bool {
+	return os.Getenv("BLUEMEMO_LOCOMO_REEMBED") != ""
 }
 
 func turnWindow() int {
@@ -706,7 +722,7 @@ func (rig *locomoRig) judgeCorrectness(ctx context.Context, question locomoQuest
 
 func (rig *locomoRig) ask(ctx context.Context, question locomoQuestion) locomoOutcome {
 	outcome := locomoOutcome{Category: question.Category, Question: question.Question, Gold: question.goldText()}
-	result, errorValue := rig.store.Recall(ctx, question.Question, locomoRecallLimit)
+	result, errorValue := rig.store.Recall(ctx, question.Question, recallLimit())
 	if errorValue != nil {
 		outcome.Failure = "recall: " + errorValue.Error()
 		return outcome
@@ -801,8 +817,18 @@ func TestLoCoMoAccuracy(t *testing.T) {
 	arm := os.Getenv(locomoArmVariable)
 	rig := openLocomoRig(t, filepath.Join(outputDirectory, fmt.Sprintf("%s-%d.db", arm, conversationIndex)), conversationIndex, credential)
 	ingestStarted := time.Now()
-	settleFailures := rig.ingest(ctx, t, ingested)
+	settleFailures := 0
+	if !reusesStore() {
+		settleFailures = rig.ingest(ctx, t, ingested)
+	}
 	ingestSeconds := time.Since(ingestStarted).Seconds()
+	if reembedsBeforeAsking() {
+		report, errorValue := rig.store.Reembed(ctx, 64)
+		if errorValue != nil {
+			t.Fatal(errorValue)
+		}
+		t.Logf("reembedded: %+v", report)
+	}
 	questionStarted := time.Now()
 	outcomes := rig.askAll(ctx, questionsInside(record, len(ingested)))
 	result := locomoResult{
