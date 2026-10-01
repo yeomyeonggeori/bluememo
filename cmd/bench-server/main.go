@@ -183,6 +183,8 @@ func (running *service) retrieve(writer http.ResponseWriter, request *http.Reque
 		content := recalled.Memory.Content
 		if occurrence := recalled.Memory.TimeReference(time.UTC); occurrence != "" {
 			content = "[" + occurrence + "] " + content
+		} else if !recalled.Memory.CreatedAt.IsZero() {
+			content = "[recorded " + recalled.Memory.CreatedAt.In(time.UTC).Format("2006-01-02") + "] " + content
 		}
 		answer.Memories = append(answer.Memories, retrievedMemory{
 			ID:        recalled.Memory.MemoryID,
@@ -209,9 +211,13 @@ func spokenEntries(memories []bluememo.RecalledMemory, bodies map[string]string,
 			continue
 		}
 		taken[origin] = true
+		heading := "What was said"
+		if !recalled.Memory.CreatedAt.IsZero() {
+			heading += " on " + recalled.Memory.CreatedAt.In(time.UTC).Format("2006-01-02")
+		}
 		spoken = append(spoken, retrievedMemory{
 			ID:        "said-" + origin,
-			Content:   "What was said:\n" + body,
+			Content:   heading + ":\n" + body,
 			SourceIDs: []string{origin},
 		})
 		if len(spoken) == limit {
