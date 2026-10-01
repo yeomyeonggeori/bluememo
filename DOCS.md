@@ -199,6 +199,34 @@ file is current always has one answer.
 that a model change would leave every file silently unreachable, since recall
 only considers a file embedded by the model it is asking with.
 
+## Moving a store
+
+A store is one file and it is the whole memory. Copy it anywhere, open it, and
+the facts, their occurrences, their edges, their strengths, the notes they were
+settled from and the files are all there to read. An older file upgrades itself
+on open: the migrations run in order against `user_version`, so a store written
+months ago opens against today's schema without a step.
+
+What does not travel is the index. Every vector is stamped with the model that
+produced it, and a recall only considers vectors made by the model it is asking
+with, so a store opened beside a different embedder answers nothing. The memory
+is intact and unreachable, which looks exactly like an empty store.
+
+`IndexState` is how a host tells those apart before it concludes anything:
+
+```go
+state, _ := store.IndexState(ctx)
+if state.Stale > 0 {
+    store.Reembed(ctx, 64)
+}
+```
+
+`Current` counts what a recall can see and `Stale` counts what it cannot, over
+the memories, their trigger phrases and the files together. `Reembed` moves the
+stale ones onto the configured model, rebuilding each one's text the way it was
+built the first time, and after it `Stale` is zero. The cost is one embedding
+call per batch, paid once per move.
+
 ## Tombstone
 
 What remains after a memory is deleted.

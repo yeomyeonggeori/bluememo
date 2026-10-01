@@ -31,3 +31,48 @@ func TestReembedMovesEveryVectorOntoTheCurrentModel(t *testing.T) {
 		t.Fatalf("after reembedding the vector should rank again, got %+v", result.Memories[0])
 	}
 }
+
+func TestAMovedStoreSaysItsIndexIsStaleBeforeRecallGoesQuiet(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.judge.Queue(bluememo.Judgement{Relation: bluememo.RelationUnrelated, TargetIndex: -1, Importance: 4})
+	testFixture.settle(t, "부산", statement("이샘플은 부산에 산다."))
+	if errorValue := testFixture.store.StoreFile(context.Background(), bluememo.File{
+		FileID: "k7m2qx9fjh4t8", Name: "lease", Extension: "pdf",
+		Medium: bluememo.MediumDocument, Summary: "The lease for the Busan office.",
+	}); errorValue != nil {
+		t.Fatalf("store file: %v", errorValue)
+	}
+	before, errorValue := testFixture.store.IndexState(context.Background())
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if before.Stale != 0 || before.Current == 0 {
+		t.Fatalf("a store built by its own embedder is already stale: %+v", before)
+	}
+	testFixture.store.Close()
+
+	moved, errorValue := bluememo.Open(context.Background(), testFixture.path, bluememo.Configuration{
+		Embedder: bluememotest.HashEmbedder{}, EmbeddingModel: "somewhere-else"})
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	defer moved.Close()
+
+	arrived, errorValue := moved.IndexState(context.Background())
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if arrived.Stale != before.Current || arrived.Current != 0 {
+		t.Fatalf("a moved store does not report what a recall cannot see: %+v", arrived)
+	}
+	if _, errorValue := moved.Reembed(context.Background(), 8); errorValue != nil {
+		t.Fatalf("reembed: %v", errorValue)
+	}
+	settled, errorValue := moved.IndexState(context.Background())
+	if errorValue != nil {
+		t.Fatal(errorValue)
+	}
+	if settled.Stale != 0 || settled.Current != before.Current {
+		t.Fatalf("reembedding did not make the store current: %+v", settled)
+	}
+}

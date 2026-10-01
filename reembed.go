@@ -103,3 +103,26 @@ func (store *Store) replaceEmbeddings(ctx context.Context, stale []staleText, up
 	}
 	return transaction.Commit()
 }
+
+type IndexState struct {
+	EmbeddingModel string `json:"embeddingModel"`
+	Current        int    `json:"current"`
+	Stale          int    `json:"stale"`
+}
+
+func (store *Store) IndexState(ctx context.Context) (IndexState, error) {
+	state := IndexState{EmbeddingModel: store.configuration.EmbeddingModel}
+	for _, table := range []string{"memory", "memory_trigger", "file"} {
+		row := store.database.QueryRowContext(ctx, `select
+			count(case when embedding_model = ? and embedding is not null then 1 end),
+			count(case when embedding_model <> ? or embedding is null then 1 end)
+			from `+table, state.EmbeddingModel, state.EmbeddingModel)
+		var current, stale int
+		if errorValue := row.Scan(&current, &stale); errorValue != nil {
+			return IndexState{}, errorValue
+		}
+		state.Current += current
+		state.Stale += stale
+	}
+	return state, nil
+}
