@@ -517,3 +517,37 @@ ten results. Hindsight spends those ten slots on about 3600 tokens each, while a
 bluememo memory is around 29, so the slot count is equal and what fills it is not.
 The retained note body is what this library has to put in a slot, and that is the
 next arm.
+
+## What the retained note is worth on AMB's footing
+
+Same conversation, same store, same ten slots. The only change is that each slot
+carries the note its memory came from as well as the memory.
+
+| category | memories only | memories and their notes | questions |
+| --- | --- | --- | --- |
+| multi-hop | 0.923 | 1.000 | 13 |
+| temporal | 0.865 | 0.946 | 37 |
+| open-domain | 0.771 | 0.886 | 70 |
+| single-hop | 0.750 | 0.688 | 32 |
+| overall | 0.803 | 0.868 | 152 |
+| context tokens | 295 | 8417 | |
+
+Against what AMB publishes for this split:
+
+| | accuracy | context tokens per query |
+| --- | --- | --- |
+| hindsight | 0.9201 | 36235 |
+| bluememo with notes, conv-26 | 0.8684 | 8417 |
+| cognee | 0.8026 | 14724 |
+| bluememo, memories only, conv-26 | 0.8026 | 295 |
+| hybrid-search | 0.7909 | 22157 |
+
+Single-hop is the one that goes backwards, and the twenty remaining failures say
+why: ten of them are single-hop, where the memories-only arm got eight of those
+right. The memory is still in the slot, with the conversation around it, so
+nothing was lost and the answerer was distracted. A question that wants one
+precise fact is answered worse when that fact arrives inside eight thousand
+tokens of chat.
+
+So the two arms are a curve, not a ranking, and nothing here knows at read time
+which end of it a question wants.
