@@ -318,7 +318,7 @@ func numberedContext(memories []bluememo.RecalledMemory) string {
 const locomoAnswerInstruction = `You answer a question about two people's conversations using only the numbered memories you are given.
 A memory may begin with the time it happened in square brackets. Use that time to answer questions about when something happened; give the time at the precision the memory gives it.
 A section headed "What was said" may follow, holding the conversation the memories were drawn from; read it for detail a memory left out.
-If the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
+Work through what the memories say step by step, joining several of them where one alone does not answer the question, and then answer.`
 
 const locomoCorrectnessInstruction = `You grade an answer against a gold answer for a question.
 Mark it correct when the answer contains the same facts as the gold answer, however it is worded or how much extra it says. For a question about time, it is correct when it names the same date or period as the gold answer, even in another format.
@@ -329,7 +329,7 @@ const locomoDeclineInstruction = `You read a question and an answer to it. Decid
 Judge only from the question and the answer. Do not add requirements the answer does not state.`
 
 const (
-	locomoAnswerSchema      = `{"type":"object","additionalProperties":false,"required":["answer"],"properties":{"answer":{"type":"string"}}}`
+	locomoAnswerSchema      = `{"type":"object","additionalProperties":false,"required":["reasoning","answer"],"properties":{"reasoning":{"type":"string","description":"How the memories were used to reach the answer, step by step, naming which ones."},"answer":{"type":"string","description":"The answer, briefly. If the memories do not bear on the question, say the information is not available."}}}`
 	locomoCorrectnessSchema = `{"type":"object","additionalProperties":false,"required":["isCorrect"],"properties":{"isCorrect":{"type":"boolean"}}}`
 	locomoDeclineSchema     = `{"type":"object","additionalProperties":false,"required":["declines"],"properties":{"declines":{"type":"boolean"}}}`
 )
@@ -339,6 +339,7 @@ type locomoOutcome struct {
 	Question      string   `json:"question"`
 	Gold          string   `json:"gold"`
 	Answer        string   `json:"answer"`
+	Reasoning     string   `json:"reasoning,omitempty"`
 	IsCorrect     bool     `json:"isCorrect"`
 	Declines      bool     `json:"declines"`
 	Degraded      string   `json:"degraded,omitempty"`
@@ -434,19 +435,20 @@ func (rig *locomoRig) settleWithRetry(ctx context.Context, t *testing.T, session
 	return failures
 }
 
-func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, result bluememo.RecallResult) (string, error) {
+func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, result bluememo.RecallResult) (string, string, error) {
 	subject := "Memories:\n" + numberedContext(result.Memories) + spokenContext(result) + "\nQuestion: " + question.Question
 	response, errorValue := rig.model.Structured(ctx, "answer", locomoAnswerSchema, locomoAnswerInstruction, subject)
 	if errorValue != nil {
-		return "", errorValue
+		return "", "", errorValue
 	}
 	var parsed struct {
-		Answer string `json:"answer"`
+		Reasoning string `json:"reasoning"`
+		Answer    string `json:"answer"`
 	}
 	if errorValue := json.Unmarshal([]byte(response), &parsed); errorValue != nil {
-		return "", fmt.Errorf("answer is not the schema: %w", errorValue)
+		return "", "", fmt.Errorf("answer is not the schema: %w", errorValue)
 	}
-	return parsed.Answer, nil
+	return parsed.Answer, parsed.Reasoning, nil
 }
 
 func (rig *locomoRig) judgeDecline(ctx context.Context, question locomoQuestion, answer string) (bool, error) {
@@ -483,7 +485,7 @@ func (rig *locomoRig) ask(ctx context.Context, question locomoQuestion) locomoOu
 	}
 	outcome.Degraded = result.DegradedReason
 	outcome.RecalledLines = strings.Split(strings.TrimSpace(numberedContext(result.Memories)), "\n")
-	outcome.Answer, errorValue = rig.answer(ctx, question, result)
+	outcome.Answer, outcome.Reasoning, errorValue = rig.answer(ctx, question, result)
 	if errorValue != nil {
 		outcome.Failure = "answer: " + errorValue.Error()
 		return outcome
