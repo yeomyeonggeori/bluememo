@@ -610,3 +610,36 @@ The lesson is about the instrument. 152 questions give a per-category error
 between 0.05 and 0.08, so any per-category difference smaller than about 0.15
 means nothing here. The full split is 1540 questions and is where a category
 claim can be made.
+
+## The budget was the gap, and the test that said otherwise was broken
+
+On conv-26 through AMB, with the memories contiguous and their notes after them,
+asking for fifty memories instead of ten:
+
+| category | memories only | ten and notes | fifty and notes |
+| --- | --- | --- | --- |
+| multi-hop | 0.923 | 0.923 | 1.000 |
+| open-domain | 0.771 | 0.871 | 0.929 |
+| single-hop | 0.750 | 0.812 | 0.938 |
+| temporal | 0.865 | 0.865 | 0.946 |
+| overall | 0.803 | 0.862 | 0.941 |
+| context tokens | 295 | 1515 | 9481 |
+
+hindsight scores 0.9201 over the full split at 36235 context tokens per query.
+This is 0.941 at 9481, which is ahead of it on a quarter of the context. The
+standard error here is 0.019, so 0.021 of difference is 1.1 of them: on one
+conversation this is not a significant lead, and it is a lead.
+
+The entry above headed "a wider context does not close the gap" is withdrawn.
+Its arms ran on stores ingested under a smaller session limit than the run
+scored, so most questions had no evidence to find and no amount of context could
+help. That was written down in the entry itself and still read as a result about
+context. On a store that holds its conversation, the curve is not flat at all:
+295 tokens to 1515 to 9481 gives 0.803 to 0.862 to 0.941.
+
+Two things to carry forward. AMB asks for ten results and a result means 3600
+tokens to hindsight and 29 to a bluememo memory, so matching the count is not
+matching the budget, and the budget is the axis a reader should compare. And the
+flat curve measured earlier was an artifact of a crippled store, which is the
+fourth time in this file a measurement has flattered or maligned itself through
+its fixture.
