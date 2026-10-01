@@ -83,6 +83,7 @@ type Tombstone struct {
 	Content       string          `json:"content"`
 	IsStatic      bool            `json:"isStatic"`
 	OccurredAt    time.Time       `json:"occurredAt,omitzero"`
+	OccurredUntil time.Time       `json:"occurredUntil,omitzero"`
 	OriginID      string          `json:"originID"`
 	Reason        TombstoneReason `json:"reason"`
 	RequestPhrase string          `json:"requestPhrase,omitempty"`

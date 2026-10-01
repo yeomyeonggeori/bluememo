@@ -102,17 +102,16 @@ The model supplies these when it writes one:
 | --- | --- |
 | `content` | the sentence, at most 240 characters, with pronouns resolved |
 | `isStatic` | a permanent trait of the person, such as a name, a role or a lasting preference |
-| `occurredOn` | the first day of the time it happened, when it describes an event |
-| `occurredUntil` | the last day of that time, empty when it happened on one day |
+| `occurredOn` | when it happened, when it describes an event: a day, a time of day, or two of those joined by a slash |
 | `expiry` | when it stops being true, chosen from a closed list |
 
 The runtime adds the rest: an identifier, the origin it came from, its importance rating, its storage strength, the people it names, and timestamps. A memory is live, cold, or gone.
 
 ## Note
 
-The raw text a host hands to `Memorize`, kept until settling turns it into memories.
+The raw text a host hands to `Memorize`. Settling turns it into memories and the note stays, because a sentence the decomposer compressed is still readable in what was said.
 
-A note carries a group identifier, the speaker's name and whether the person asked for it to be remembered. Notes that share a group are decomposed together, so the model reads a conversation as one unit. Until a note settles, `Recall` returns it under `Unsettled` when it shares words with the question.
+A note carries a group identifier, the speaker's name and whether the person asked for it to be remembered. Notes that share a group are decomposed together, so the model reads a conversation as one unit. Until a note settles, `Recall` returns it under `Unsettled` when it shares words with the question. Afterwards, `RecallSources` makes `Recall` return the bodies behind the memories it ranked, one per origin, under `Sources`.
 
 ## Origin
 

@@ -271,7 +271,7 @@ func (store *Store) insertAndRelate(ctx context.Context, fresh Memory, embedding
 	now := store.now()
 	return store.insertAndRehearse(ctx, fresh, embedding, func(transaction *sql.Tx) error {
 		if _, errorValue := transaction.ExecContext(ctx,
-			`insert or ignore into memory_relation (from_memory_id, to_memory_id, edge, created_at) values (?, ?, ?, ?)`,
+			`insert or ignore into memory_edge (from_memory_id, to_memory_id, edge, created_at) values (?, ?, ?, ?)`,
 			fresh.MemoryID, target.MemoryID, edge, toMilliseconds(now)); errorValue != nil {
 			return errorValue
 		}
@@ -326,7 +326,7 @@ func insertMemory(ctx context.Context, transaction *sql.Tx, memory Memory, embed
 		return errorValue
 	}
 	_, errorValue = transaction.ExecContext(ctx, `
-		insert into memory (memory_id, content, is_static, occurred_at, occurred_to, valid_until, origin_id, importance, storage_strength,
+		insert into memory (memory_id, content, is_static, occurred_at, occurred_until, valid_until, origin_id, importance, storage_strength,
 		                    resolved_entity_ids, unresolved_names, embedding_model, embedding, created_at)
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		memory.MemoryID, memory.Content, memory.IsStatic, nullMilliseconds(memory.OccurredAt), nullMilliseconds(memory.OccurredUntil), nullMilliseconds(memory.ValidUntil),

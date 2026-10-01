@@ -107,7 +107,7 @@ func (store *Store) Memories(ctx context.Context) ([]Memory, error) {
 
 func (store *Store) Tombstones(ctx context.Context) ([]Tombstone, error) {
 	rows, errorValue := store.database.QueryContext(ctx, `
-		select memory_id, content, is_static, occurred_at, origin_id, reason, request_phrase, created_at, died_at
+		select memory_id, content, is_static, occurred_at, occurred_until, origin_id, reason, request_phrase, created_at, died_at
 		from tombstone order by died_at desc`)
 	if errorValue != nil {
 		return nil, errorValue
@@ -116,13 +116,14 @@ func (store *Store) Tombstones(ctx context.Context) ([]Tombstone, error) {
 	tombstones := []Tombstone{}
 	for rows.Next() {
 		var tombstone Tombstone
-		var occurredAt sql.NullInt64
+		var occurredAt, occurredUntil sql.NullInt64
 		var createdAt, diedAt int64
-		if errorValue := rows.Scan(&tombstone.MemoryID, &tombstone.Content, &tombstone.IsStatic, &occurredAt, &tombstone.OriginID,
+		if errorValue := rows.Scan(&tombstone.MemoryID, &tombstone.Content, &tombstone.IsStatic, &occurredAt, &occurredUntil, &tombstone.OriginID,
 			&tombstone.Reason, &tombstone.RequestPhrase, &createdAt, &diedAt); errorValue != nil {
 			return nil, errorValue
 		}
 		tombstone.OccurredAt = fromNullMilliseconds(occurredAt)
+		tombstone.OccurredUntil = fromNullMilliseconds(occurredUntil)
 		tombstone.CreatedAt = fromMilliseconds(createdAt)
 		tombstone.DiedAt = fromMilliseconds(diedAt)
 		tombstones = append(tombstones, tombstone)
@@ -217,7 +218,7 @@ func (store *Store) newIdentifier() string {
 	return NewIdentifier()
 }
 
-const memoryColumns = `memory_id, content, is_static, occurred_at, occurred_to, valid_until, origin_id, importance, storage_strength,
+const memoryColumns = `memory_id, content, is_static, occurred_at, occurred_until, valid_until, origin_id, importance, storage_strength,
 	resolved_entity_ids, unresolved_names, created_at, last_recalled_at, cold_since, cold_reason, superseded_by`
 
 type rowScanner interface {

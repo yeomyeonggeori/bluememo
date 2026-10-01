@@ -26,7 +26,7 @@ func (store *Store) Reembed(ctx context.Context, batchSize int) (ReembedReport, 
 		batchSize = 64
 	}
 	memoryCount, errorValue := store.reembedTable(ctx, batchSize,
-		`select memory_id, content, occurred_at, occurred_to from memory where embedding_model <> ? or embedding is null limit ?`,
+		`select memory_id, content, occurred_at, occurred_until from memory where embedding_model <> ? or embedding is null limit ?`,
 		`update memory set embedding = ?, embedding_model = ? where memory_id = ?`)
 	if errorValue != nil {
 		return ReembedReport{}, errorValue
