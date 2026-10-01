@@ -18,7 +18,7 @@ func contractFile() bluememo.File {
 		Kind:      bluememo.FileKindDocument,
 		Summary:   "The FY2025 audit report for 여명거리, signed 2026-03-15.",
 		Data:      json.RawMessage(`{"text":"# Audit report\n\nNo material weaknesses."}`),
-		Category:  "03-finance",
+		Category:  "03",
 	}
 }
 
@@ -31,7 +31,7 @@ func TestAFileComesBackWithTheTextItCarried(t *testing.T) {
 	if errorValue != nil {
 		t.Fatalf("read file: %v", errorValue)
 	}
-	if stored.Kind != bluememo.FileKindDocument || stored.Category != "03-finance" {
+	if stored.Kind != bluememo.FileKindDocument || stored.Category != "03" {
 		t.Fatalf("kind %q category %q", stored.Kind, stored.Category)
 	}
 	var carried struct{ Text string }
@@ -49,7 +49,7 @@ func TestAFileIsFoundByWhatItsSummarySays(t *testing.T) {
 	other := bluememo.File{
 		FileID: "3n8b4tjhf9xq2", Name: "team-photo", Extension: "jpg",
 		Kind: bluememo.FileKindImage, Summary: "Six people at a desk in the Seoul office.",
-		Data: json.RawMessage(`{"text":"Six people at a desk."}`), Category: "13-media",
+		Data: json.RawMessage(`{"text":"Six people at a desk."}`), Category: "13",
 	}
 	for _, each := range []bluememo.File{file, other} {
 		if errorValue := testFixture.store.StoreFile(context.Background(), each); errorValue != nil {
@@ -76,7 +76,7 @@ func TestACategoryNarrowsWhichFilesAreSearched(t *testing.T) {
 		t.Fatalf("store file: %v", errorValue)
 	}
 	recalled, errorValue := testFixture.store.RecallFiles(context.Background(),
-		bluememo.FileRequest{Text: file.Summary, Category: "13-media"})
+		bluememo.FileRequest{Text: file.Summary, Category: "13"})
 	if errorValue != nil {
 		t.Fatalf("recall files: %v", errorValue)
 	}
@@ -188,5 +188,45 @@ func TestReembedMovesAFileOntoTheCurrentModel(t *testing.T) {
 	}
 	if len(after) != 1 {
 		t.Fatalf("the file is still unreachable after reembedding: %d", len(after))
+	}
+}
+
+func TestACategoryCodeReachesEverythingBelowIt(t *testing.T) {
+	testFixture := newFixture(t)
+	for identifier, category := range map[string]string{
+		"aaa1111111111": "03",
+		"bbb2222222222": "031",
+		"ccc3333333333": "0312",
+		"ddd4444444444": "04",
+	} {
+		file := contractFile()
+		file.FileID = identifier
+		file.Category = category
+		if errorValue := testFixture.store.StoreFile(context.Background(), file); errorValue != nil {
+			t.Fatalf("store %s: %v", identifier, errorValue)
+		}
+	}
+	for _, each := range []struct {
+		asked string
+		want  int
+	}{{"03", 3}, {"031", 2}, {"0312", 1}, {"04", 1}, {"", 4}} {
+		recalled, errorValue := testFixture.store.RecallFiles(context.Background(),
+			bluememo.FileRequest{Text: "audit", Category: each.asked})
+		if errorValue != nil {
+			t.Fatalf("recall %q: %v", each.asked, errorValue)
+		}
+		if len(recalled) != each.want {
+			t.Fatalf("category %q reached %d files, wanted %d", each.asked, len(recalled), each.want)
+		}
+	}
+}
+
+func TestACategoryLongerThanItsCodeIsRefused(t *testing.T) {
+	testFixture := newFixture(t)
+	file := contractFile()
+	file.Category = "03-finance"
+	errorValue := testFixture.store.StoreFile(context.Background(), file)
+	if !errors.Is(errorValue, bluememo.ErrCategoryTooLong) {
+		t.Fatalf("a category wider than four characters was stored: %v", errorValue)
 	}
 }

@@ -154,16 +154,22 @@ That is the whole reason `file` is not a kind of memory.
 | `kind` | `document`, `image`, `video`, `audio` or `other` |
 | `summary` | what a search reads, and what the embedding is taken from |
 | `data` | JSON whose shape `kind` decides: a document's text, an image's description, a recording's transcript |
-| `category` | the host's classification, such as `03-finance`; empty until something classifies it |
+| `category` | the host's classification code, at most four characters, one per level; empty until something classifies it |
 | `supersedes` | the file this one replaces |
 
 `kind` carries `other` and never null, because null would say the store has not
 looked, which is a different state from having looked and found none of the four.
 
+A category is a code and not a name, so each character is a level and a prefix
+is a subtree: a file in `0312` answers a search of `031` and of `03`. Four
+characters is the width, which is what bounds the depth. The store does not own
+the list of codes; a host that has one passes it in, and an empty code means
+nothing has classified the file yet.
+
 `StoreFile` embeds the summary and writes the row, replacing a row that already
 holds that identifier. `File` reads one back by identity, including one that has
-been superseded. `RecallFiles` ranks by cosine over the summaries, narrowed to a
-category when the request names one, and leaves out any file another file
+been superseded. `RecallFiles` ranks by cosine over the summaries, narrowed to the subtree of a
+category code when the request names one, and leaves out any file another file
 supersedes — so what comes back is current, and `supersedes` is unique, so which
 file is current always has one answer.
 
