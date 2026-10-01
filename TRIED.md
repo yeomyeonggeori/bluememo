@@ -486,3 +486,34 @@ session limit than the run scores, so most of the questions have no evidence in
 the store to find. The AMB run ingested all nineteen of its documents. Only the
 within-arm comparison above means anything, and the number that compares with
 0.9201 is the full split through AMB.
+
+## On the real footing the failures invert
+
+The thirty wrong answers from the conv-26 run through AMB, counted the same way
+as before and costing nothing:
+
+| | this harness | through AMB |
+| --- | --- | --- |
+| gold terms were in the context shown | 17 of 28 | 3 of 30 |
+| gold terms were absent from it | 4 of 28 | 20 of 30 |
+
+A strong answerer that reasons first takes out what is there, so what remains is
+missing from what was retrieved. The weakness is retrieval after all, which is
+the opposite of what the same count said under the weaker answerer, and the two
+are not in conflict: a weak answerer fails on material it was given, a strong
+one fails on material it was not.
+
+Where it is missing is the useful part:
+
+| category | wrong |
+| --- | --- |
+| open-domain | 16 |
+| single-hop | 8 |
+| temporal | 5 |
+| multi-hop | 1 |
+
+Open-domain is over half of the loss and multi-hop is one question. AMB asks for
+ten results. Hindsight spends those ten slots on about 3600 tokens each, while a
+bluememo memory is around 29, so the slot count is equal and what fills it is not.
+The retained note body is what this library has to put in a slot, and that is the
+next arm.
