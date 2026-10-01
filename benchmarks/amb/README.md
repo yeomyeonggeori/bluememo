@@ -26,8 +26,9 @@ given and needs `OPENROUTER_API_KEY`:
 go run ./cmd/bench-server -directory /tmp/bluememo-banks
 ```
 
-Then run a dataset. `BLUEMEMO_SERVER` points the provider elsewhere and
-`BLUEMEMO_SOURCES=1` appends the note a memory came from to that memory:
+Then run a dataset. `BLUEMEMO_SERVER` points the provider elsewhere,
+`BLUEMEMO_SOURCES=1` appends the notes the memories came from, and
+`BLUEMEMO_RECALL=N` answers with N memories whatever the benchmark asked for:
 
 ```bash
 cd <amb> && uv run memory-bench --dataset locomo --split locomo10 --memory bluememo
@@ -63,3 +64,15 @@ hybrid-search 0.7909 at 22157, cognee 0.8026 over 152 questions at 14724.
 which is the comparison AMB's own README draws when it says that on most
 instances dumping everything into context scores competitively because
 retrieval has become the easy part.
+
+## On asking for a different number than the benchmark did
+
+AMB asks a provider for ten results, and a result means something different to
+each one. Hindsight spends those ten slots on about 3600 tokens each; a bluememo
+memory is around 29. So ten is the same count and a different budget, and the
+axis this library is actually compared on is the context it costs.
+
+`BLUEMEMO_RECALL` exists to answer that honestly: a run that supplies fifty
+memories instead of ten says so, and the result records the context tokens it
+used, which is what makes it comparable. A run that leaves the variable unset
+answers with exactly what was asked.

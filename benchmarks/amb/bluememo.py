@@ -19,6 +19,7 @@ class BluememoMemoryProvider(MemoryProvider):
     def __init__(self):
         self._base = os.environ.get("BLUEMEMO_SERVER", "http://127.0.0.1:8713")
         self._sources = os.environ.get("BLUEMEMO_SOURCES", "") != ""
+        self._recall = int(os.environ.get("BLUEMEMO_RECALL", "0"))
 
     def _post(self, route: str, payload: dict) -> dict | None:
         request = urllib.request.Request(
@@ -80,7 +81,7 @@ class BluememoMemoryProvider(MemoryProvider):
     def retrieve(self, query: str, k: int = 10, user_id: str | None = None, query_timestamp: str | None = None) -> tuple[list[Document], dict | None]:
         answer = self._post("/retrieve", {
             "query": query,
-            "k": k,
+            "k": self._recall or k,
             "user_id": user_id or "shared",
             "sources": self._sources,
         }) or {}
