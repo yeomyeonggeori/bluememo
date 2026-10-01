@@ -38,6 +38,7 @@ const (
 
 	locomoDefaultRecallLimit = 20
 	locomoRerankDepth        = 30
+	locomoSourceLimit        = 10
 	locomoQuestionWorkers    = 6
 	locomoAttemptLimit       = 8
 	locomoBackoffBase        = time.Second
@@ -553,6 +554,34 @@ func describeOccurrence(memory bluememo.Memory) string {
 	return first.Format("2 January 2006") + " to " + last.Format("2 January 2006")
 }
 
+func sourcesWanted() bool {
+	return os.Getenv("BLUEMEMO_LOCOMO_SOURCES") != ""
+}
+
+func spokenContext(result bluememo.RecallResult) string {
+	if len(result.Sources) == 0 {
+		return ""
+	}
+	bodies := make(map[string]string, len(result.Sources))
+	for _, source := range result.Sources {
+		bodies[source.OriginID] = source.Body
+	}
+	var listing strings.Builder
+	taken := map[string]bool{}
+	for _, recalled := range result.Memories {
+		body, isKnown := bodies[recalled.Memory.OriginID]
+		if !isKnown || taken[recalled.Memory.OriginID] {
+			continue
+		}
+		taken[recalled.Memory.OriginID] = true
+		fmt.Fprintf(&listing, "%s\n\n", body)
+		if len(taken) == locomoSourceLimit {
+			break
+		}
+	}
+	return "\nWhat was said:\n" + listing.String()
+}
+
 func numberedContext(memories []bluememo.RecalledMemory) string {
 	var listing strings.Builder
 	for index, recalled := range memories {
@@ -568,7 +597,7 @@ func numberedContext(memories []bluememo.RecalledMemory) string {
 
 const locomoAnswerInstruction = `You answer a question about two people's conversations using only the numbered memories you are given.
 A memory may begin with the time it happened in square brackets. Use that time to answer questions about when something happened; give the time at the precision the memory gives it.
-If the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
+A section headed "What was said" may follow, holding the conversation the memories were drawn from; read it for detail a memory left out.\nIf the memories support or imply an answer, give it briefly. If nothing in the memories bears on the question, say that the information is not available.`
 
 const locomoCorrectnessInstruction = `You grade an answer against a gold answer for a question.
 Mark it correct when the answer contains the same facts as the gold answer, however it is worded or how much extra it says. For a question about time, it is correct when it names the same date or period as the gold answer, even in another format.
@@ -636,6 +665,7 @@ func openLocomoRig(t *testing.T, path string, conversationIndex int, credential 
 		Reranker:           decisions,
 		RerankDepth:        locomoRerankDepth,
 		EmbedTimeReference: true,
+		RecallSources:      sourcesWanted(),
 		ClaimDuration:      time.Minute,
 		Now:                clock.now,
 		NewIdentifier:      locomoIdentifiers(locomoIdentifierSeed + int64(conversationIndex)),
@@ -680,8 +710,8 @@ func (rig *locomoRig) settleWithRetry(ctx context.Context, t *testing.T, session
 	return failures
 }
 
-func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, memories []bluememo.RecalledMemory) (string, error) {
-	subject := "Memories:\n" + numberedContext(memories) + "\nQuestion: " + question.Question
+func (rig *locomoRig) answer(ctx context.Context, question locomoQuestion, result bluememo.RecallResult) (string, error) {
+	subject := "Memories:\n" + numberedContext(result.Memories) + spokenContext(result) + "\nQuestion: " + question.Question
 	response, errorValue := rig.model.structured(ctx, "answer", locomoAnswerSchema, locomoAnswerInstruction, subject)
 	if errorValue != nil {
 		return "", errorValue
@@ -729,7 +759,7 @@ func (rig *locomoRig) ask(ctx context.Context, question locomoQuestion) locomoOu
 	}
 	outcome.Degraded = result.DegradedReason
 	outcome.RecalledLines = strings.Split(strings.TrimSpace(numberedContext(result.Memories)), "\n")
-	outcome.Answer, errorValue = rig.answer(ctx, question, result.Memories)
+	outcome.Answer, errorValue = rig.answer(ctx, question, result)
 	if errorValue != nil {
 		outcome.Failure = "answer: " + errorValue.Error()
 		return outcome
