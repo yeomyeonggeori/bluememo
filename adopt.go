@@ -2,6 +2,7 @@ package bluememo
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -26,25 +27,35 @@ type AdoptReport struct {
 // which model produced it.
 var ErrAdoptedMemoryIncomplete = errors.New("adopted memory is incomplete")
 
+// ErrEmbeddingWidthMismatch reports an adopted embedding whose width differs
+// from another vector this store holds, or is adopting, from the same model.
+var ErrEmbeddingWidthMismatch = errors.New("an embedding is not as wide as the others from its model")
+
 // Adopt writes memories another store settled, exactly as they are. No model
 // runs, nothing is judged, and no sentence is rewritten, so a memory keeps the
 // identifier and the wording it already had. It is how one person's memory
 // moves between stores.
 //
 // Adoption is idempotent on the identifier, so a move interrupted halfway
-// finishes by running again.
+// finishes by running again. An identifier the store has buried counts as
+// already held, so running a move again never brings back what was forgotten.
 //
 // An embedding is kept with the model that produced it. Recall reads only the
 // vectors of the model this store is configured with, so a memory adopted from
 // another model answers on its wording until Reembed puts the current model's
 // vector in its place. A memory adopted without an embedding names no model at
-// all, which is the same stale state by a shorter road.
+// all, which is the same stale state by a shorter road. One model has one
+// width in a store: an embedding is refused when a vector the store holds, or
+// another in the same adoption, came from its model at a different width.
 func (store *Store) Adopt(ctx context.Context, adopted []AdoptedMemory) (AdoptReport, error) {
 	report := AdoptReport{}
 	for _, candidate := range adopted {
 		if err := validateAdoptedMemory(candidate); err != nil {
 			return report, err
 		}
+	}
+	if err := store.validateEmbeddingWidths(ctx, adopted); err != nil {
+		return report, err
 	}
 	for _, candidate := range adopted {
 		held, err := store.alreadyHolds(ctx, candidate.Memory.MemoryID)
@@ -70,20 +81,67 @@ func validateAdoptedMemory(candidate AdoptedMemory) error {
 	if candidate.Memory.Content == "" {
 		return fmt.Errorf("%w: %s has no content", ErrAdoptedMemoryIncomplete, candidate.Memory.MemoryID)
 	}
-	if len(candidate.Embedding) > 0 && candidate.EmbeddingModel == "" {
+	if len(candidate.Embedding) == 0 {
+		return nil
+	}
+	if candidate.EmbeddingModel == "" {
 		return fmt.Errorf("%w: %s carries an embedding without its model", ErrAdoptedMemoryIncomplete, candidate.Memory.MemoryID)
+	}
+	if err := ValidateEmbedding(candidate.Embedding); err != nil {
+		return fmt.Errorf("%w: %s", err, candidate.Memory.MemoryID)
 	}
 	return nil
 }
 
-func (store *Store) alreadyHolds(ctx context.Context, memoryID string) (bool, error) {
-	var count int
-	errorValue := store.database.QueryRowContext(ctx,
-		`select count(*) from memory where memory_id = ?`, memoryID).Scan(&count)
-	if errorValue != nil {
-		return false, errorValue
+func (store *Store) validateEmbeddingWidths(ctx context.Context, adopted []AdoptedMemory) error {
+	widthByModel := map[string]int{}
+	for _, candidate := range adopted {
+		if len(candidate.Embedding) == 0 {
+			continue
+		}
+		width, known := widthByModel[candidate.EmbeddingModel]
+		if !known {
+			heldWidth, err := store.heldEmbeddingWidth(ctx, candidate.EmbeddingModel)
+			if err != nil {
+				return err
+			}
+			width = heldWidth
+		}
+		if width == 0 {
+			width = len(candidate.Embedding)
+		}
+		if len(candidate.Embedding) != width {
+			return fmt.Errorf("%w: %s is %d wide and %s vectors are %d wide",
+				ErrEmbeddingWidthMismatch, candidate.Memory.MemoryID, len(candidate.Embedding), candidate.EmbeddingModel, width)
+		}
+		widthByModel[candidate.EmbeddingModel] = width
 	}
-	return count > 0, nil
+	return nil
+}
+
+func (store *Store) heldEmbeddingWidth(ctx context.Context, embeddingModel string) (int, error) {
+	var byteCount sql.NullInt64
+	errorValue := store.database.QueryRowContext(ctx, `
+		select length(embedding) from (
+			select embedding from memory where embedding_model = ? and embedding is not null
+			union all select embedding from memory_trigger where embedding_model = ?
+			union all select embedding from file where embedding_model = ? and embedding is not null
+		) limit 1`, embeddingModel, embeddingModel, embeddingModel).Scan(&byteCount)
+	if errors.Is(errorValue, sql.ErrNoRows) {
+		return 0, nil
+	}
+	if errorValue != nil {
+		return 0, errorValue
+	}
+	return int(byteCount.Int64) / 4, nil
+}
+
+func (store *Store) alreadyHolds(ctx context.Context, memoryID string) (bool, error) {
+	var isHeld bool
+	errorValue := store.database.QueryRowContext(ctx, `
+		select exists (select 1 from memory where memory_id = ?)
+		    or exists (select 1 from tombstone where memory_id = ?)`, memoryID, memoryID).Scan(&isHeld)
+	return isHeld, errorValue
 }
 
 func (store *Store) adoptOne(ctx context.Context, candidate AdoptedMemory) error {

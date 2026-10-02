@@ -3,6 +3,7 @@ package bluememo_test
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 	"time"
 
@@ -144,5 +145,89 @@ func TestAdoptRefusesAMemoryItCannotPlace(t *testing.T) {
 				t.Fatalf("holds %d memories, want none written", len(memories))
 			}
 		})
+	}
+}
+
+func TestAdoptNeverBringsBackAForgottenMemory(t *testing.T) {
+	testFixture := newFixture(t)
+	ctx := context.Background()
+	adopted := []bluememo.AdoptedMemory{adoptedFact("carried-1", "이샘플 leads the spring audit.")}
+
+	if _, errorValue := testFixture.store.Adopt(ctx, adopted); errorValue != nil {
+		t.Fatalf("first adopt: %v", errorValue)
+	}
+	if _, errorValue := testFixture.store.ForgetMemories(ctx, []string{"carried-1"}, "forget the audit"); errorValue != nil {
+		t.Fatalf("forget: %v", errorValue)
+	}
+	report, errorValue := testFixture.store.Adopt(ctx, adopted)
+	if errorValue != nil {
+		t.Fatalf("second adopt: %v", errorValue)
+	}
+	if report.Adopted != 0 || report.AlreadyHeld != 1 {
+		t.Fatalf("report = %+v, want the buried identifier counted as already held", report)
+	}
+	if memories := testFixture.memories(t); len(memories) != 0 {
+		t.Fatalf("holds %d memories, want the forgotten one to stay forgotten", len(memories))
+	}
+}
+
+func TestAdoptRefusesAnEmbeddingOfAnotherWidthThanItsModel(t *testing.T) {
+	held := adoptedFact("carried-1", "이샘플 leads the spring audit.")
+	held.Embedding = []float32{0.1, 0.2, 0.3}
+	held.EmbeddingModel = "some-other-model"
+	narrower := adoptedFact("carried-2", "박예시 keeps the ledger.")
+	narrower.Embedding = []float32{0.1, 0.2}
+	narrower.EmbeddingModel = "some-other-model"
+
+	t.Run("against a vector the store holds", func(t *testing.T) {
+		testFixture := newFixture(t)
+		ctx := context.Background()
+		if _, errorValue := testFixture.store.Adopt(ctx, []bluememo.AdoptedMemory{held}); errorValue != nil {
+			t.Fatalf("adopt: %v", errorValue)
+		}
+		_, errorValue := testFixture.store.Adopt(ctx, []bluememo.AdoptedMemory{narrower})
+		if !errors.Is(errorValue, bluememo.ErrEmbeddingWidthMismatch) {
+			t.Fatalf("error = %v, want ErrEmbeddingWidthMismatch", errorValue)
+		}
+		if memories := testFixture.memories(t); len(memories) != 1 {
+			t.Fatalf("holds %d memories, want only the first", len(memories))
+		}
+	})
+
+	t.Run("against the configured embedder's vectors", func(t *testing.T) {
+		testFixture := newFixture(t)
+		testFixture.settle(t, "이샘플 leads the spring audit.", bluememo.Proposition{Content: "이샘플 leads the spring audit."})
+		mismatched := narrower
+		mismatched.EmbeddingModel = "hash"
+		_, errorValue := testFixture.store.Adopt(context.Background(), []bluememo.AdoptedMemory{mismatched})
+		if !errors.Is(errorValue, bluememo.ErrEmbeddingWidthMismatch) {
+			t.Fatalf("error = %v, want ErrEmbeddingWidthMismatch", errorValue)
+		}
+	})
+
+	t.Run("within one adoption", func(t *testing.T) {
+		testFixture := newFixture(t)
+		_, errorValue := testFixture.store.Adopt(context.Background(), []bluememo.AdoptedMemory{held, narrower})
+		if !errors.Is(errorValue, bluememo.ErrEmbeddingWidthMismatch) {
+			t.Fatalf("error = %v, want ErrEmbeddingWidthMismatch", errorValue)
+		}
+		if memories := testFixture.memories(t); len(memories) != 0 {
+			t.Fatalf("holds %d memories, want none written", len(memories))
+		}
+	})
+}
+
+func TestAdoptRefusesAnEmbeddingThatIsNotFinite(t *testing.T) {
+	testFixture := newFixture(t)
+	adopted := adoptedFact("carried-1", "이샘플 leads the spring audit.")
+	adopted.Embedding = []float32{0.1, float32(math.NaN())}
+	adopted.EmbeddingModel = "hash"
+
+	_, errorValue := testFixture.store.Adopt(context.Background(), []bluememo.AdoptedMemory{adopted})
+	if !errors.Is(errorValue, bluememo.ErrInvalidEmbedding) {
+		t.Fatalf("error = %v, want ErrInvalidEmbedding", errorValue)
+	}
+	if memories := testFixture.memories(t); len(memories) != 0 {
+		t.Fatalf("holds %d memories, want none written", len(memories))
 	}
 }

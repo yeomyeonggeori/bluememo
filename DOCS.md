@@ -244,13 +244,17 @@ store.Adopt(ctx, []bluememo.AdoptedMemory{{
 Nothing is decomposed, judged, or reworded. A memory keeps the identifier and
 the sentence it arrived with, which is what lets the host match the two sides
 afterwards and run the move again where it stopped: adoption is idempotent on
-the identifier.
+the identifier. An identifier the store has buried counts as held too, so a
+second run never brings back what a person asked to forget.
 
 An embedding travels with the model that made it, under the same rule a move
 follows. Recall reads only the configured model's vectors, so an adopted
 memory answers on its wording until `Reembed` gives it one of its own, and
 `IndexState` counts it as stale until then. A memory adopted with no embedding
-at all is in that same state by a shorter road.
+at all is in that same state by a shorter road. An embedding has to be finite
+and as wide as every other vector the store holds from its model, or the whole
+adoption is refused with `ErrInvalidEmbedding` or `ErrEmbeddingWidthMismatch`
+before anything is written.
 
 Importance, strength and the creation time are filled in when they arrive
 empty, so a caller carrying memory out of an older shape supplies the wording
