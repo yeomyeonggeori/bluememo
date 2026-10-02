@@ -878,3 +878,42 @@ other matches the phrasing.
 
 Hindsight spends 36,347 tokens on the 36 it alone answers. bluememo spends
 6,202 on its 31.
+
+## The picture a reader of the conversation saw
+
+One LoCoMo turn in five shares a picture, and the dataset carries its
+description: 1,226 of 5,882 turns hold a `blip_caption`. The AMB provider
+rendered `speaker` and `text` and nothing else, so none of those descriptions
+reached bluememo, while hindsight passes the document through unrendered and
+reads every one. Seven of the sixteen questions hindsight alone answered named
+something living in a caption: a slogan on a poster, the text of a sign on a
+door, a cup with a dog's face on it, a car with a broken windshield. Those had
+been written off as photo content no text memory could reach, which was wrong.
+
+Rendering the caption into the turn is the fair thing to do and it changes
+nothing.
+
+| unit | questions | without | with the caption | hindsight |
+|---|---|---|---|---|
+| conv-26 | 152 | 142 | 146 | 143 |
+| conv-30 | 81 | 79 | 78 | 74 |
+| conv-41 | 152 | 143 | 140 | 144 |
+| conv-42 | 199 | 175 | 176 | 178 |
+| conv-43 | 178 | 154 | 151 | 157 |
+| conv-44 | 123 | 113 | 115 | 115 |
+| total | 885 | 806 | 806 | 811 |
+
+The per-unit moves are +4, −1, −3, +1, −3, +2. They sum to zero and each sits
+inside the 0.046 spread two runs of one configuration already show, so this is
+churn rather than a result. Context went from 6,228 tokens to 6,816.
+
+The part of the hypothesis that was wrong is the part that assumed new content
+is free. A caption is real content and the recall budget is fifty slots, so
+every caption that enters displaces something that was already answering a
+question. Plain extra slots measured negative here before, and this is the same
+finding arriving by a different road: at this budget the store is not short of
+material, it is short of room.
+
+The provider keeps the caption, because an adapter that silently drops a field
+the comparison reads makes every number after it unreadable. The accuracy claim
+goes away.
