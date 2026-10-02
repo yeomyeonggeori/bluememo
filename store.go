@@ -26,6 +26,7 @@ const (
 
 type Configuration struct {
 	Embedder           Embedder
+	Chooser            Chooser
 	Reranker           Reranker
 	RerankDepth        int
 	LaneDepth          int
@@ -201,7 +202,25 @@ func withDefaults(configuration Configuration) Configuration {
 	if configuration.Logger == nil {
 		configuration.Logger = slog.Default()
 	}
+	if configuration.Judge == nil && configuration.Chooser != nil {
+		configuration.Judge = DistributionJudge{Chooser: configuration.Chooser}
+	}
+	if configuration.EmbeddingModel == "" {
+		configuration.EmbeddingModel = embeddingModelNameOf(configuration.Embedder)
+	}
 	return configuration
+}
+
+// embeddingModelNameOf asks an embedder what it is. The name belongs to the
+// embedder, and a configuration that carries its own copy is a second copy to
+// keep in step: a name that drifts from the vectors it labels makes every one
+// of them unreadable.
+func embeddingModelNameOf(embedder Embedder) string {
+	named, isNamed := embedder.(interface{ EmbeddingModelName() string })
+	if !isNamed {
+		return ""
+	}
+	return named.EmbeddingModelName()
 }
 
 func (store *Store) now() time.Time {
