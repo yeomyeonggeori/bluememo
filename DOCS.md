@@ -160,15 +160,28 @@ That is the whole reason `file` is not a kind of memory.
 
 `medium` carries `other` and never null, because null would say the store has not
 looked, which is a different state from having looked and found none of the four.
-It is called `medium` because a host has its own `kind`: internkim's documents
-are issued, received or internal, which is a different question from whether a
-file is a picture.
+It is called `medium` because a host has its own `kind`: a document may be
+issued, received or internal, which is a different question from whether a file
+is a picture.
 
 A file speaks from a time the way a memory does, and `TimeReference` renders it
 the same way. Under `EmbedTimeReference` that rendering goes in front of the
 summary before the summary is embedded, by the same `matchableText` a memory
 goes through, so the two tables embed a date the same way and `Reembed` puts
 back exactly what was there.
+
+There is no column for where the bytes are, and that is the contract: a path is
+the host's layout, and holding one here would be a second copy of it that drifts
+the first time a file moves. What the host owes in exchange is that **a row
+determines where its bytes are**. `file_id`, `name`, `extension` and `category`
+are what they are so that a host can lay its storage out and then work the
+location back out of the row. Narrowing to a few candidates a host can search
+through is allowed; landing on exactly one is what to aim for.
+
+A host that lays out its storage by category gets this for nothing, because a
+category is already a path: one segment per level, each segment the prefix that
+level ends at. The code is the host's to assign and its meaning is the host's to
+know; this library only stores it and matches prefixes against it.
 
 A category is a code and not a name, so each character is a level and a prefix
 is a subtree: a file in `0312` answers a search of `031` and of `03`. Four ASCII letters or
@@ -327,7 +340,7 @@ type Reranker interface {
 
 **`RerankDepth` is not optional in practice.** It defaults to three times the caller's limit, which at the default limit of 12 is a shortlist of 36, and a reranker with a smaller capacity fails on it. A decision model answering a choice question takes at most 32 criteria and reserves two, so 30 is its real ceiling. Set `RerankDepth` to what the host's reranker accepts.
 
-The host supplies the reranker; this library never names a model or a provider. In internkim that means posting to the capability daemon's `/v1/llm/decide` with a choice question over the candidate sentences, leaving the model name out of the request so the daemon picks the decision model. Measured on the evaluation set, that configuration takes overall recall@1 from 0.804 to 0.880 and recall@3 to 1.000 in every category, for 46 calls and about a tenth of a cent.
+The host supplies the reranker; this library never names a model or a provider. A decision model answering one choice question over the candidate sentences is enough: measured on the evaluation set, that takes overall recall@1 from 0.804 to 0.880 and recall@3 to 1.000 in every category, for 46 calls and about a tenth of a cent.
 
 ## Forget
 

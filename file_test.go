@@ -321,3 +321,35 @@ func TestReembeddingAFileKeepsItsOccurrenceInTheVector(t *testing.T) {
 		t.Fatalf("reembedding dropped the occurrence from the vector: %+v", recalled)
 	}
 }
+
+// A host lays its storage out and works the location back out of the row, so a
+// recall that drops any of the four fields a path is built from breaks that
+// contract without breaking a type.
+func TestARecalledFileCarriesWhatAPathIsBuiltFrom(t *testing.T) {
+	testFixture := newFixture(t)
+	if errorValue := testFixture.store.StoreFile(context.Background(), contractFile()); errorValue != nil {
+		t.Fatalf("store file: %v", errorValue)
+	}
+	recalled, errorValue := testFixture.store.RecallFiles(context.Background(), bluememo.FileRequest{Text: "audit report", Limit: 5})
+	if errorValue != nil {
+		t.Fatalf("recall files: %v", errorValue)
+	}
+	if len(recalled) == 0 {
+		t.Fatal("expected the stored file to answer its own summary")
+	}
+	found := recalled[0].File
+	for name, value := range map[string]string{
+		"file_id":   found.FileID,
+		"name":      found.Name,
+		"extension": found.Extension,
+		"category":  found.Category,
+	} {
+		if value == "" {
+			t.Fatalf("a recalled file carries no %s, so a host cannot find its bytes", name)
+		}
+	}
+	expected := contractFile()
+	if found.FileID != expected.FileID || found.Name != expected.Name || found.Extension != expected.Extension || found.Category != expected.Category {
+		t.Fatalf("a recalled file disagrees with what was stored: %+v", found)
+	}
+}
