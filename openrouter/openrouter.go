@@ -216,3 +216,5 @@ func CostOf(responseBody []byte) float64 {
 	}
 	return parsed.Usage.Cost
 }
+
+func (client *Client) EmbeddingModelName() string { return client.EmbeddingModel }

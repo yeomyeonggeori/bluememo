@@ -8,6 +8,7 @@ An agent that forgets everything between conversations makes a person repeat the
 
 ## What it is
 
+- Three fields connect it. An embedder that answers `EmbeddingModelName() string` names its own vectors, so `EmbeddingModel` is only set when it does not, and a `Chooser` is made into the judge, so `Judge` is only set to replace that mechanism. A store opened with none of them still remembers what it is given and ranks it by wording, saying `no embedder is configured` as the reason its recall is thin.
 - One file per person. `Open` takes a path and creates the file with mode `0600`. There is no access-control model inside: whoever can open the file can read all of it, so a host that serves several people opens a different file for each one, as that person.
 - One sentence per memory. A memory stands on its own: `Alex wants meeting notes in Markdown every time.` Conditions, time and source stay inside the sentence.
 - Pure Go. It depends on the standard library and `modernc.org/sqlite`. The host supplies the embedder, the language model and the judge through small interfaces.
@@ -52,10 +53,9 @@ func main() {
 	model := ollama.New("qwen3.5:4b", "embeddinggemma")
 
 	store, errorValue := bluememo.Open(ctx, "alex.db", bluememo.Configuration{
-		Embedder:       model,
-		EmbeddingModel: model.EmbeddingModel,
-		Model:          model,
-		Judge:          bluememo.DistributionJudge{Chooser: model},
+		Embedder: model,
+		Model:    model,
+		Chooser:  model,
 	})
 	if errorValue != nil {
 		log.Fatal(errorValue)

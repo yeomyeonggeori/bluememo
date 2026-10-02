@@ -14,10 +14,9 @@ func main() {
 	model := ollama.New("qwen3.5:4b", "embeddinggemma")
 
 	store, errorValue := bluememo.Open(ctx, "alex.db", bluememo.Configuration{
-		Embedder:       model,
-		EmbeddingModel: model.EmbeddingModel,
-		Model:          model,
-		Judge:          bluememo.DistributionJudge{Chooser: model},
+		Embedder: model,
+		Model:    model,
+		Chooser:  model,
 	})
 	if errorValue != nil {
 		log.Fatal(errorValue)

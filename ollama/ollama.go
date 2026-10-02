@@ -127,3 +127,5 @@ func (client Client) post(ctx context.Context, path string, body any, target any
 	}
 	return json.NewDecoder(response.Body).Decode(target)
 }
+
+func (client Client) EmbeddingModelName() string { return client.EmbeddingModel }

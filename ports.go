@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 )
 
+// An Embedder that also answers EmbeddingModelName() string saves a
+// configuration from carrying the name a second time.
 type Embedder interface {
 	EmbedQuery(ctx context.Context, text string) ([]float32, error)
 	EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error)
