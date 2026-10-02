@@ -13,6 +13,16 @@ ollama pull qwen3.5:4b && ollama pull embeddinggemma
 go run ./examples/quickstart
 ```
 
+## From an agent
+
+This repository is an [Agent Plugins](https://agent-plugins.org) package, so any client that speaks the standard can keep its own memory here:
+
+```bash
+go install github.com/yeomyeonggeori/bluememo/cmd/bluememo@latest
+```
+
+`mcp.json` declares `bluememo mcp`, a Model Context Protocol server over stdio with three tools: `remember`, `search` and `forget`. It opens `~/.bluememo/me.db` and asks for nothing else. With no embedder a recall ranks by wording and says so, so there is no key, no model and no setup; configuring one adds the vector lane.
+
 The documentation is [DOCS.md](DOCS.md), published at [bluememo.intern.kim](https://bluememo.intern.kim). The design and the measurements behind it are in [issue #3](https://github.com/yeomyeonggeori/bluememo/issues/3).
 
 ## Where it stands
@@ -36,7 +46,10 @@ The split by category says where the difference lives. Of the questions only one
 |---|---|
 | `.` | the store, settling, judging, recall, forgetting, sweeping |
 | `migrations/` | the schema, embedded and applied by `Open` through `user_version` |
+| `cmd/bluememo/` | `bluememo mcp`, the protocol server, and the plugin's own guards |
+| `plugin.json`, `mcp.json`, `skills/` | the Agent Plugins package, with the plugin root at the repository root |
 | `ollama/` | an adapter that runs the three ports on local Ollama models |
+| `openrouter/` | an adapter that runs them on OpenRouter models |
 | `examples/` | `quickstart` on real local models, `recall` on scripted ones |
 | `bluememotest/` | a hash embedder, a table embedder, a scripted model, judge and chooser |
 | `docs/` | the documentation site, generated from `DOCS.md` |

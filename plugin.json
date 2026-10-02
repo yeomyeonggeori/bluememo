@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bluememo",
+  "version": "0.1.0",
+  "description": "Long-term memory for an agent, kept in one SQLite file the person owns. Remembers what they tell it, recalls it by wording, and forgets on request. Needs no key, no model and no setup: install the bluememo command and the tools work.",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/yeomyeonggeori/bluememo",
+  "keywords": [
+    "memory",
+    "context",
+    "recall",
+    "sqlite",
+    "mcp"
+  ]
+}
