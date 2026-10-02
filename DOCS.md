@@ -170,6 +170,19 @@ summary before the summary is embedded, by the same `matchableText` a memory
 goes through, so the two tables embed a date the same way and `Reembed` puts
 back exactly what was there.
 
+There is no column for where the bytes are, and that is the contract: a path is
+the host's layout, and holding one here would be a second copy of it that drifts
+the first time a file moves. What the host owes in exchange is that **a row
+determines where its bytes are**. `file_id`, `name`, `extension` and `category`
+are what they are so that a host can lay its storage out and then work the
+location back out of the row. Narrowing to a few candidates a host can search
+through is allowed; landing on exactly one is what to aim for.
+
+A host that lays out its storage by category gets this for nothing, because a
+category is already a path: one segment per level, each segment the prefix that
+level ends at. The code is the host's to assign and its meaning is the host's to
+know; this library only stores it and matches prefixes against it.
+
 A category is a code and not a name, so each character is a level and a prefix
 is a subtree: a file in `0312` answers a search of `031` and of `03`. Four ASCII letters or
 digits is the width, which is what bounds the depth and keeps a prefix of the
