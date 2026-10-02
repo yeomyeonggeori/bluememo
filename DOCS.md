@@ -160,9 +160,9 @@ That is the whole reason `file` is not a kind of memory.
 
 `medium` carries `other` and never null, because null would say the store has not
 looked, which is a different state from having looked and found none of the four.
-It is called `medium` because a host has its own `kind`: internkim's documents
-are issued, received or internal, which is a different question from whether a
-file is a picture.
+It is called `medium` because a host has its own `kind`: a document may be
+issued, received or internal, which is a different question from whether a file
+is a picture.
 
 A file speaks from a time the way a memory does, and `TimeReference` renders it
 the same way. Under `EmbedTimeReference` that rendering goes in front of the
@@ -327,7 +327,7 @@ type Reranker interface {
 
 **`RerankDepth` is not optional in practice.** It defaults to three times the caller's limit, which at the default limit of 12 is a shortlist of 36, and a reranker with a smaller capacity fails on it. A decision model answering a choice question takes at most 32 criteria and reserves two, so 30 is its real ceiling. Set `RerankDepth` to what the host's reranker accepts.
 
-The host supplies the reranker; this library never names a model or a provider. In internkim that means posting to the capability daemon's `/v1/llm/decide` with a choice question over the candidate sentences, leaving the model name out of the request so the daemon picks the decision model. Measured on the evaluation set, that configuration takes overall recall@1 from 0.804 to 0.880 and recall@3 to 1.000 in every category, for 46 calls and about a tenth of a cent.
+The host supplies the reranker; this library never names a model or a provider. A decision model answering one choice question over the candidate sentences is enough: measured on the evaluation set, that takes overall recall@1 from 0.804 to 0.880 and recall@3 to 1.000 in every category, for 46 calls and about a tenth of a cent.
 
 ## Forget
 
