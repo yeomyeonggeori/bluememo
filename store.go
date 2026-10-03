@@ -106,6 +106,15 @@ func (store *Store) Memories(ctx context.Context) ([]Memory, error) {
 	return queryMemories(ctx, store.database, `where cold_since is null order by created_at desc`)
 }
 
+// IsEmpty says whether the store keeps nothing its owner could lose: no
+// memory, warm or cold, no note waiting to be settled, and no file.
+func (store *Store) IsEmpty(ctx context.Context) (bool, error) {
+	var held int
+	errorValue := store.database.QueryRowContext(ctx, `
+		select (select count(*) from memory) + (select count(*) from pending_note) + (select count(*) from file)`).Scan(&held)
+	return held == 0, errorValue
+}
+
 func (store *Store) Tombstones(ctx context.Context) ([]Tombstone, error) {
 	rows, errorValue := store.database.QueryContext(ctx, `
 		select memory_id, content, is_static, occurred_at, occurred_until, origin_id, reason, request_phrase, created_at, died_at
