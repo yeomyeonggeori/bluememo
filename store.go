@@ -52,6 +52,7 @@ type Store struct {
 	database      *sql.DB
 	configuration Configuration
 	beneath       []Known
+	isReadOnly    bool
 }
 
 type Note struct {

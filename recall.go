@@ -94,6 +94,9 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if result.Unsettled, errorValue = store.unsettledNotes(ctx, trimmed); errorValue != nil {
 		return RecallResult{}, errorValue
 	}
+	if store.isReadOnly {
+		return result, nil
+	}
 	return result, store.reinforce(ctx, ownOnly(result.Memories, own), search.now)
 }
 
