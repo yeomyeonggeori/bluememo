@@ -212,6 +212,25 @@ file is current always has one answer.
 that a model change would leave every file silently unreachable, since recall
 only considers a file embedded by the model it is asking with.
 
+## Reading a store you do not keep
+
+A store has one keeper, the process that writes it. Another process may be
+allowed to read the file and nothing more, as when a host lets each person read
+their own memory under their own identity while a service writes it on their
+behalf. `Open` cannot serve that reader: it creates the file when it is
+missing, migrates it, and every recall reinforces what it returned.
+
+`OpenToRead` opens the file as it is. It creates nothing, refuses a file whose
+schema is not the one this library reads rather than migrating it, and its
+`Recall` writes nothing. What a reader recalled is still worth reinforcing, so
+the reader hands the memory identifiers back and the keeper calls `Reinforce`
+with them.
+
+A reader that cannot write a WAL database needs the `-wal` and `-shm` files to
+exist already (https://sqlite.org/wal.html#readonly). They do while the keeper
+holds the store open, so a host opens the store as its keeper before it asks a
+reader to read it.
+
 ## Moving a store
 
 A store is one file and it is the whole memory. Copy it anywhere, open it, and
