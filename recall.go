@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -80,8 +81,11 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	result.Relevance = closest
 	ranked, rerankFailure := store.rerank(ctx, trimmed, ranked, limit)
 	result.DegradedReason = joinReasons(result.DegradedReason, rerankFailure)
-	result.Memories, errorValue = store.withSiblings(ctx, ranked, limit)
+	own, errorValue := store.withSiblings(ctx, ranked, limit)
 	if errorValue != nil {
+		return RecallResult{}, errorValue
+	}
+	if result.Memories, errorValue = store.throughLayers(ctx, trimmed, own, limit); errorValue != nil {
 		return RecallResult{}, errorValue
 	}
 	if result.Sources, errorValue = store.sourcesOf(ctx, result.Memories); errorValue != nil {
@@ -90,7 +94,13 @@ func (store *Store) Recall(ctx context.Context, query string, limit int) (Recall
 	if result.Unsettled, errorValue = store.unsettledNotes(ctx, trimmed); errorValue != nil {
 		return RecallResult{}, errorValue
 	}
-	return result, store.reinforce(ctx, result.Memories, search.now)
+	return result, store.reinforce(ctx, ownOnly(result.Memories, own), search.now)
+}
+
+func ownOnly(recalled []RecalledMemory, own []RecalledMemory) []RecalledMemory {
+	return slices.DeleteFunc(slices.Clone(recalled), func(entry RecalledMemory) bool {
+		return !slices.ContainsFunc(own, func(held RecalledMemory) bool { return held.Memory.MemoryID == entry.Memory.MemoryID })
+	})
 }
 
 func (store *Store) Profile(ctx context.Context) ([]Memory, error) {
