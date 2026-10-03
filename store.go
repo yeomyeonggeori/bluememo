@@ -51,6 +51,7 @@ type Configuration struct {
 type Store struct {
 	database      *sql.DB
 	configuration Configuration
+	beneath       []Known
 }
 
 type Note struct {

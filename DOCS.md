@@ -279,6 +279,23 @@ What remains after a memory is deleted.
 
 A tombstone keeps the sentence, whether it was static, when it happened, its origin, why it died (`asked`, `pressure`, `superseded` or `expired`) and, when a person asked, the phrase they used. A deleted memory can be read back from its tombstone alone. Tombstones have their own cap.
 
+## Layers
+
+What a store stands on.
+
+```go
+type Known interface {
+	Search(ctx context.Context, query string, limit int) ([]RecalledMemory, error)
+}
+
+func (store *Store) On(beneath ...Known) *Store
+func (store *Store) Search(ctx context.Context, query string, limit int) ([]RecalledMemory, error)
+```
+
+A person's memory rarely stands alone: a team knows things, a company knows more, and the host may keep records that already hold some of what a person says. `On` stands a store on those layers. A sentence a layer already knows is not written again, and a recall reads through every layer with the store's own memories first. A layer is anything that answers `Search`, including another store, which may stand on layers of its own, and a host's record that is no store at all. `Search` is recall without its side effects: nothing beneath is reinforced by being read through.
+
+Only the top store is written to or forgotten from. The layered store shares its database with the one it came from, so closing either closes both. A store on nothing behaves exactly as it does without `On`.
+
 # Lifecycle
 
 ## Memorize
@@ -309,9 +326,9 @@ For each group, settling claims the group with a lease so two workers never proc
 | `same` | the higher-rated wording stays live and is reinforced; the other goes cold |
 | `noise` | dropped: the judge rated the sentence 1, nothing worth keeping |
 
-Embeddings only gather the candidates; the judge decides. When the store holds nothing close yet, there is nothing to relate to, and the sentence is kept unless it is noise. A sentence the judge rates 3 or higher is rehearsed: the model writes up to four trigger phrases a person might use when the memory matters, and a phrase is kept only if it sits at least 0.05 closer to its own memory than to the average live memory. A group whose settling fails keeps its lease until it runs out, then the next `Settle` takes it again.
+When the store stands on layers, each sentence is first shown to the judge beside what they hold; one the judge calls `same` is counted as known and goes no further. Embeddings only gather the candidates; the judge decides. When the store holds nothing close yet, there is nothing to relate to, and the sentence is kept unless it is noise. A sentence the judge rates 3 or higher is rehearsed: the model writes up to four trigger phrases a person might use when the memory matters, and a phrase is kept only if it sits at least 0.05 closer to its own memory than to the average live memory. A group whose settling fails keeps its lease until it runs out, then the next `Settle` takes it again.
 
-The report counts groups, proposals, inserts, reinforcements, supersessions, extensions, drops, rejected sentences and failed rehearsals.
+The report counts groups, proposals, sentences already known beneath, inserts, reinforcements, supersessions, extensions, drops, rejected sentences and failed rehearsals.
 
 ## Recall
 
@@ -325,6 +342,8 @@ func (store *Store) Profile(ctx context.Context) ([]Memory, error)
 Three lanes are ranked and fused by reciprocal rank: cosine similarity over memory vectors, character-bigram overlap over the text, and cosine similarity over trigger phrases. Character bigrams let a two-character word count, which matters in Korean, where many nouns are two syllables long. The leading hit brings the rest of its origin with it. Age plays no part in ranking, because a question about last year wants last year's memory; the store keeps what is current by superseding what is not.
 
 Every memory returned is reinforced by `1 − retrievability`, so a memory recalled just before it would have faded gains the most, and one recalled a minute after it was written gains nothing. Without an embedder, or when embedding fails, recall answers from the text lane and says why in `DegradedReason`.
+
+A store standing on layers interleaves their answers with its own by rank, its own first at each rank, and reinforces only its own.
 
 `Profile` returns the live static memories, most useful first.
 

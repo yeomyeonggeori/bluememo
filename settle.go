@@ -29,6 +29,7 @@ type SettleReport struct {
 	Superseded          int `json:"superseded"`
 	Extended            int `json:"extended"`
 	Dropped             int `json:"dropped"`
+	Known               int `json:"known"`
 	Rejected            int `json:"rejected"`
 	RehearsalFailures   int `json:"rehearsalFailures"`
 	DroppedTriggerCount int `json:"droppedTriggerCount"`
@@ -187,6 +188,14 @@ func (store *Store) settleProposition(ctx context.Context, group pendingGroup, p
 		return nil
 	}
 	report.Proposed++
+	isKnown, errorValue := store.isKnownBeneath(ctx, proposition.Content)
+	if errorValue != nil {
+		return errorValue
+	}
+	if isKnown {
+		report.Known++
+		return nil
+	}
 	embedding, errorValue := store.embedDocument(ctx, store.matchableText(proposition.Content, dates.occurredAt, dates.occurredUntil))
 	if errorValue != nil {
 		return errorValue
