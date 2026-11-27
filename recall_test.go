@@ -20,9 +20,26 @@ func TestAHitBringsTheRestOfItsBundle(t *testing.T) {
 		statement("올린 뒤 버전을 확인한다."))
 	testFixture.settle(t, "다른 이야기", statement("박예시는 아침에만 커피를 마신다."))
 
-	result := testFixture.recall(t, "릴리스는 admind와 capabilityd를 함께 올린다", 3)
-	if len(result.Memories) != 3 || !result.Memories[1].IsSibling || !result.Memories[2].IsSibling {
+	result := testFixture.recall(t, "릴리스는 admind와 capabilityd를 함께 올린다", 12)
+	if len(result.Memories) < 3 || !result.Memories[1].IsSibling || !result.Memories[2].IsSibling {
 		t.Fatalf("expected the leading hit and its two siblings, got %v", recalledContents(result))
+	}
+}
+
+func TestABundleLeavesRoomForTheNextHit(t *testing.T) {
+	testFixture := newFixture(t)
+	testFixture.settle(t, "긴 회의",
+		statement("이샘플은 배포 일정을 금요일로 정했다."),
+		statement("회의실 예약은 박예시가 맡는다."),
+		statement("간식은 최견본이 준비한다."),
+		statement("다음 회의는 한 달 뒤에 연다."),
+		statement("회의록은 위키에 올린다."))
+	testFixture.settle(t, "다른 날", statement("배포 일정은 고객사 점검 때문에 하루 미뤄졌다."))
+
+	result := testFixture.recall(t, "이샘플은 배포 일정을 금요일로 정했다", 4)
+	recalled := recalledContents(result)
+	if recalled[0] != "이샘플은 배포 일정을 금요일로 정했다." || !slices.Contains(recalled, "배포 일정은 고객사 점검 때문에 하루 미뤄졌다.") {
+		t.Fatalf("expected the leading hit and the next hit from another note, got %v", recalled)
 	}
 }
 
