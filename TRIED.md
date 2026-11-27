@@ -917,3 +917,51 @@ material, it is short of room.
 The provider keeps the caption, because an adapter that silently drops a field
 the comparison reads makes every number after it unreadable. The accuracy claim
 goes away.
+
+## Follow-up queries after the first recall (2026-11-27)
+
+The hypothesis came from MeMo (arXiv 2605.15156), whose appendix J.2 reports
+that an answering model allowed to ask again after reading what came back does
+far better than one that asks once. Here the answerer read the memories its
+question recalled and wrote up to three further queries for what was still
+missing. Each was recalled at the same limit and the new memories were appended.
+
+LoCoMo, ten conversations at a session limit of 10, 499 answerable questions,
+every arm on one set of stores. `z-ai/glm-5.3-flash` decomposed, answered and
+graded, EmbeddingGemma 2 (Q8_0 under llama.cpp) embedded, and
+`~typesafe/jev-latest` judged and reranked. The entries above used another
+embedder and another answerer, so these numbers compare only with each other.
+Two runs of one arm differ by 0.026 overall.
+
+| arm | memories shown | overall 1 to 4 | multi-hop |
+| --- | --- | --- | --- |
+| one query, limit 12 | 12 | 0.669, 0.695 | 0.426, 0.443 |
+| limit 12 and follow-up queries | 16.6 on average | 0.693, 0.683 | 0.508, 0.557 |
+| one query, limit 17 | 17 | 0.731, 0.721 | 0.557, 0.541 |
+
+The follow-up arm did not beat its own baseline overall, and it lost to a single
+query that showed the same number of memories. Its multi-hop gain is the gain of
+seeing five more memories. The answerer asked again on 77% of questions, so the
+price was a model call on most recalls.
+
+What was wrong: the paper's memory is a model that answers a sub-question, so
+asking again reaches something the first answer did not hold. A recall here
+returns ranked statements, and a second query mostly reaches what a deeper first
+one had already ranked.
+
+**Untested:** more than one round, and an answerer told to ask less often.
+
+## The decline grade counts a corrected premise as an assertion
+
+Found while reading the same runs. Of nine unanswerable questions that one arm
+lost in both of its runs, four were answered by correcting the question: asked
+about Andrew's four dogs, the answer said the dogs are Audrey's and Andrew has
+none. `locomoDeclineInstruction` asks whether the answer says the information is
+not available, so it grades that answer as an assertion.
+
+Regrading every unanswerable answer with an instruction that also accepts a
+corrected premise moved the decline rate at a limit of 12 from 0.794 to 0.868,
+and at 50 from 0.785 to 0.908. Under the harness's own grade the rate is flat
+from 12 to 50; under the regrade it rises with the limit. The instruction in the
+harness is unchanged, so a comparison of decline rates between two arms that
+show different memories carries this error.

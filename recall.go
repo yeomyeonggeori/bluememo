@@ -20,6 +20,7 @@ const (
 	DefaultRecallLimit   = 50
 	UnsettledNoteLimit   = 3
 	laneDepthMultiplier  = 3
+	siblingSlotShare     = 4
 	reciprocalRankOffset = 60.0
 )
 
@@ -328,8 +329,8 @@ func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, l
 	}
 	leading := ranked[0]
 	siblings, errorValue := queryMemories(ctx, store.database,
-		`where origin_id = ? and memory_id <> ? and cold_since is null and (valid_until is null or valid_until > ?) order by created_at`,
-		leading.Memory.OriginID, leading.Memory.MemoryID, toMilliseconds(store.now()))
+		`where origin_id = ? and memory_id <> ? and cold_since is null and (valid_until is null or valid_until > ?) order by created_at limit ?`,
+		leading.Memory.OriginID, leading.Memory.MemoryID, toMilliseconds(store.now()), siblingSlots(limit))
 	if errorValue != nil {
 		return nil, errorValue
 	}
@@ -345,6 +346,10 @@ func (store *Store) withSiblings(ctx context.Context, ranked []RecalledMemory, l
 		}
 	}
 	return expanded[:min(limit, len(expanded))], nil
+}
+
+func siblingSlots(limit int) int {
+	return max(1, limit/siblingSlotShare)
 }
 
 func (store *Store) unsettledNotes(ctx context.Context, text string) ([]UnsettledNote, error) {

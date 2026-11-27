@@ -119,7 +119,7 @@ A note carries a group identifier, the speaker's name and whether the person ask
 
 The group of memories that came out of one settled group of notes.
 
-Decomposition splits one message into several sentences, and those siblings belong together: `A release ships admind and capabilityd together` and `Shipping only one of them breaks the protocol` answer the same question. A recall that finds one of them returns the others with it, and eviction moves or keeps a whole origin at once.
+Decomposition splits one message into several sentences, and those siblings belong together: `A release ships admind and capabilityd together` and `Shipping only one of them breaks the protocol` answer the same question. A recall that finds one of them brings the others along, up to a quarter of what it was asked for, so one long conversation leaves room for the hits that follow it. Eviction moves or keeps a whole origin at once.
 
 ## Expiry
 
